@@ -46,6 +46,12 @@ Usage
     if __name__ == "__main__":
         bot.run("BOT_TOKEN_HERE")
 
+Screenshots
+-----------
+
+.. ::image:: https://raw.githubusercontent.com/mahtoid/DiscordChatExporterPy/master/.screenshots/channel_output.png
+.. ::image:: https://raw.githubusercontent.com/mahtoid/DiscordChatExporterPy/master/.screenshots/html_output.png
+
 Links
 -----
 - `Wiki <https://github.com/mahtoid/DiscordChatExporterPy/wiki/>`_
