@@ -1,0 +1,3 @@
+include README.rst
+include LICENSE
+recursive-include chat_exporter/chat_exporter_html *.html
