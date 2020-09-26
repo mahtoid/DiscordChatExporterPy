@@ -69,7 +69,7 @@ async def parse_mentions(content, guild, bot):
     offset = 0
     for match in re.finditer(REGEX_ROLES, content):
         role_id = int(match.group(1))
-        role = bot.get_role(role_id)
+        role = guild.get_role(role_id)
         replacement = '<span style="color: #%02x%02x%02x;">@%s</span>' \
                       % (role.color.r, role.color.g, role.color.b, role.name)
         content = content.replace(content[match.start() + offset:match.end() + offset],
@@ -78,7 +78,7 @@ async def parse_mentions(content, guild, bot):
 
     for match in re.finditer(REGEX_ROLES_2, content):
         role_id = int(match.group(1))
-        role = bot.get_role(role_id)
+        role = guild.get_role(role_id)
         replacement = '<span style="color: #%02x%02x%02x;">@%s</span>' \
                       % (role.color.r, role.color.g, role.color.b, role.name)
         content = content.replace(content[match.start() + offset:match.end() + offset],
