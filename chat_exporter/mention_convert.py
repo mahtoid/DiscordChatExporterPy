@@ -48,7 +48,10 @@ async def parse_mentions(content, guild, bot):
     for match in re.finditer(REGEX_CHANNELS, content):
         channel_id = int(match.group(1))
         channel = guild.get_channel(channel_id)
-        replacement = '<span class="mention" title="%s">#%s</span>' \
+        if channel is None:
+            replacement = '#deleted-channel'
+        else:
+            replacement = '<span class="mention" title="%s">#%s</span>' \
                       % (channel.name, channel.name)
         content = content.replace(content[match.start() + offset:match.end() + offset],
                                   replacement)
@@ -57,11 +60,11 @@ async def parse_mentions(content, guild, bot):
     for match in re.finditer(REGEX_CHANNELS_2, content):
         channel_id = int(match.group(1))
         channel = guild.get_channel(channel_id)
-        try:
-            replacement = '<span class="mention" title="%s">#%s</span>' \
-                          % (channel.name, channel.name)
-        except AttributeError:
+        if channel is None:
             replacement = '#deleted-channel'
+        else:
+            replacement = '<span class="mention" title="%s">#%s</span>' \
+                      % (channel.name, channel.name)
         content = content.replace(content[match.start() + offset:match.end() + offset],
                                   replacement)
         offset += len(replacement) - (match.end() - match.start())
@@ -70,19 +73,23 @@ async def parse_mentions(content, guild, bot):
     for match in re.finditer(REGEX_ROLES, content):
         role_id = int(match.group(1))
         role = guild.get_role(role_id)
-        replacement = '<span style="color: #%02x%02x%02x;">@%s</span>' \
-                      % (role.color.r, role.color.g, role.color.b, role.name)
-        content = content.replace(content[match.start() + offset:match.end() + offset],
-                                  replacement)
+        if role is None:
+            replacement = '@deleted-role'
+        else:
+            replacement = '<span style="color: #%02x%02x%02x;">@%s</span>' \
+                          % (role.color.r, role.color.g, role.color.b, role.name)
+        content = content.replace(content[match.start() + offset:match.end() + offset], replacement)
         offset += len(replacement) - (match.end() - match.start())
 
     for match in re.finditer(REGEX_ROLES_2, content):
         role_id = int(match.group(1))
         role = guild.get_role(role_id)
-        replacement = '<span style="color: #%02x%02x%02x;">@%s</span>' \
-                      % (role.color.r, role.color.g, role.color.b, role.name)
-        content = content.replace(content[match.start() + offset:match.end() + offset],
-                                  replacement)
+        if role is None:
+            replacement = '@deleted-role'
+        else:
+            replacement = '<span style="color: #%02x%02x%02x;">@%s</span>' \
+                          % (role.color.r, role.color.g, role.color.b, role.name)
+        content = content.replace(content[match.start() + offset:match.end() + offset], replacement)
         offset += len(replacement) - (match.end() - match.start())
 
     # members
