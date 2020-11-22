@@ -7,7 +7,7 @@ import sys
 import traceback
 from chat_exporter.misc_tools import escape_html, member_colour_translator
 from chat_exporter.mention_convert import parse_mentions, escape_mentions, unescape_mentions
-from chat_exporter.markdown_convert import parse_markdown
+from chat_exporter.markdown_convert import parse_markdown, parse_embed_markdown
 from chat_exporter.emoji_convert import convert_emoji
 from pytz import timezone
 from datetime import timedelta
@@ -27,7 +27,7 @@ def init_exporter(_bot):
 
 async def export(ctx):
     try:
-        transcript = await generate_transcript(ctx.channel)
+        transcript = await produce_transcript(ctx.channel)
     except Exception:
         transcript = None
         print("Error during transcript generation!", file=sys.stderr)
@@ -63,9 +63,18 @@ async def export(ctx):
 
 
 async def generate_transcript(channel):
+    try:
+        transcript = await produce_transcript(channel)
+    except Exception:
+        transcript = None
+        print(f"Please send a screenshot of the above error to https://www.github.com/mahtoid/DiscordChatExporterPy")
+
+    return transcript
+
+
+async def produce_transcript(channel):
     guild = channel.guild
     messages = await channel.history(limit=None, oldest_first=True).flatten()
-
     previous_author = ""
     previous_timestamp = ""
     messages_html = ""
@@ -88,11 +97,18 @@ async def generate_transcript(channel):
         for e in m.embeds:
             fields = ""
             for f in e.fields:
-                cur_field = await fill_out(channel, msg_embed_field, [
-                    ("EMBED_FIELD_NAME", f.name),
-                    ("EMBED_FIELD_VALUE", f.value),
-                ])
-                fields += cur_field
+                if f.inline:
+                    cur_field = await fill_out(channel, msg_embed_field_inline, [
+                        ("EMBED_FIELD_NAME", f.name),
+                        ("EMBED_FIELD_VALUE", f.value),
+                    ])
+                    fields += cur_field
+                else:
+                    cur_field = await fill_out(channel, msg_embed_field, [
+                        ("EMBED_FIELD_NAME", f.name),
+                        ("EMBED_FIELD_VALUE", f.value),
+                    ])
+                    fields += cur_field
 
             # default values for embeds need explicit setting because
             # Embed.empty breaks just about everything
@@ -113,17 +129,22 @@ async def generate_transcript(channel):
                 else ""
             footer_icon = e.footer.icon_url \
                 if e.footer.icon_url != discord.Embed.Empty \
-                else ""
+                else None
             url = e.url \
                 if e.url != discord.Embed.Empty \
                 else ""
             embed_image = ""
             footer_fields = ""
             if footer != "":
-                cur_footer = await fill_out(channel, embed_footer, [
-                    ("EMBED_FOOTER", footer),
-                    ("EMBED_FOOTER_ICON", footer_icon)
-                ])
+                if footer_icon:
+                    cur_footer = await fill_out(channel, embed_footer_image, [
+                        ("EMBED_FOOTER", footer),
+                        ("EMBED_FOOTER_ICON", footer_icon)
+                    ])
+                else:
+                    cur_footer = await fill_out(channel, embed_footer, [
+                        ("EMBED_FOOTER", footer),
+                    ])
                 footer_fields += cur_footer
             if "tenor.com" in str(url):
                 try:
@@ -142,8 +163,8 @@ async def generate_transcript(channel):
                 ("EMBED_AUTHOR", author),
                 ("EMBED_TITLE", title),
                 ("EMBED_IMAGE", embed_image),
-                ("EMBED_DESC", desc, PARSE_MODE_MARKDOWN),
-                ("EMBED_FIELDS", fields, []),
+                ("EMBED_DESC", desc, PARSE_MODE_EMBED),
+                ("EMBED_FIELDS", fields, PARSE_MODE_EMBED_VALUE),
                 ("EMBED_FOOTER", footer_fields)
 
             ])
@@ -315,6 +336,8 @@ async def generate_transcript(channel):
 PARSE_MODE_NONE = 0
 PARSE_MODE_NO_MARKDOWN = 1
 PARSE_MODE_MARKDOWN = 2
+PARSE_MODE_EMBED = 3
+PARSE_MODE_EMBED_VALUE = 4
 
 
 async def fill_out(channel, base, replacements):
@@ -332,6 +355,11 @@ async def fill_out(channel, base, replacements):
             v = await parse_mentions(v, channel.guild, bot)
         if mode == PARSE_MODE_MARKDOWN:
             v = await parse_markdown(v)
+        if mode == PARSE_MODE_EMBED:
+            v = await parse_embed_markdown(v)
+            v = await parse_markdown(v)
+        if mode == PARSE_MODE_EMBED_VALUE:
+            v = await parse_embed_markdown(v)
 
         base = base.replace("{{" + k + "}}", v)
 
@@ -350,6 +378,7 @@ msg = read_file(dir_path + "/chat_exporter_html/message.html")
 bot_tag = read_file(dir_path + "/chat_exporter_html/bot-tag.html")
 msg_embed = read_file(dir_path + "/chat_exporter_html/message-embed.html")
 msg_embed_field = read_file(dir_path + "/chat_exporter_html/message-embed-field.html")
+msg_embed_field_inline = read_file(dir_path + "/chat_exporter_html/message-embed-field-inline.html")
 img_attachment = read_file(dir_path + "/chat_exporter_html/image-attachment.html")
 msg_attachment = read_file(dir_path + "/chat_exporter_html/message_attachment.html")
 emoji = read_file(dir_path + "/chat_exporter_html/emoji_attachment.html")
@@ -357,3 +386,4 @@ custom_emoji = read_file(dir_path + "/chat_exporter_html/custom_emoji_attachment
 continue_message = read_file(dir_path + "/chat_exporter_html/continue_message.html")
 end_message = read_file(dir_path + "/chat_exporter_html/end_message.html")
 embed_footer = read_file(dir_path + "/chat_exporter_html/embed_footer.html")
+embed_footer_image = read_file(dir_path + "/chat_exporter_html/embed_footer_image.html")

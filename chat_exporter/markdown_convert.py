@@ -1,6 +1,44 @@
 import re
 
 
+async def parse_embed_markdown(content):
+    # [Message](Link)
+
+    pattern = re.compile(r'<div class="chatlog__embed-field-value"><span class="markdown">(.+)?</span></div>')
+    match = re.search(pattern, content)
+    if match is not None:
+        field_value = match.group(1)
+        pattern = re.compile(r"\[(.+)?]\((.+)?\)")
+        match = re.search(pattern, field_value)
+        change = False
+        while match is not None:
+            change = True
+            affected_text = match.group(1)
+            affected_url = match.group(2)
+            field_value = field_value.replace(field_value[match.start():match.end()],
+                                  '<a href="%s">%s</a>' % (affected_url, affected_text))
+            match = re.search(pattern, field_value)
+
+        if change:
+            pattern = re.compile(r'<div class="chatlog__embed-field-value"><span class="markdown">(.+)?</span></div>')
+            match = re.search(pattern, content)
+            content = content.replace(content[match.start():match.end()],
+                                      '<div class="chatlog__embed-field-value"><span class="markdown">%s</span></div>'
+                                      % field_value)
+
+    if match is None:
+        pattern = re.compile(r"\[(.+)?]\((.+)?\)")
+        match = re.search(pattern, content)
+        while match is not None:
+            affected_text = match.group(1)
+            affected_url = match.group(2)
+            content = content.replace(content[match.start():match.end()],
+                                      '<a href="%s">%s</a>' % (affected_url, affected_text))
+            match = re.search(pattern, content)
+
+    return content
+
+
 async def parse_markdown(content):
     # **bold**
     pattern = re.compile(r"\*\*(.*?)\*\*")
@@ -84,6 +122,11 @@ async def parse_markdown(content):
     match = re.search(pattern, content)
     while match is not None:
         affected_text = match.group(1)
+        if affected_text.lower().startswith(("asciidoc", "autohotkey", "bash", "coffeescript", "cpp", "cs", "css",
+                                             "diff", "fix", "glsl", "ini", "json", "md", "ml", "prolog", "py",
+                                             "tex", "xl", "xml")):
+            affected_text = affected_text.replace("<br>", " <br>")
+            affected_text = ' '.join(affected_text.split()[1:])
         affected_text = re.sub(r"^<br>", "", affected_text)
         affected_text = re.sub(r"<br>$", "", affected_text)
         affected_text = await return_to_markdown(affected_text)
