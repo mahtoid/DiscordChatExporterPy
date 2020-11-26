@@ -1,7 +1,6 @@
 import io
 import re
 import os
-import requests
 import discord
 import sys
 import traceback
@@ -132,10 +131,25 @@ async def produce_transcript(channel):
             footer_icon = e.footer.icon_url \
                 if e.footer.icon_url != discord.Embed.Empty \
                 else None
-            url = e.url \
-                if e.url != discord.Embed.Empty \
+
+            thumbnail = e.thumbnail.url \
+                if e.thumbnail.url != discord.Embed.Empty \
                 else ""
-            embed_image = ""
+
+            image = e.image.url \
+                if e.image.url != discord.Embed.Empty \
+                else ""
+
+            if image != "":
+                image = await fill_out(channel, embed_image, [
+                    ("EMBED_IMAGE", str(image)),
+                ])
+
+            if thumbnail != "":
+                thumbnail = await fill_out(channel, embed_thumbnail, [
+                    ("EMBED_THUMBNAIL", str(thumbnail)),
+                ])
+
             footer_fields = ""
             if footer != "":
                 if footer_icon:
@@ -148,27 +162,18 @@ async def produce_transcript(channel):
                         ("EMBED_FOOTER", footer),
                     ])
                 footer_fields += cur_footer
-            if "tenor.com" in str(url):
-                try:
-                    pattern = r"https:\/\/tenor.com\/view\/.*-gif-(.*)"
-                    url_id = re.search(pattern, str(url)).group(1)
-                    requested_website = requests.get(f'{m.content}')
-                    pattern = rf"https:\/\/media1.tenor.com\/images\/(.*?)?\/tenor.gif\?itemid={url_id}"
-                    url = re.search(pattern, requested_website.text).group(1)
-                    embed_image = "https://media1.tenor.com/images/" + url + f"/tenor.gif?itemid={url_id}"
-                except AttributeError:
-                    pass
+
             cur_embed = await fill_out(channel, msg_embed, [
                 ("EMBED_R", str(r)),
                 ("EMBED_G", str(g)),
                 ("EMBED_B", str(b)),
                 ("EMBED_AUTHOR", author, PARSE_MODE_EMBED_EMOJI),
                 ("EMBED_TITLE", title, PARSE_MODE_EMBED_EMOJI),
-                ("EMBED_IMAGE", embed_image),
+                ("EMBED_IMAGE", image),
+                ("EMBED_THUMBNAIL", thumbnail),
                 ("EMBED_DESC", desc, PARSE_MODE_EMBED),
                 ("EMBED_FIELDS", fields, PARSE_MODE_EMBED_VALUE),
                 ("EMBED_FOOTER", footer_fields, PARSE_MODE_EMBED_EMOJI)
-
             ])
             embeds += cur_embed
 
@@ -374,3 +379,5 @@ continue_message = read_file(dir_path + "/chat_exporter_html/continue_message.ht
 end_message = read_file(dir_path + "/chat_exporter_html/end_message.html")
 embed_footer = read_file(dir_path + "/chat_exporter_html/embed_footer.html")
 embed_footer_image = read_file(dir_path + "/chat_exporter_html/embed_footer_image.html")
+embed_image = read_file(dir_path + "/chat_exporter_html/embed_image.html")
+embed_thumbnail = read_file(dir_path + "/chat_exporter_html/embed_thumbnail.html")
