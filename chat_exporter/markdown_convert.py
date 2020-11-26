@@ -1,4 +1,29 @@
 import re
+from chat_exporter.emoji_convert import convert_emoji
+
+
+async def parse_emoji(content):
+    output = []
+    for word in content.split():
+        emoji_pattern = re.compile(r"&lt;:.*:.*&gt;")
+        emoji_animated = re.compile(r"&lt;a:.*:.*&gt;")
+        if emoji_pattern.search(word):
+            pattern = r"&lt;:.*:(\d*)&gt;"
+            emoji_id = re.search(pattern, word).group(1)
+            new_w = f'<img class="emoji emoji--small" src="https://cdn.discordapp.com/emojis/{str(emoji_id)}.png">'
+            word = re.sub(emoji_pattern, new_w, word)
+            output.append(word)
+        elif emoji_animated.search(word):
+            pattern = r"&lt;a:.*:(\d*)&gt;"
+            emoji_id = re.search(pattern, word).group(1)
+            new_w = f'<img class="emoji emoji--small" src="https://cdn.discordapp.com/emojis/{str(emoji_id)}.gif">'
+            word = re.sub(emoji_animated, new_w, word)
+            output.append(word)
+        else:
+            word = convert_emoji(word)
+            output.append(word)
+    content = " ".join(output)
+    return content
 
 
 async def parse_embed_markdown(content):

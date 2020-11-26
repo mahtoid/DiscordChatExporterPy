@@ -7,7 +7,7 @@ import sys
 import traceback
 from chat_exporter.misc_tools import escape_html, member_colour_translator
 from chat_exporter.mention_convert import parse_mentions, escape_mentions, unescape_mentions
-from chat_exporter.markdown_convert import parse_markdown, parse_embed_markdown
+from chat_exporter.markdown_convert import parse_markdown, parse_embed_markdown, parse_emoji
 from chat_exporter.emoji_convert import convert_emoji
 from pytz import timezone
 from datetime import timedelta
@@ -26,6 +26,7 @@ def init_exporter(_bot):
 
 
 async def export(ctx):
+    # noinspection PyBroadException
     try:
         transcript = await produce_transcript(ctx.channel)
     except Exception:
@@ -63,6 +64,7 @@ async def export(ctx):
 
 
 async def generate_transcript(channel):
+    # noinspection PyBroadException
     try:
         transcript = await produce_transcript(channel)
     except Exception:
@@ -75,7 +77,7 @@ async def generate_transcript(channel):
 async def produce_transcript(channel):
     guild = channel.guild
     messages = await channel.history(limit=None, oldest_first=True).flatten()
-    previous_author = ""
+    previous_author = 0
     previous_timestamp = ""
     messages_html = ""
     for m in messages:
@@ -160,12 +162,12 @@ async def produce_transcript(channel):
                 ("EMBED_R", str(r)),
                 ("EMBED_G", str(g)),
                 ("EMBED_B", str(b)),
-                ("EMBED_AUTHOR", author),
-                ("EMBED_TITLE", title),
+                ("EMBED_AUTHOR", author, PARSE_MODE_EMBED_EMOJI),
+                ("EMBED_TITLE", title, PARSE_MODE_EMBED_EMOJI),
                 ("EMBED_IMAGE", embed_image),
                 ("EMBED_DESC", desc, PARSE_MODE_EMBED),
                 ("EMBED_FIELDS", fields, PARSE_MODE_EMBED_VALUE),
-                ("EMBED_FOOTER", footer_fields)
+                ("EMBED_FOOTER", footer_fields, PARSE_MODE_EMBED_EMOJI)
 
             ])
             embeds += cur_embed
@@ -254,35 +256,14 @@ async def produce_transcript(channel):
                 ])
                 emojis += cur_emoji
 
-        output = []
-        for word in m.content.split():
-            emoji_pattern = re.compile(r"&lt;:.*:.*&gt;")
-            emoji_animated = re.compile(r"&lt;a:.*:.*&gt;")
-            if emoji_pattern.search(word):
-                pattern = r"&lt;:.*:(\d*)&gt;"
-                emoji_id = re.search(pattern, word).group(1)
-                new_w = f'<img class="emoji emoji--small" src="https://cdn.discordapp.com/emojis/{str(emoji_id)}.png">'
-                word = re.sub(emoji_pattern, new_w, word)
-                output.append(word)
-            elif emoji_animated.search(word):
-                pattern = r"&lt;a:.*:(\d*)&gt;"
-                emoji_id = re.search(pattern, word).group(1)
-                new_w = f'<img class="emoji emoji--small" src="https://cdn.discordapp.com/emojis/{str(emoji_id)}.gif">'
-                word = re.sub(emoji_animated, new_w, word)
-                output.append(word)
-            else:
-                word = convert_emoji(word)
-                output.append(word)
-        m.content = " ".join(output)
+        m.content = await parse_emoji(m.content)
 
         cur_msg = ""
-        try:
-            author_name = await escape_html(m.author.nick)
-        except AttributeError:
-            author_name = await escape_html(m.author.name)
+
+        author_name = await escape_html(m.author.display_name)
 
         user_colour = await member_colour_translator(m.author)
-        if previous_author == m.author.name and previous_timestamp > time_string:
+        if previous_author == m.author.id and previous_timestamp > time_string:
             cur_msg = await fill_out(channel, continue_message, [
                 ("AVATAR_URL", str(m.author.avatar_url)),
                 ("NAME_TAG", "%s#%s" % (m.author.name, m.author.discriminator)),
@@ -297,7 +278,7 @@ async def produce_transcript(channel):
                 ("EMOJI", emojis)
             ])
         else:
-            if previous_author != "" and previous_timestamp != "":
+            if previous_author != 0 and previous_timestamp != "":
                 cur_msg = await fill_out(channel, end_message, [])
             cur_msg += await fill_out(channel, msg, [
                 ("AVATAR_URL", str(m.author.avatar_url)),
@@ -313,7 +294,7 @@ async def produce_transcript(channel):
                 ("ATTACHMENTS", attachments, PARSE_MODE_NONE),
                 ("EMOJI", emojis)
             ])
-            previous_author = m.author.name
+            previous_author = m.author.id
             previous_timestamp = time_string + timedelta(minutes=4)
 
         messages_html += cur_msg
@@ -328,6 +309,7 @@ async def produce_transcript(channel):
         ("CHANNEL_NAME", f"Channel: {channel.name}"),
         ("MESSAGE_COUNT", str(len(messages))),
         ("MESSAGES", messages_html, PARSE_MODE_NONE),
+        ("TIMEZONE", str(eastern)),
     ])
 
     return transcript
@@ -338,6 +320,7 @@ PARSE_MODE_NO_MARKDOWN = 1
 PARSE_MODE_MARKDOWN = 2
 PARSE_MODE_EMBED = 3
 PARSE_MODE_EMBED_VALUE = 4
+PARSE_MODE_EMBED_EMOJI = 5
 
 
 async def fill_out(channel, base, replacements):
@@ -358,8 +341,12 @@ async def fill_out(channel, base, replacements):
         if mode == PARSE_MODE_EMBED:
             v = await parse_embed_markdown(v)
             v = await parse_markdown(v)
+            v = await parse_emoji(v)
         if mode == PARSE_MODE_EMBED_VALUE:
             v = await parse_embed_markdown(v)
+            v = await parse_emoji(v)
+        if mode == PARSE_MODE_EMBED_EMOJI:
+            v = await parse_emoji(v)
 
         base = base.replace("{{" + k + "}}", v)
 
