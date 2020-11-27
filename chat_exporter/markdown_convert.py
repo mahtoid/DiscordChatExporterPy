@@ -24,6 +24,7 @@ async def parse_emoji(content):
             word = convert_emoji(word)
             output.append(word)
     content = " ".join(output)
+    content = re.sub(r"<br>", "\n", content)
     return content
 
 
