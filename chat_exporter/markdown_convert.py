@@ -3,6 +3,7 @@ from chat_exporter.emoji_convert import convert_emoji
 
 
 async def parse_emoji(content):
+    content = re.sub(r"\n", "<br>", content)
     output = []
     for word in content.split():
         emoji_pattern = re.compile(r"&lt;:.*:.*&gt;")
