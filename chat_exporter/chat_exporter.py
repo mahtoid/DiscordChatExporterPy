@@ -345,8 +345,8 @@ async def fill_out(channel, base, replacements):
             v = await parse_markdown(v)
         if mode == PARSE_MODE_EMBED:
             v = await parse_embed_markdown(v)
-            v = await parse_markdown(v)
             v = await parse_emoji(v)
+            v = await parse_markdown(v)
         if mode == PARSE_MODE_EMBED_VALUE:
             v = await parse_embed_markdown(v)
             v = await parse_emoji(v)
