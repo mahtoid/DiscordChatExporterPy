@@ -1,4 +1,5 @@
 import html
+from PIL import ImageColor
 
 
 async def escape_html(content):
@@ -6,28 +7,15 @@ async def escape_html(content):
 
 
 async def member_colour_translator(member):
-    r_colour = 0
-    g_colour = 0
-    b_colour = 0
-    try:
-        for roles in member.roles:
-            if roles.colour.r != 0:
-                r_colour = roles.colour.r
-                g_colour = roles.colour.g
-                b_colour = roles.colour.b
-            if roles.colour.g != 0:
-                r_colour = roles.colour.r
-                g_colour = roles.colour.g
-                b_colour = roles.colour.b
-            if roles.colour.b != 0:
-                r_colour = roles.colour.r
-                g_colour = roles.colour.g
-                b_colour = roles.colour.b
-    except AttributeError:
-        pass
-    if r_colour == 0 and g_colour == 0 and b_colour == 0:
-        r_colour = 255
-        g_colour = 255
-        b_colour = 255
-    user_colour = f"color: #%02x%02x%02x;" % (r_colour, g_colour, b_colour)
+    if member is not None:
+        user_colour = member.colour
+        if '#000000' in str(user_colour):
+            user_colour = f"color: #%02x%02x%02x;" % (255, 255, 255)
+        else:
+            user_colour = ImageColor.getrgb(str(user_colour))
+            colour_r, colour_g, colour_b = user_colour
+            user_colour = f"color: #%02x%02x%02x;" % (colour_r, colour_g, colour_b)
+        return user_colour
+    else:
+        user_colour = f"color: #%02x%02x%02x;" % (255, 255, 255)
     return user_colour

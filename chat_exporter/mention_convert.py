@@ -1,5 +1,4 @@
 import re
-from chat_exporter.misc_tools import escape_html
 
 REGEX_ROLES = r"&lt;@&amp;([0-9]+)&gt;"
 REGEX_MEMBERS = r"&lt;@!?([0-9]+)&gt;"
@@ -100,9 +99,9 @@ async def parse_mentions(content, guild, bot):
         member = guild.get_member(member_id) or bot.get_user(member_id)
 
         try:
-            member_name = await escape_html(member.nick)
+            member_name = member.display_name
         except AttributeError:
-            member_name = await escape_html(member.name)
+            member_name = member
 
         if member is not None:
             replacement = '<span class="mention" title="%s">@%s</span>' \
@@ -116,9 +115,9 @@ async def parse_mentions(content, guild, bot):
         member = guild.get_member(member_id) or bot.get_user(member_id)
 
         try:
-            member_name = await escape_html(member.nick)
+            member_name = member.display_name
         except AttributeError:
-            member_name = await escape_html(member.name)
+            member_name = member
 
         if member is not None:
             replacement = '<span class="mention" title="%s">@%s</span>' \
