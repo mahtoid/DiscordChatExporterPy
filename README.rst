@@ -48,6 +48,7 @@ Usage
     
     if __name__ == "__main__":
         bot.run("BOT_TOKEN_HERE")
+*Optional: If you want to display Members Colours (Role Colours) then enabling the Members Intent.*
 
 Screenshots
 -----------

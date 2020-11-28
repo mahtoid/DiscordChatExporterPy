@@ -267,7 +267,6 @@ async def produce_transcript(channel):
 
         author_name = await escape_html(m.author.display_name)
 
-        user_colour = await member_colour_translator(m.author)
         if previous_author == m.author.id and previous_timestamp > time_string:
             cur_msg = await fill_out(channel, continue_message, [
                 ("AVATAR_URL", str(m.author.avatar_url)),
@@ -283,6 +282,12 @@ async def produce_transcript(channel):
                 ("EMOJI", emojis)
             ])
         else:
+            try:
+                member = guild.get_member(m.author.id)
+            except discord.NotFound:
+                member = m.author
+
+            user_colour = await member_colour_translator(member)
             if previous_author != 0 and previous_timestamp != "":
                 cur_msg = await fill_out(channel, end_message, [])
             cur_msg += await fill_out(channel, msg, [
