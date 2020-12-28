@@ -39,7 +39,6 @@ Usage
     @bot.event
     async def on_ready():
         print("Live: " + bot.user.name)
-        chat_exporter.init_exporter(bot)
     
     
     @bot.command()
@@ -49,7 +48,7 @@ Usage
     if __name__ == "__main__":
         bot.run("BOT_TOKEN_HERE")
 
-*Optional: If you want to display Members Colours (Role Colours) then enable the Members Intent.*
+*Optional: If you want the transcript to display Members (Role) Colours then enable the Members Intent.*
 
 Screenshots
 -----------

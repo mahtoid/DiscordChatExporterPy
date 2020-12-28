@@ -40,7 +40,7 @@ async def unescape_mentions(content):
     return content
 
 
-async def parse_mentions(content, guild, bot):
+async def parse_mentions(content, guild):
     # parse mentions
     # channels
     offset = 0
@@ -96,7 +96,7 @@ async def parse_mentions(content, guild, bot):
 
     for match in re.finditer(REGEX_MEMBERS, content):
         member_id = int(match.group(1))
-        member = guild.get_member(member_id) or bot.get_user(member_id)
+        member = guild.get_member(member_id)
 
         try:
             member_name = member.display_name
@@ -109,10 +109,13 @@ async def parse_mentions(content, guild, bot):
             content = content.replace(content[match.start() + offset:match.end() + offset],
                                       replacement)
             offset += len(replacement) - (match.end() - match.start())
+        else:
+            content = content.replace(content[match.start() + offset:match.end() + offset],
+                                      '<span class="mention" title="%s">@%s</span>' % ("Unknown", "Unknown"))
 
     for match in re.finditer(REGEX_MEMBERS_2, content):
         member_id = int(match.group(1))
-        member = guild.get_member(member_id) or bot.get_user(member_id)
+        member = guild.get_member(member_id)
 
         try:
             member_name = member.display_name
@@ -125,6 +128,9 @@ async def parse_mentions(content, guild, bot):
             content = content.replace(content[match.start() + offset:match.end() + offset],
                                       replacement)
             offset += len(replacement) - (match.end() - match.start())
+        else:
+            content = content.replace(content[match.start() + offset:match.end() + offset],
+                                      '<span class="mention" title="%s">@%s</span>' % ("Unknown", "Unknown"))
 
     # custom emoji
     offset = 0
