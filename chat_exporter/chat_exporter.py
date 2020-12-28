@@ -6,7 +6,7 @@ import sys
 import traceback
 from chat_exporter.misc_tools import escape_html, member_colour_translator
 from chat_exporter.mention_convert import parse_mentions, escape_mentions, unescape_mentions
-from chat_exporter.markdown_convert import parse_markdown, parse_embed_markdown, parse_emoji
+from chat_exporter.markdown_convert import parse_markdown, parse_embed_markdown, parse_emoji, https_http_links
 from chat_exporter.emoji_convert import convert_emoji
 from pytz import timezone
 from datetime import timedelta
@@ -15,13 +15,6 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 
 eastern = timezone("US/Eastern")
 utc = timezone("UTC")
-
-bot = None
-
-
-def init_exporter(_bot):
-    global bot
-    bot = _bot
 
 
 async def export(ctx):
@@ -62,7 +55,10 @@ async def export(ctx):
         await ctx.channel.send(embed=transcript_embed, file=transcript_file)
 
 
-async def generate_transcript(channel):
+async def generate_transcript(channel: discord.TextChannel, tz_info="US/Eastern"):
+    global eastern
+    eastern = timezone(tz_info)
+
     # noinspection PyBroadException
     try:
         transcript = await produce_transcript(channel)
@@ -98,6 +94,8 @@ async def produce_transcript(channel):
         for e in m.embeds:
             fields = ""
             for f in e.fields:
+                f.name = await https_http_links(f.name)
+                f.value = await https_http_links(f.value)
                 if f.inline:
                     cur_field = await fill_out(channel, msg_embed_field_inline, [
                         ("EMBED_FIELD_NAME", f.name),
@@ -116,14 +114,24 @@ async def produce_transcript(channel):
             title = e.title \
                 if e.title != discord.Embed.Empty \
                 else ""
+            if title != "":
+                title = await https_http_links(title)
             r, g, b = (e.colour.r, e.colour.g, e.colour.b) \
                 if e.colour != discord.Embed.Empty \
                 else (0x20, 0x22, 0x25)  # default colour
             desc = e.description \
                 if e.description != discord.Embed.Empty \
                 else ""
+            if desc != "":
+                desc = await https_http_links(desc)
             author = e.author.name \
                 if e.author.name != discord.Embed.Empty \
+                else ""
+            author_url = e.author.url \
+                if e.author.url != discord.Embed.Empty \
+                else ""
+            author_icon = e.author.icon_url \
+                if e.author.icon_url != discord.Embed.Empty \
                 else ""
             footer = e.footer.text \
                 if e.footer.text != discord.Embed.Empty \
@@ -139,6 +147,8 @@ async def produce_transcript(channel):
             image = e.image.url \
                 if e.image.url != discord.Embed.Empty \
                 else ""
+            if author_url != "":
+                author = f'<a class="chatlog__embed-author-name-link" href="{author_url}">{author}</a>'
 
             if image != "":
                 image = await fill_out(channel, embed_image, [
@@ -163,11 +173,24 @@ async def produce_transcript(channel):
                     ])
                 footer_fields += cur_footer
 
+            author_html = ""
+            if author != "":
+                if author_icon != "":
+                    cur_author_icon = await fill_out(channel, embed_author_icon, [
+                        ("EMBED_AUTHOR", author),
+                        ("EMBED_AUTHOR_ICON", author_icon)
+                    ])
+                else:
+                    cur_author_icon = await fill_out(channel, embed_author, [
+                        ("EMBED_AUTHOR", author),
+                    ])
+                author_html += cur_author_icon
+
             cur_embed = await fill_out(channel, msg_embed, [
                 ("EMBED_R", str(r)),
                 ("EMBED_G", str(g)),
                 ("EMBED_B", str(b)),
-                ("EMBED_AUTHOR", author, PARSE_MODE_EMBED_EMOJI),
+                ("EMBED_AUTHOR", author_html, PARSE_MODE_EMBED_EMOJI),
                 ("EMBED_TITLE", title, PARSE_MODE_EMBED_EMOJI),
                 ("EMBED_IMAGE", image),
                 ("EMBED_THUMBNAIL", thumbnail),
@@ -204,35 +227,7 @@ async def produce_transcript(channel):
         else:
             ze_bot_tag = ""
 
-        output = []
-        if "http://" in m.content or "www." in m.content or "https://" in m.content:
-            for word in m.content.split():
-                if word.startswith("&lt;") and word.endswith("&gt;"):
-                    pattern = r"&lt;(.*)&gt;"
-                    url = re.search(pattern, word).group(1)
-                    url = f'<a href="{url}">{url}</a>'
-                    output.append(url)
-                elif "http://" in word:
-                    pattern = r"http://(.*)"
-                    word_link = re.search(pattern, word).group(1)
-                    word_full = f'<a href="http://{word_link}">http://{word_link}</a>'
-                    word = re.sub(pattern, word_full, word)
-                    output.append(word)
-                elif "www." in word:
-                    pattern = r"www.(.*)"
-                    word_link = re.search(pattern, word).group(1)
-                    word_full = f'<a href="www.{word_link}">www.{word_link}</a>'
-                    word = re.sub(pattern, word_full, word)
-                    output.append(word)
-                elif "https://" in word:
-                    pattern = r"https://(.*)"
-                    word_link = re.search(pattern, word).group(1)
-                    word_full = f'<a href="https://{word_link}">https://{word_link}</a>'
-                    word = re.sub(pattern, word_full, word)
-                    output.append(word)
-                else:
-                    output.append(word)
-            m.content = " ".join(output)
+        m.content = await https_http_links(m.content)
 
         emojis = ""
         for reactions in m.reactions:
@@ -345,7 +340,7 @@ async def fill_out(channel, base, replacements):
             v = await escape_mentions(v)
             v = await escape_mentions(v)
             v = await unescape_mentions(v)
-            v = await parse_mentions(v, channel.guild, bot)
+            v = await parse_mentions(v, channel.guild)
         if mode == PARSE_MODE_MARKDOWN:
             v = await parse_markdown(v)
         if mode == PARSE_MODE_EMBED:
@@ -386,3 +381,5 @@ embed_footer = read_file(dir_path + "/chat_exporter_html/embed_footer.html")
 embed_footer_image = read_file(dir_path + "/chat_exporter_html/embed_footer_image.html")
 embed_image = read_file(dir_path + "/chat_exporter_html/embed_image.html")
 embed_thumbnail = read_file(dir_path + "/chat_exporter_html/embed_thumbnail.html")
+embed_author = read_file(dir_path + "/chat_exporter_html/embed_author.html")
+embed_author_icon = read_file(dir_path + "/chat_exporter_html/embed_author_icon.html")
