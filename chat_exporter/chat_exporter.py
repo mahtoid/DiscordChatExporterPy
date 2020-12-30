@@ -62,7 +62,6 @@ async def generate_transcript(channel: discord.TextChannel, tz_info="US/Eastern"
     # noinspection PyBroadException
     try:
         if messages:
-            messages.reverse()
             transcript = await produce_transcript(channel, messages)
         else:
             transcript = await produce_transcript(channel)
@@ -209,13 +208,13 @@ async def produce_transcript(channel, messages = None):
         for a in m.attachments:
             result_img = False
             for ending in img_types:
-                if str(a.url).endswith(ending):
+                if str(a.proxy_url).endswith(ending):
                     result_img = True
 
             if result_img:
                 cur_attach = await fill_out(channel, img_attachment, [
-                    ("ATTACH_URL", a.url),
-                    ("ATTACH_URL_THUMB", a.url)
+                    ("ATTACH_URL", a.proxy_url),
+                    ("ATTACH_URL_THUMB", a.proxy_url)
                 ])
             else:
                 file_mb = a.size / 1000000
