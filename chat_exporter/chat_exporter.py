@@ -55,13 +55,17 @@ async def export(ctx):
         await ctx.channel.send(embed=transcript_embed, file=transcript_file)
 
 
-async def generate_transcript(channel: discord.TextChannel, tz_info="US/Eastern"):
+async def generate_transcript(channel: discord.TextChannel, tz_info="US/Eastern", messages: list = None):
     global eastern
     eastern = timezone(tz_info)
 
     # noinspection PyBroadException
     try:
-        transcript = await produce_transcript(channel)
+        if messages:
+            messages.reverse()
+            transcript = await produce_transcript(channel, messages)
+        else:
+            transcript = await produce_transcript(channel)
     except Exception:
         transcript = None
         print(f"Please send a screenshot of the above error to https://www.github.com/mahtoid/DiscordChatExporterPy")
@@ -69,9 +73,9 @@ async def generate_transcript(channel: discord.TextChannel, tz_info="US/Eastern"
     return transcript
 
 
-async def produce_transcript(channel):
+async def produce_transcript(channel, messages = None):
     guild = channel.guild
-    messages = await channel.history(limit=None, oldest_first=True).flatten()
+    messages = messages or await channel.history(limit=None, oldest_first=True).flatten()
     previous_author = 0
     previous_timestamp = ""
     messages_html = ""
