@@ -69,7 +69,7 @@ async def generate_transcript(channel: discord.TextChannel, tz_info="US/Eastern"
     return transcript
 
 
-async def raw_transcript(channel: discord.TextChannel, tz_info="US/Eastern", messages: list):
+async def raw_transcript(channel: discord.TextChannel, messages: list, tz_info="US/Eastern"):
     global eastern
     eastern = timezone(tz_info)
 
