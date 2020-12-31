@@ -208,7 +208,7 @@ async def produce_transcript(channel, messages = None):
         for a in m.attachments:
             result_img = False
             for ending in img_types:
-                if str(a.proxy_url).endswith(ending):
+                if str(a.url).endswith(ending):
                     result_img = True
 
             if result_img:
