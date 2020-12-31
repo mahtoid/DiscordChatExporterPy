@@ -230,7 +230,7 @@ async def produce_transcript(channel, messages = None):
             else:
                 file_mb = a.size / 1000000
                 cur_attach = await fill_out(channel, msg_attachment, [
-                    ("ATTACH_URL", a.proxy_url),
+                    ("ATTACH_URL", a.url),
                     ("ATTACH_BYTES", str(file_mb)[:4] + "MB"),
                     ("ATTACH_FILE", str(a.filename))
                 ])
