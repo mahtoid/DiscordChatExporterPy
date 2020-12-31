@@ -61,10 +61,7 @@ async def generate_transcript(channel: discord.TextChannel, tz_info="US/Eastern"
 
     # noinspection PyBroadException
     try:
-        if messages:
-            transcript = await produce_transcript(channel, messages)
-        else:
-            transcript = await produce_transcript(channel)
+        transcript = await produce_transcript(channel)
     except Exception:
         transcript = None
         print(f"Please send a screenshot of the above error to https://www.github.com/mahtoid/DiscordChatExporterPy")
@@ -72,7 +69,7 @@ async def generate_transcript(channel: discord.TextChannel, tz_info="US/Eastern"
     return transcript
 
 
-async def produce_transcript(channel, messages = None):
+async def produce_transcript(channel, messages):
     guild = channel.guild
     messages = messages or await channel.history(limit=None, oldest_first=True).flatten()
     previous_author = 0
