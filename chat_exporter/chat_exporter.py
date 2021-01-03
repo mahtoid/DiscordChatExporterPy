@@ -2,7 +2,7 @@ import io
 import re
 from pytz import timezone
 from PIL import ImageColor
-from datetime import timedelta, datetime
+from datetime import timedelta
 from dataclasses import dataclass
 
 from typing import Optional, List
@@ -15,8 +15,8 @@ import html
 from build_embed import BuildEmbed
 from build_attachments import BuildAttachment
 from build_reaction import BuildReaction
-from build_html import fill_out, start_message, bot_tag, message_body, end_message, total, PARSE_MODE_NONE, \
-    PARSE_MODE_MARKDOWN
+from build_html import fill_out, start_message, bot_tag, message_reference, message_reference_unknown, message_body, \
+    end_message, total, PARSE_MODE_NONE, PARSE_MODE_MARKDOWN
 
 from parse_mention import pass_bot
 
@@ -147,6 +147,7 @@ class Message:
     embeds: str = ""
     attachments: str = ""
     reactions: str = ""
+    reference: str = ""
 
     bot_tag: Optional[str] = None
 
@@ -155,8 +156,8 @@ class Message:
 
     previous_author: Optional[int] = None
     previous_timestamp: Optional[int] = None
-    time_string: Optional[datetime] = None
-    full_time_string: Optional[str] = None
+    time_string_create: Optional[str] = None
+    time_string_edited: Optional[str] = None
 
     time_format = "%b %d, %Y %I:%M %p"
     utc = timezone("UTC")
@@ -166,7 +167,7 @@ class Message:
         self.previous_message = previous_message
         self.timezone = timezone_string
 
-        self.set_time(message)
+        self.time_string_create, self.time_string_edit = self.set_time(message)
 
     async def build_message(self):
         self.message.content = html.escape(self.message.content)
@@ -176,6 +177,11 @@ class Message:
             self.bot_tag = bot_tag
         else:
             self.bot_tag = ""
+
+        if self.message.reference:
+            self.reference = await self.build_reference()
+        else:
+            self.reference = ""
 
         for e in self.message.embeds:
             self.embeds += await BuildEmbed(e, self.message.guild).flow()
@@ -188,10 +194,15 @@ class Message:
 
         await self.generate_message_divider()
 
+        if self.time_string_edit != "":
+            self.time_string_edit = f'<span class="chatlog__edited-timestamp" title="{self.time_string_edit}">' \
+                                    f'(edited)</span>'
+
         self.message_html += await fill_out(self.message.guild, message_body, [
             ("MESSAGE_ID", str(self.message.id)),
             ("MESSAGE_CONTENT", self.message.content, PARSE_MODE_MARKDOWN),
             ("EMBEDS", self.embeds, PARSE_MODE_NONE),
+            ("EDIT", self.time_string_edit),
             ("ATTACHMENTS", self.attachments, PARSE_MODE_NONE),
             ("EMOJI", self.reactions, PARSE_MODE_NONE)
         ])
@@ -199,30 +210,56 @@ class Message:
         return self.message_html
 
     async def generate_message_divider(self):
-        if self.previous_message is None or self.previous_message.author.id != self.message.author.id or \
+        if self.previous_message is None or self.reference != "" or \
+                self.previous_message.author.id != self.message.author.id or \
                 self.message.created_at > (self.previous_message.created_at + timedelta(minutes=4)):
 
             if self.previous_message is not None:
                 self.message_html += await fill_out(self.message.guild, end_message, [])
 
-            try:
-                member = self.message.guild.get_member(self.message.author.id)
-            except discord.NotFound:
-                member = self.message.author
-            user_colour = await self.user_colour_translate(member)
+            user_colour = await self.user_colour_translate(self.message.guild, self.message.author)
 
             self.message_html += await fill_out(self.message.guild, start_message, [
+                ("REFERENCE", self.reference, PARSE_MODE_NONE),
                 ("AVATAR_URL", str(self.message.author.avatar_url), PARSE_MODE_NONE),
                 ("NAME_TAG", "%s#%s" % (self.message.author.name, self.message.author.discriminator)),
                 ("USER_ID", str(self.message.author.id)),
                 ("USER_COLOUR", user_colour),
                 ("NAME", str(html.escape(self.message.author.display_name))),
                 ("BOT_TAG", self.bot_tag, PARSE_MODE_NONE),
-                ("TIMESTAMP", self.full_time_string),
+                ("TIMESTAMP", self.time_string_create),
             ])
 
+    async def build_reference(self):
+        user_colour = await self.user_colour_translate(self.message.guild, self.message.author)
+
+        try:
+            message: discord.Message = await self.message.channel.fetch_message(self.message.reference.message_id)
+        except discord.NotFound:
+            return message_reference_unknown
+
+        _, time_string_edit = self.set_time(message)
+
+        if time_string_edit != "":
+            time_string_edit = f'<span class="chatlog__reference-edited-timestamp" title="{time_string_edit}">(edited)'\
+                               f'</span>'
+
+        return await fill_out(self.message.guild, message_reference, [
+            ("AVATAR_URL", str(message.author.avatar_url), PARSE_MODE_NONE),
+            ("NAME_TAG", "%s#%s" % (message.author.name, message.author.discriminator)),
+            ("USER_COLOUR", user_colour, PARSE_MODE_NONE),
+            ("CONTENT", message.content),
+            ("EDIT", time_string_edit),
+            ("MESSAGE_ID", str(self.message.reference.message_id), PARSE_MODE_NONE)
+        ])
+
     @staticmethod
-    async def user_colour_translate(member):
+    async def user_colour_translate(guild, author):
+        try:
+            member = guild.get_member(author.id)
+        except discord.NotFound:
+            member = author
+
         if member is not None:
             user_colour = member.colour
             if '#000000' in str(user_colour):
@@ -237,12 +274,13 @@ class Message:
         return user_colour
 
     def set_time(self, message):
-        self.time_string = self.utc.localize(message.created_at).astimezone(self.timezone)
-        time_string_created = self.time_string.strftime(self.time_format)
+        time_string = self.utc.localize(message.created_at).astimezone(self.timezone)
+        time_string_created = time_string.strftime(self.time_format)
         if message.edited_at is not None:
             time_string_edited = self.utc.localize(message.edited_at).astimezone(self.timezone)
             time_string_edited = time_string_edited.strftime(self.time_format)
-            self.full_time_string = "%s (edited %s)" \
-                                    % (time_string_created, time_string_edited)
+            time_string_edited = "%s" % time_string_edited
         else:
-            self.full_time_string = time_string_created
+            time_string_edited = ""
+
+        return time_string_created, time_string_edited
