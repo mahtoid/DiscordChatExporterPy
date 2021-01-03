@@ -47,6 +47,8 @@ def read_file(filename):
 # MESSAGES
 start_message = read_file(dir_path + "/chat_exporter_html/message/start.html")
 bot_tag = read_file(dir_path + "/chat_exporter_html/message/bot-tag.html")
+message_reference = read_file(dir_path + "/chat_exporter_html/message/reference.html")
+message_reference_unknown = read_file(dir_path + "/chat_exporter_html/message/reference_unknown.html")
 message_body = read_file(dir_path + "/chat_exporter_html/message/message.html")
 end_message = read_file(dir_path + "/chat_exporter_html/message/end.html")
 
