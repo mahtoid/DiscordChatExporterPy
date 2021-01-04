@@ -16,7 +16,7 @@ from build_embed import BuildEmbed
 from build_attachments import BuildAttachment
 from build_reaction import BuildReaction
 from build_html import fill_out, start_message, bot_tag, message_reference, message_reference_unknown, message_body, \
-    end_message, total, PARSE_MODE_NONE, PARSE_MODE_MARKDOWN
+    end_message, total, PARSE_MODE_NONE, PARSE_MODE_MARKDOWN, PARSE_MODE_REFERENCE
 
 from parse_mention import pass_bot
 
@@ -202,7 +202,7 @@ class Message:
             ("MESSAGE_ID", str(self.message.id)),
             ("MESSAGE_CONTENT", self.message.content, PARSE_MODE_MARKDOWN),
             ("EMBEDS", self.embeds, PARSE_MODE_NONE),
-            ("EDIT", self.time_string_edit),
+            ("EDIT", self.time_string_edit, PARSE_MODE_NONE),
             ("ATTACHMENTS", self.attachments, PARSE_MODE_NONE),
             ("EMOJI", self.reactions, PARSE_MODE_NONE)
         ])
@@ -247,9 +247,10 @@ class Message:
         return await fill_out(self.message.guild, message_reference, [
             ("AVATAR_URL", str(message.author.avatar_url), PARSE_MODE_NONE),
             ("NAME_TAG", "%s#%s" % (message.author.name, message.author.discriminator)),
+            ("NAME", str(html.escape(message.author.display_name))),
             ("USER_COLOUR", user_colour, PARSE_MODE_NONE),
-            ("CONTENT", message.content),
-            ("EDIT", time_string_edit),
+            ("CONTENT", message.content, PARSE_MODE_REFERENCE),
+            ("EDIT", time_string_edit, PARSE_MODE_NONE),
             ("MESSAGE_ID", str(self.message.reference.message_id), PARSE_MODE_NONE)
         ])
 
