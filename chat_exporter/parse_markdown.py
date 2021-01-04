@@ -34,6 +34,17 @@ class ParseMarkdown:
 
         return self.content
 
+    def message_reference_flow(self):
+        self.https_http_links()
+        self.parse_normal_markdown()
+        self.parse_code_block_markdown()
+        self.parse_br()
+
+        return self.content
+
+    def parse_br(self):
+        self.content = self.content.replace("<br>", " ")
+
     def parse_emoji(self):
         emoji_pattern = re.compile(r"&lt;:.*?:(\d*)&gt;")
         emoji_animated = re.compile(r"&lt;a:.*?:(\d*)&gt;")
@@ -82,6 +93,15 @@ class ParseMarkdown:
             affected_text = match.group(1)
             self.content = self.content.replace(self.content[match.start():match.end()],
                                                 '<span style="text-decoration: underline">%s</span>' % affected_text)
+            match = re.search(pattern, self.content)
+
+        # _italic_
+        pattern = re.compile(r"_(.*?)_")
+        match = re.search(pattern, self.content)
+        while match is not None:
+            affected_text = match.group(1)
+            self.content = self.content.replace(self.content[match.start():match.end()],
+                                                '<em>%s</em>' % affected_text)
             match = re.search(pattern, self.content)
 
         # ~~strikethrough~~
