@@ -68,61 +68,24 @@ class ParseMarkdown:
             match = re.search(emoji_pattern, self.content)
 
     def parse_normal_markdown(self):
-        # **bold**
-        pattern = re.compile(r"\*\*(.*?)\*\*")
-        match = re.search(pattern, self.content)
-        while match is not None:
-            affected_text = match.group(1)
-            self.content = self.content.replace(self.content[match.start():match.end()],
-                                                '<strong>%s</strong>' % affected_text)
-            match = re.search(pattern, self.content)
+        holder = [r"_(.*?)_", '<em>%s</em>'], \
+                 [r"\*(.*?)\*", '<em>%s</em>'], \
+                 [r"\*\*(.*?)\*\*", '<strong>%s</strong>'], \
+                 [r"__(.*?)__", '<span style="text-decoration: underline">%s</span>'], \
+                 [r"~~(.*?)~~", '<span style="text-decoration: line-through">%s</span>'], \
+                 [r"\|\|(.*?)\|\|", '<span class="spoiler spoiler--hidden" onclick="showSpoiler(event, this)"> <span '
+                                    'class="spoiler-text">%s</span></span>']
 
-        # *italic*
-        pattern = re.compile(r"\*(.*?)\*")
-        match = re.search(pattern, self.content)
-        while match is not None:
-            affected_text = match.group(1)
-            self.content = self.content.replace(self.content[match.start():match.end()],
-                                                '<em>%s</em>' % affected_text)
-            match = re.search(pattern, self.content)
+        for x in holder:
+            p, r = x
 
-        # __underline__
-        pattern = re.compile(r"__(.*?)__")
-        match = re.search(pattern, self.content)
-        while match is not None:
-            affected_text = match.group(1)
-            self.content = self.content.replace(self.content[match.start():match.end()],
-                                                '<span style="text-decoration: underline">%s</span>' % affected_text)
+            pattern = re.compile(p)
             match = re.search(pattern, self.content)
-
-        # _italic_
-        pattern = re.compile(r"_(.*?)_")
-        match = re.search(pattern, self.content)
-        while match is not None:
-            affected_text = match.group(1)
-            self.content = self.content.replace(self.content[match.start():match.end()],
-                                                '<em>%s</em>' % affected_text)
-            match = re.search(pattern, self.content)
-
-        # ~~strikethrough~~
-        pattern = re.compile(r"~~(.*?)~~")
-        match = re.search(pattern, self.content)
-        while match is not None:
-            affected_text = match.group(1)
-            self.content = self.content.replace(self.content[match.start():match.end()],
-                                                '<span style="text-decoration: line-through">%s</span>' % affected_text)
-            match = re.search(pattern, self.content)
-
-        # ||spoiler||
-        pattern = re.compile(r"\|\|(.*?)\|\|")
-        match = re.search(pattern, self.content)
-        while match is not None:
-            affected_text = match.group(1)
-            self.content = self.content.replace(self.content[match.start():match.end()],
-                                                '<span class="spoiler spoiler--hidden" onclick="showSpoiler(event, '
-                                                'this)"> '
-                                                '<span class="spoiler-text">%s</span></span>' % affected_text)
-            match = re.search(pattern, self.content)
+            while match is not None:
+                affected_text = match.group(1)
+                self.content = self.content.replace(self.content[match.start():match.end()],
+                                                    r % affected_text)
+                match = re.search(pattern, self.content)
 
         # > quote
         pattern = re.compile(r"^&gt;\s(.+)")
@@ -208,54 +171,24 @@ class ParseMarkdown:
 
     @staticmethod
     def return_to_markdown(content):
-        pattern = re.compile(r"<strong>(.*?)</strong>")
-        match = re.search(pattern, content)
-        while match is not None:
-            affected_text = match.group(1)
-            content = content.replace(content[match.start():match.end()],
-                                      '**%s**' % affected_text)
-            match = re.search(pattern, content)
+        holders = [r"<strong>(.*?)</strong>", '**%s**'], \
+                  [r"<em>([^<>]+)</em>", '*%s*'], \
+                  [r'<span style="text-decoration: underline">([^<>]+)</span>', '__%s__'], \
+                  [r'<span style="text-decoration: line-through">([^<>]+)</span>', '~~%s~~'], \
+                  [r'<div class="quote">(.*?)</div>', '> %s'], \
+                  [r'<span class="spoiler spoiler--hidden" onclick="showSpoiler\(event, this\)">'
+                   r'<span class="spoiler-text">(.*?)</span></span>', '||%s||']
 
-        pattern = re.compile(r"<em>([^<>]+)</em>")
-        match = re.search(pattern, content)
-        while match is not None:
-            affected_text = match.group(1)
-            content = content.replace(content[match.start():match.end()],
-                                      '*%s*' % affected_text)
-            match = re.search(pattern, content)
+        for x in holders:
+            p, r = x
 
-        pattern = re.compile(r'<span style="text-decoration: underline">([^<>]+)</span>')
-        match = re.search(pattern, content)
-        while match is not None:
-            affected_text = match.group(1)
-            content = content.replace(content[match.start():match.end()],
-                                      '__%s__' % affected_text)
+            pattern = re.compile(p)
             match = re.search(pattern, content)
-
-        pattern = re.compile(r'<span style="text-decoration: line-through">([^<>]+)</span>')
-        match = re.search(pattern, content)
-        while match is not None:
-            affected_text = match.group(1)
-            content = content.replace(content[match.start():match.end()],
-                                      '~~%s~~' % affected_text)
-            match = re.search(pattern, content)
-
-        pattern = re.compile(r'<span class="spoiler spoiler--hidden" onclick="showSpoiler\(event, this\)">'
-                             r'<span class="spoiler-text">(.*?)</span></span>')
-        match = re.search(pattern, content)
-        while match is not None:
-            affected_text = match.group(1)
-            content = content.replace(content[match.start():match.end()],
-                                      '||%s||' % affected_text)
-            match = re.search(pattern, content)
-
-        pattern = re.compile(r'<div class="quote">(.*?)</div>')
-        match = re.search(pattern, content)
-        while match is not None:
-            affected_text = match.group(1)
-            content = content.replace(content[match.start():match.end()],
-                                      '> %s' % affected_text)
-            match = re.search(pattern, content)
+            while match is not None:
+                affected_text = match.group(1)
+                content = content.replace(content[match.start():match.end()],
+                                          r % affected_text)
+                match = re.search(pattern, content)
 
         pattern = re.compile(r'<a href="(.*?)">(.*?)</a>')
         match = re.search(pattern, content)

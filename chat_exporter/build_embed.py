@@ -48,9 +48,9 @@ class BuildEmbed:
             else ""
 
         if self.title != "":
-            self.title = await fill_out(self.guild, embed_title, [("EMBED_TITLE", self.title, PARSE_MODE_MARKDOWN)])
-
-        # Markdown: HTTPS/HTTP Links, Standard
+            self.title = await fill_out(self.guild, embed_title, [
+                ("EMBED_TITLE", self.title, PARSE_MODE_MARKDOWN)
+            ])
 
     async def build_description(self):
         self.description = self.embed.description \
@@ -58,27 +58,22 @@ class BuildEmbed:
             else ""
 
         if self.description != "":
-            self.description = await fill_out(self.guild, embed_description, [("EMBED_DESC", self.embed.description,
-                                                                               PARSE_MODE_EMBED)])
-
-        # Markdown: HTTPS/HTTP Links, Standard
+            self.description = await fill_out(self.guild, embed_description, [
+                ("EMBED_DESC", self.embed.description, PARSE_MODE_EMBED)
+            ])
 
     async def build_fields(self):
         self.fields = ""
         for field in self.embed.fields:
             if field.inline:
-                self.fields += await fill_out(self.guild, embed_field_inline, [("FIELD_NAME", field.name,
-                                                                                PARSE_MODE_SPECIAL_EMBED),
-                                                                               ("FIELD_VALUE", field.value,
-                                                                                PARSE_MODE_EMBED)])
+                self.fields += await fill_out(self.guild, embed_field_inline, [
+                    ("FIELD_NAME", field.name, PARSE_MODE_SPECIAL_EMBED),
+                    ("FIELD_VALUE", field.value, PARSE_MODE_EMBED)
+                ])
             else:
-                self.fields += await fill_out(self.guild, embed_field, [("FIELD_NAME", field.name,
-                                                                         PARSE_MODE_SPECIAL_EMBED),
-                                                                        ("FIELD_VALUE", field.value,
-                                                                         PARSE_MODE_EMBED)])
-
-        # Markdown: HTTPS/HTTP Links, Standard
-        #           Title: Embed Markdown
+                self.fields += await fill_out(self.guild, embed_field, [
+                    ("FIELD_NAME", field.name, PARSE_MODE_SPECIAL_EMBED),
+                    ("FIELD_VALUE", field.value, PARSE_MODE_EMBED)])
 
     async def build_author(self):
         self.author = self.embed.author.name \
@@ -89,9 +84,10 @@ class BuildEmbed:
             if self.embed.author.url != discord.Embed.Empty \
             else self.author
 
-        author_icon = await fill_out(self.guild, embed_author_icon, [("AUTHOR", self.author, PARSE_MODE_NONE),
-                                                                     ("AUTHOR_ICON", self.embed.author.icon_url,
-                                                                      PARSE_MODE_NONE)]) \
+        author_icon = await fill_out(self.guild, embed_author_icon, [
+            ("AUTHOR", self.author, PARSE_MODE_NONE),
+            ("AUTHOR_ICON", self.embed.author.icon_url, PARSE_MODE_NONE)
+        ]) \
             if self.embed.author.icon_url != discord.Embed.Empty \
             else ""
 
@@ -101,8 +97,9 @@ class BuildEmbed:
             self.author = author_icon
 
     async def build_image(self):
-        self.image = await fill_out(self.guild, embed_image, [("EMBED_IMAGE", str(self.embed.image.proxy_url),
-                                                               PARSE_MODE_NONE)]) \
+        self.image = await fill_out(self.guild, embed_image, [
+            ("EMBED_IMAGE", str(self.embed.image.proxy_url), PARSE_MODE_NONE)
+        ]) \
             if self.embed.image.url != discord.Embed.Empty \
             else ""
 
