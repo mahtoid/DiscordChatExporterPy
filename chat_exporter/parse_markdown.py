@@ -119,23 +119,34 @@ class ParseMarkdown:
             match = re.search(pattern, self.content)
 
     def parse_code_block_markdown(self):
+        markdown_languages = ["asciidoc", "autohotkey", "bash", "coffeescript", "cpp", "cs", "css",
+                              "diff", "fix", "glsl", "ini", "json", "md", "ml", "prolog", "py",
+                              "tex", "xl", "xml", "js"]
         self.content = re.sub(r"\n", "<br>", self.content)
+
         # ```code```
         pattern = re.compile(r"```(.*?)```")
         match = re.search(pattern, self.content)
         while match is not None:
+            language_class = "nohighlight"
             affected_text = match.group(1)
-            if affected_text.lower().startswith(("asciidoc", "autohotkey", "bash", "coffeescript", "cpp", "cs", "css",
-                                                 "diff", "fix", "glsl", "ini", "json", "md", "ml", "prolog", "py",
-                                                 "tex", "xl", "xml", "js")):
-                affected_text = affected_text.replace("<br>", " <br>")
-                affected_text = ' '.join(affected_text.split()[1:])
+
+            for language in markdown_languages:
+                if affected_text.lower().startswith(language):
+                    language_class = "language=" + language
+                    _, _, affected_text = affected_text.partition('<br>')
+
             affected_text = self.return_to_markdown(affected_text)
-            affected_text = re.sub(r"^\s<br>", "", affected_text)
-            affected_text = re.sub(r"^<br>", "", affected_text)
-            affected_text = re.sub(r"<br>$", "", affected_text)
+
+            pattern = re.compile(r"^<br>|<br>$")
+            second_match = re.search(pattern, affected_text)
+            while second_match is not None:
+                affected_text = re.sub(r"^<br>|<br>$", '', affected_text)
+                second_match = re.search(pattern, affected_text)
+
             self.content = self.content.replace(self.content[match.start():match.end()],
-                                                '<div class="pre pre--multiline nohighlight">%s</div>' % affected_text)
+                                                '<div class="pre pre--multiline %s">%s</div>' %
+                                                (language_class, affected_text))
             match = re.search(pattern, self.content)
 
         # ``code``
