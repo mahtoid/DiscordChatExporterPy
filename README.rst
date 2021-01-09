@@ -115,4 +115,6 @@ Links
 - `Wiki <https://github.com/mahtoid/DiscordChatExporterPy/wiki/>`_
 - `Discord Server <https://discord.gg/jeAdPaC>`_
 
-
+Attributions
+------------
+*This project borrows CSS and HTML code from* `Tyrrrz's C# DiscordChatExporter <https://github.com/Tyrrrz/DiscordChatExporter/>`_ *repository.*
