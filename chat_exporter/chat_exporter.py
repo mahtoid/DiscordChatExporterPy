@@ -138,7 +138,6 @@ class Transcript:
         ])
 
 
-@dataclass
 class Message:
     message: discord.Message
     previous_message: discord.Message

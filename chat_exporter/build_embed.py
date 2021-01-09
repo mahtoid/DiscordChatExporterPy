@@ -1,5 +1,3 @@
-from dataclasses import dataclass
-
 import discord
 
 from build_html import fill_out, embed_body, embed_title, embed_description, embed_field, embed_field_inline, \
@@ -7,7 +5,6 @@ from build_html import fill_out, embed_body, embed_title, embed_description, emb
     PARSE_MODE_SPECIAL_EMBED, PARSE_MODE_NONE, PARSE_MODE_MARKDOWN
 
 
-@dataclass
 class BuildEmbed:
     r: str
     g: str

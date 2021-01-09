@@ -1,11 +1,9 @@
 import re
-from dataclasses import dataclass
 
 from emoji_convert import convert_emoji
 from build_html import fill_out, emoji, custom_emoji, PARSE_MODE_NONE
 
 
-@dataclass
 class BuildReaction:
     def __init__(self, reaction, guild):
         self.reaction = reaction
