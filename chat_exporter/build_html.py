@@ -72,6 +72,7 @@ custom_emoji = read_file(dir_path + "/chat_exporter_html/reaction/custom_emoji.h
 # ATTACHMENT
 img_attachment = read_file(dir_path + "/chat_exporter_html/attachment/image-attachment.html")
 msg_attachment = read_file(dir_path + "/chat_exporter_html/attachment/message_attachment.html")
+audio_attachment = read_file(dir_path + "/chat_exporter_html/attachment/audio_attachment.html")
 
 # GUILD / FULL TRANSCRIPT
 total = read_file(dir_path + "/chat_exporter_html/base.html")
