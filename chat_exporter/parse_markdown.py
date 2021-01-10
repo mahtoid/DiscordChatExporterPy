@@ -38,6 +38,7 @@ class ParseMarkdown:
         self.https_http_links()
         self.parse_normal_markdown()
         self.parse_code_block_markdown()
+        self.parse_emoji()
         self.parse_br()
 
         return self.content
@@ -68,10 +69,11 @@ class ParseMarkdown:
             match = re.search(emoji_pattern, self.content)
 
     def parse_normal_markdown(self):
-        holder = [r"_(.*?)_", '<em>%s</em>'], \
-                 [r"\*(.*?)\*", '<em>%s</em>'], \
+
+        holder = [r"__(.*?)__", '<span style="text-decoration: underline">%s</span>'], \
+                 [r"_(.*?)_", '<em>%s</em>'], \
                  [r"\*\*(.*?)\*\*", '<strong>%s</strong>'], \
-                 [r"__(.*?)__", '<span style="text-decoration: underline">%s</span>'], \
+                 [r"\*(.*?)\*", '<em>%s</em>'], \
                  [r"~~(.*?)~~", '<span style="text-decoration: line-through">%s</span>'], \
                  [r"\|\|(.*?)\|\|", '<span class="spoiler spoiler--hidden" onclick="showSpoiler(event, this)"> <span '
                                     'class="spoiler-text">%s</span></span>']
@@ -187,8 +189,8 @@ class ParseMarkdown:
                   [r'<span style="text-decoration: underline">([^<>]+)</span>', '__%s__'], \
                   [r'<span style="text-decoration: line-through">([^<>]+)</span>', '~~%s~~'], \
                   [r'<div class="quote">(.*?)</div>', '> %s'], \
-                  [r'<span class="spoiler spoiler--hidden" onclick="showSpoiler\(event, this\)">'
-                   r'<span class="spoiler-text">(.*?)</span></span>', '||%s||']
+                  [r'<span class="spoiler spoiler--hidden" onclick="showSpoiler\(event, this\)"> <span '
+                   r'class="spoiler-text">(.*?)<\/span><\/span>', '||%s||']
 
         for x in holders:
             p, r = x
