@@ -15,8 +15,8 @@ import html
 from build_embed import BuildEmbed
 from build_attachments import BuildAttachment
 from build_reaction import BuildReaction
-from build_html import fill_out, start_message, bot_tag, message_reference, message_reference_unknown, message_body, \
-    end_message, total, PARSE_MODE_NONE, PARSE_MODE_MARKDOWN, PARSE_MODE_REFERENCE
+from build_html import fill_out, start_message, bot_tag, message_reference, message_reference_unknown, message_content,\
+    message_body, end_message, total, PARSE_MODE_NONE, PARSE_MODE_MARKDOWN, PARSE_MODE_REFERENCE
 
 from parse_mention import pass_bot
 
@@ -146,7 +146,6 @@ class Message:
     embeds: str = ""
     attachments: str = ""
     reactions: str = ""
-    reference: str = ""
 
     bot_tag: Optional[str] = None
 
@@ -172,15 +171,8 @@ class Message:
         self.message.content = html.escape(self.message.content)
         self.message.content = re.sub(r"\n", "<br>", self.message.content)
 
-        if self.message.author.bot:
-            self.bot_tag = bot_tag
-        else:
-            self.bot_tag = ""
-
-        if self.message.reference:
-            self.reference = await self.build_reference()
-        else:
-            self.reference = ""
+        await self.build_content()
+        await self.build_reference()
 
         for e in self.message.embeds:
             self.embeds += await BuildEmbed(e, self.message.guild).flow()
@@ -191,17 +183,15 @@ class Message:
         for r in self.message.reactions:
             self.reactions += await BuildReaction(r, self.message.guild).flow()
 
-        await self.generate_message_divider()
+        if self.reactions:
+            self.reactions = f'<div class="chatlog__reactions">{self.reactions}</div>'
 
-        if self.time_string_edit != "":
-            self.time_string_edit = f'<span class="chatlog__edited-timestamp" title="{self.time_string_edit}">' \
-                                    f'(edited)</span>'
+        await self.generate_message_divider()
 
         self.message_html += await fill_out(self.message.guild, message_body, [
             ("MESSAGE_ID", str(self.message.id)),
-            ("MESSAGE_CONTENT", self.message.content, PARSE_MODE_MARKDOWN),
+            ("MESSAGE_CONTENT", self.message.content, PARSE_MODE_NONE),
             ("EMBEDS", self.embeds, PARSE_MODE_NONE),
-            ("EDIT", self.time_string_edit, PARSE_MODE_NONE),
             ("ATTACHMENTS", self.attachments, PARSE_MODE_NONE),
             ("EMOJI", self.reactions, PARSE_MODE_NONE)
         ])
@@ -209,7 +199,7 @@ class Message:
         return self.message_html
 
     async def generate_message_divider(self):
-        if self.previous_message is None or self.reference != "" or \
+        if self.previous_message is None or self.message.reference != "" or \
                 self.previous_message.author.id != self.message.author.id or \
                 self.message.created_at > (self.previous_message.created_at + timedelta(minutes=4)):
 
@@ -218,8 +208,13 @@ class Message:
 
             user_colour = await self.user_colour_translate(self.message.guild, self.message.author)
 
+            if self.message.author.bot:
+                self.bot_tag = bot_tag
+            else:
+                self.bot_tag = ""
+
             self.message_html += await fill_out(self.message.guild, start_message, [
-                ("REFERENCE", self.reference, PARSE_MODE_NONE),
+                ("REFERENCE", self.message.reference, PARSE_MODE_NONE),
                 ("AVATAR_URL", str(self.message.author.avatar_url), PARSE_MODE_NONE),
                 ("NAME_TAG", "%s#%s" % (self.message.author.name, self.message.author.discriminator)),
                 ("USER_ID", str(self.message.author.id)),
@@ -229,7 +224,25 @@ class Message:
                 ("TIMESTAMP", self.time_string_create),
             ])
 
+    async def build_content(self):
+        if not self.message.content:
+            self.message.content = ""
+            return
+
+        if self.time_string_edit != "":
+            self.time_string_edit = f'<span class="chatlog__edited-timestamp" title="{self.time_string_edit}">' \
+                                    f'(edited)</span>'
+
+        self.message.content = await fill_out(self.message.guild, message_content, [
+            ("MESSAGE_CONTENT", self.message.content, PARSE_MODE_MARKDOWN),
+            ("EDIT", self.time_string_edit, PARSE_MODE_NONE)
+        ])
+
     async def build_reference(self):
+        if not self.message.reference:
+            self.message.reference = ""
+            return
+
         user_colour = await self.user_colour_translate(self.message.guild, self.message.author)
 
         try:
@@ -243,7 +256,7 @@ class Message:
             time_string_edit = f'<span class="chatlog__reference-edited-timestamp" title="{time_string_edit}">(edited)'\
                                f'</span>'
 
-        return await fill_out(self.message.guild, message_reference, [
+        self.message.reference = await fill_out(self.message.guild, message_reference, [
             ("AVATAR_URL", str(message.author.avatar_url), PARSE_MODE_NONE),
             ("NAME_TAG", "%s#%s" % (message.author.name, message.author.discriminator)),
             ("NAME", str(html.escape(message.author.display_name))),
