@@ -1,8 +1,8 @@
 import discord
 
-from build_html import fill_out, embed_body, embed_title, embed_description, embed_field, embed_field_inline, \
-    embed_footer, embed_footer_icon, embed_image, embed_thumbnail, embed_author, embed_author_icon, PARSE_MODE_EMBED, \
-    PARSE_MODE_SPECIAL_EMBED, PARSE_MODE_NONE, PARSE_MODE_MARKDOWN
+from chat_exporter.build_html import fill_out, embed_body, embed_title, embed_description, embed_field, \
+    embed_field_inline, embed_footer, embed_footer_icon, embed_image, embed_thumbnail, embed_author, embed_author_icon, \
+    PARSE_MODE_EMBED, PARSE_MODE_SPECIAL_EMBED, PARSE_MODE_NONE, PARSE_MODE_MARKDOWN
 
 
 class BuildEmbed:
