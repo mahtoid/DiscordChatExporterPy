@@ -206,12 +206,9 @@ class Message:
             if self.previous_message is not None:
                 self.message_html += await fill_out(self.message.guild, end_message, [])
 
-            user_colour = await self.user_colour_translate(self.message.guild, self.message.author)
+            user_colour = self.user_colour_translate(self.message.guild, self.message.author)
 
-            if self.message.author.bot:
-                self.bot_tag = bot_tag
-            else:
-                self.bot_tag = ""
+            is_bot = self.check_if_bot(self.message)
 
             self.message_html += await fill_out(self.message.guild, start_message, [
                 ("REFERENCE", self.message.reference, PARSE_MODE_NONE),
@@ -220,7 +217,7 @@ class Message:
                 ("USER_ID", str(self.message.author.id)),
                 ("USER_COLOUR", user_colour),
                 ("NAME", str(html.escape(self.message.author.display_name))),
-                ("BOT_TAG", self.bot_tag, PARSE_MODE_NONE),
+                ("BOT_TAG", is_bot, PARSE_MODE_NONE),
                 ("TIMESTAMP", self.time_string_create),
             ])
 
@@ -243,12 +240,24 @@ class Message:
             self.message.reference = ""
             return
 
-        user_colour = await self.user_colour_translate(self.message.guild, self.message.author)
+        user_colour = self.user_colour_translate(self.message.guild, self.message.author)
 
         try:
             message: discord.Message = await self.message.channel.fetch_message(self.message.reference.message_id)
         except discord.NotFound:
             return message_reference_unknown
+
+        is_bot = self.check_if_bot(message)
+
+        if not message.content:
+            message.content = "Click to see attachment"
+
+        if message.embeds or message.attachments:
+            attachment_icon = \
+                '<img class="chatlog__reference-icon" ' \
+                'src="https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/discord-attachment.svg">'
+        else:
+            attachment_icon = ""
 
         _, time_string_edit = self.set_time(message)
 
@@ -258,16 +267,25 @@ class Message:
 
         self.message.reference = await fill_out(self.message.guild, message_reference, [
             ("AVATAR_URL", str(message.author.avatar_url), PARSE_MODE_NONE),
+            ("BOT_TAG", is_bot, PARSE_MODE_NONE),
             ("NAME_TAG", "%s#%s" % (message.author.name, message.author.discriminator)),
             ("NAME", str(html.escape(message.author.display_name))),
             ("USER_COLOUR", user_colour, PARSE_MODE_NONE),
             ("CONTENT", message.content, PARSE_MODE_REFERENCE),
             ("EDIT", time_string_edit, PARSE_MODE_NONE),
+            ("ATTACHMENT_ICON", attachment_icon, PARSE_MODE_NONE),
             ("MESSAGE_ID", str(self.message.reference.message_id), PARSE_MODE_NONE)
         ])
 
     @staticmethod
-    async def user_colour_translate(guild, author):
+    def check_if_bot(message):
+        if message.author.bot:
+            return bot_tag
+        else:
+            return ""
+
+    @staticmethod
+    def user_colour_translate(guild, author):
         try:
             member = guild.get_member(author.id)
         except discord.NotFound:
