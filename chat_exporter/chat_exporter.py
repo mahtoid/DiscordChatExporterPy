@@ -1,28 +1,59 @@
 import io
 import re
-import os
+from pytz import timezone
+from PIL import ImageColor
+from datetime import timedelta
+from dataclasses import dataclass
+
+from typing import Optional, List
+
 import discord
 import sys
 import traceback
-from chat_exporter.misc_tools import escape_html, member_colour_translator
-from chat_exporter.mention_convert import parse_mentions, escape_mentions, unescape_mentions
-from chat_exporter.markdown_convert import parse_markdown, parse_embed_markdown, parse_emoji, https_http_links
-from chat_exporter.emoji_convert import convert_emoji
-from pytz import timezone
-from datetime import timedelta
+import html
 
-dir_path = os.path.dirname(os.path.realpath(__file__))
+from chat_exporter.build_embed import BuildEmbed
+from chat_exporter.build_attachments import BuildAttachment
+from chat_exporter.build_reaction import BuildReaction
+from chat_exporter.build_html import fill_out, start_message, bot_tag, message_reference, message_reference_unknown, \
+    message_content, message_body, end_message, total, PARSE_MODE_NONE, PARSE_MODE_MARKDOWN, PARSE_MODE_REFERENCE
 
-eastern = timezone("US/Eastern")
-utc = timezone("UTC")
+from chat_exporter.parse_mention import pass_bot
 
 
-async def export(ctx):
+bot = None
+
+
+def init_exporter(_bot):
+    global bot
+    bot = _bot
+    pass_bot(bot)
+
+
+async def export(channel: discord.TextChannel, limit: int = None, set_timezone="Europe/London"):
     # noinspection PyBroadException
     try:
-        transcript = await produce_transcript(ctx.channel)
+        return (await Transcript.export(channel, limit, set_timezone)).html
     except Exception:
-        transcript = None
+        traceback.print_exc()
+        print(f"Please send a screenshot of the above error to https://www.github.com/mahtoid/DiscordChatExporterPy")
+
+
+async def raw_export(channel: discord.TextChannel, messages: List[discord.Message],
+                     set_timezone: str = "Europe/London"):
+    # noinspection PyBroadException
+    try:
+        return (await Transcript.raw_export(channel, messages, set_timezone)).html
+    except Exception:
+        traceback.print_exc()
+        print(f"Please send a screenshot of the above error to https://www.github.com/mahtoid/DiscordChatExporterPy")
+
+
+async def quick_export(ctx):
+    # noinspection PyBroadException
+    try:
+        transcript = await Transcript.export(ctx.channel, None, "Europe/London")
+    except Exception:
         print("Error during transcript generation!", file=sys.stderr)
         traceback.print_exc()
         error_embed = discord.Embed(
@@ -32,354 +63,254 @@ async def export(ctx):
         )
         await ctx.channel.send(embed=error_embed)
         print(f"Please send a screenshot of the above error to https://www.github.com/mahtoid/DiscordChatExporterPy")
+        return
 
-    if transcript is not None:
-        async for m in ctx.channel.history(limit=None):
-            try:
-                for f in m.attachments:
-                    if f"transcript-{ctx.channel.name}.html" in f.filename:
-                        await m.delete()
-            except TypeError:
-                continue
+    async for m in ctx.channel.history(limit=None):
+        try:
+            for f in m.attachments:
+                if f"transcript-{ctx.channel.name}.html" in f.filename:
+                    await m.delete()
+        except TypeError:
+            continue
 
-        # Save transcript
-        transcript_embed = discord.Embed(
-            description=f"**Transcript Name:** transcript-{ctx.channel.name}\n\n"
-                        f"{ctx.author.mention} requested a transcript of the channel",
-            colour=discord.Colour.blurple()
-        )
+    # Save transcript
+    transcript_embed = discord.Embed(
+        description=f"**Transcript Name:** transcript-{ctx.channel.name}\n\n"
+                    f"{ctx.author.mention} requested a transcript of the channel",
+        colour=discord.Colour.blurple()
+    )
 
-        transcript_file = discord.File(io.BytesIO(transcript.encode()),
-                                       filename=f"transcript-{ctx.channel.name}.html")
+    transcript_file = discord.File(io.BytesIO(transcript.html.encode()),
+                                   filename=f"transcript-{ctx.channel.name}.html")
 
-        await ctx.channel.send(embed=transcript_embed, file=transcript_file)
-
-
-async def generate_transcript(channel: discord.TextChannel, tz_info="US/Eastern"):
-    global eastern
-    eastern = timezone(tz_info)
-
-    # noinspection PyBroadException
-    try:
-        transcript = await produce_transcript(channel)
-    except Exception:
-        transcript = None
-        print(f"Please send a screenshot of the above error to https://www.github.com/mahtoid/DiscordChatExporterPy")
-
-    return transcript
+    await ctx.send(embed=transcript_embed, file=transcript_file)
 
 
-async def produce_transcript(channel):
-    guild = channel.guild
-    messages = await channel.history(limit=None, oldest_first=True).flatten()
-    previous_author = 0
-    previous_timestamp = ""
-    messages_html = ""
-    for m in messages:
-        time_format = "%b %d, %Y %I:%M %p"
-        time_string = utc.localize(m.created_at).astimezone(eastern)
-        time_string_created = time_string.strftime(time_format)
-        if m.edited_at is not None:
-            time_string_edited = utc.localize(m.edited_at).astimezone(eastern)
-            time_string_edited = time_string_edited.strftime(time_format)
-            time_string_final = "%s (edited %s)" \
-                                % (time_string_created, time_string_edited)
-        else:
-            time_string_final = time_string_created
+@dataclass
+class Transcript:
+    guild: discord.Guild
+    channel: discord.TextChannel
+    messages: List[discord.Message]
+    timezone_string: str
+    html: Optional[str] = None
 
-        m.content = await escape_html(m.content)
-        m.content = re.sub(r"\n", "<br>", m.content)
+    @classmethod
+    async def export(cls, channel: discord.TextChannel, limit, timezone_string: str = "Europe/London") -> "Transcript":
+        messages = await channel.history(limit=limit, oldest_first=True).flatten()
+        transcript = await Transcript(channel=channel, guild=channel.guild, messages=messages,
+                                      timezone_string=timezone(timezone_string))\
+            .build_transcript()
+        return transcript
 
-        embeds = ""
-        for e in m.embeds:
-            fields = ""
-            for f in e.fields:
-                f.name = await https_http_links(f.name)
-                f.value = await https_http_links(f.value)
-                if f.inline:
-                    cur_field = await fill_out(channel, msg_embed_field_inline, [
-                        ("EMBED_FIELD_NAME", f.name),
-                        ("EMBED_FIELD_VALUE", f.value),
-                    ])
-                    fields += cur_field
-                else:
-                    cur_field = await fill_out(channel, msg_embed_field, [
-                        ("EMBED_FIELD_NAME", f.name),
-                        ("EMBED_FIELD_VALUE", f.value),
-                    ])
-                    fields += cur_field
+    @classmethod
+    async def raw_export(cls, channel: discord.TextChannel, messages: List[discord.Message],
+                         timezone_string: str = 'Europe/London') -> "Transcript":
+        messages.reverse()
+        transcript = await Transcript(channel=channel, guild=channel.guild, messages=messages,
+                                      timezone_string=timezone(timezone_string))\
+            .build_transcript()
+        return transcript
 
-            # default values for embeds need explicit setting because
-            # Embed.empty breaks just about everything
-            title = e.title \
-                if e.title != discord.Embed.Empty \
-                else ""
-            if title != "":
-                title = await https_http_links(title)
-            r, g, b = (e.colour.r, e.colour.g, e.colour.b) \
-                if e.colour != discord.Embed.Empty \
-                else (0x20, 0x22, 0x25)  # default colour
-            desc = e.description \
-                if e.description != discord.Embed.Empty \
-                else ""
-            if desc != "":
-                desc = await https_http_links(desc)
-            author = e.author.name \
-                if e.author.name != discord.Embed.Empty \
-                else ""
-            author_url = e.author.url \
-                if e.author.url != discord.Embed.Empty \
-                else ""
-            author_icon = e.author.icon_url \
-                if e.author.icon_url != discord.Embed.Empty \
-                else ""
-            footer = e.footer.text \
-                if e.footer.text != discord.Embed.Empty \
-                else ""
-            footer_icon = e.footer.icon_url \
-                if e.footer.icon_url != discord.Embed.Empty \
-                else None
+    async def build_transcript(self):
+        previous_message = None
+        message_html = ""
 
-            thumbnail = e.thumbnail.url \
-                if e.thumbnail.url != discord.Embed.Empty \
-                else ""
+        for m in self.messages:
+            message_html += await Message(m, previous_message, self.timezone_string).build_message()
+            previous_message = m
 
-            image = e.image.url \
-                if e.image.url != discord.Embed.Empty \
-                else ""
-            if author_url != "":
-                author = f'<a class="chatlog__embed-author-name-link" href="{author_url}">{author}</a>'
+        await self.build_guild(message_html)
 
-            if image != "":
-                image = await fill_out(channel, embed_image, [
-                    ("EMBED_IMAGE", str(image)),
-                ])
+        return self
 
-            if thumbnail != "":
-                thumbnail = await fill_out(channel, embed_thumbnail, [
-                    ("EMBED_THUMBNAIL", str(thumbnail)),
-                ])
+    async def build_guild(self, message_html):
+        guild_icon = self.guild.icon_url
+        if len(guild_icon) < 2:
+            guild_icon = "https://discord.com/assets/dd4dbc0016779df1378e7812eabaa04d.png"
+        guild_name = html.escape(self.guild.name)
+        self.html = await fill_out(self.guild, total, [
+            ("SERVER_NAME", f"Guild: {guild_name}"),
+            ("SERVER_AVATAR_URL", str(guild_icon), PARSE_MODE_NONE),
+            ("CHANNEL_NAME", f"Channel: {self.channel.name}"),
+            ("MESSAGE_COUNT", str(len(self.messages))),
+            ("MESSAGES", message_html, PARSE_MODE_NONE),
+            ("TIMEZONE", str(self.timezone_string)),
+        ])
 
-            footer_fields = ""
-            if footer != "":
-                if footer_icon:
-                    cur_footer = await fill_out(channel, embed_footer_image, [
-                        ("EMBED_FOOTER", footer),
-                        ("EMBED_FOOTER_ICON", footer_icon)
-                    ])
-                else:
-                    cur_footer = await fill_out(channel, embed_footer, [
-                        ("EMBED_FOOTER", footer),
-                    ])
-                footer_fields += cur_footer
 
-            author_html = ""
-            if author != "":
-                if author_icon != "":
-                    cur_author_icon = await fill_out(channel, embed_author_icon, [
-                        ("EMBED_AUTHOR", author),
-                        ("EMBED_AUTHOR_ICON", author_icon)
-                    ])
-                else:
-                    cur_author_icon = await fill_out(channel, embed_author, [
-                        ("EMBED_AUTHOR", author),
-                    ])
-                author_html += cur_author_icon
+class Message:
+    message: discord.Message
+    previous_message: discord.Message
 
-            cur_embed = await fill_out(channel, msg_embed, [
-                ("EMBED_R", str(r)),
-                ("EMBED_G", str(g)),
-                ("EMBED_B", str(b)),
-                ("EMBED_AUTHOR", author_html, PARSE_MODE_EMBED_EMOJI),
-                ("EMBED_TITLE", title, PARSE_MODE_EMBED_EMOJI),
-                ("EMBED_IMAGE", image),
-                ("EMBED_THUMBNAIL", thumbnail),
-                ("EMBED_DESC", desc, PARSE_MODE_EMBED),
-                ("EMBED_FIELDS", fields, PARSE_MODE_EMBED_VALUE),
-                ("EMBED_FOOTER", footer_fields, PARSE_MODE_EMBED_EMOJI)
-            ])
-            embeds += cur_embed
+    message_html: str = ""
+    embeds: str = ""
+    attachments: str = ""
+    reactions: str = ""
 
-        attachments = ""
+    bot_tag: Optional[str] = None
 
-        for a in m.attachments:
-            result_img = False
-            for ending in img_types:
-                if str(a.url).endswith(ending):
-                    result_img = True
+    transcript: Optional[str] = None
+    user_colour: Optional[str] = None
 
-            if result_img:
-                cur_attach = await fill_out(channel, img_attachment, [
-                    ("ATTACH_URL", a.url),
-                    ("ATTACH_URL_THUMB", a.url)
-                ])
-            else:
-                file_mb = a.size / 1000000
-                cur_attach = await fill_out(channel, msg_attachment, [
-                    ("ATTACH_URL", a.url),
-                    ("ATTACH_BYTES", str(file_mb)[:4] + "MB"),
-                    ("ATTACH_FILE", str(a.filename))
-                ])
-            attachments += cur_attach
+    previous_author: Optional[int] = None
+    previous_timestamp: Optional[int] = None
+    time_string_create: Optional[str] = None
+    time_string_edited: Optional[str] = None
 
-        if m.author.bot:
-            ze_bot_tag = bot_tag
-        else:
-            ze_bot_tag = ""
+    time_format = "%b %d, %Y %I:%M %p"
+    utc = timezone("UTC")
 
-        m.content = await https_http_links(m.content)
+    def __init__(self, message, previous_message, timezone_string):
+        self.message = message
+        self.previous_message = previous_message
+        self.timezone = timezone_string
 
-        emojis = ""
-        for reactions in m.reactions:
-            react_emoji = reactions.emoji
-            if react_emoji == "":
-                emojis += ""
-            elif ":" in str(react_emoji):
-                emoji_animated = re.compile(r"&lt;a:.*:.*&gt;")
-                if emoji_animated.search(str(react_emoji)):
-                    file_ending = "gif"
-                else:
-                    file_ending = "png"
-                pattern = r":.*:(\d*)"
-                emoji_id = re.search(pattern, str(react_emoji)).group(1)
-                cur_custom_emoji = await fill_out(channel, custom_emoji, [
-                    ("EMOJI", str(emoji_id)),
-                    ("EMOJI_COUNT", str(reactions.count)),
-                    ("EMOJI_FILE", file_ending)
-                ])
-                emojis += cur_custom_emoji
-            else:
-                react_emoji = convert_emoji(react_emoji)
-                cur_emoji = await fill_out(channel, emoji, [
-                    ("EMOJI", str(react_emoji)),
-                    ("EMOJI_COUNT", str(reactions.count))
-                ])
-                emojis += cur_emoji
+        self.time_string_create, self.time_string_edit = self.set_time(message)
 
-        m.content = await parse_emoji(m.content)
+    async def build_message(self):
+        self.message.content = html.escape(self.message.content)
+        self.message.content = re.sub(r"\n", "<br>", self.message.content)
 
-        cur_msg = ""
+        await self.build_content()
+        await self.build_reference()
 
-        author_name = await escape_html(m.author.display_name)
+        for e in self.message.embeds:
+            self.embeds += await BuildEmbed(e, self.message.guild).flow()
 
-        if previous_author == m.author.id and previous_timestamp > time_string:
-            cur_msg = await fill_out(channel, continue_message, [
-                ("AVATAR_URL", str(m.author.avatar_url)),
-                ("NAME_TAG", "%s#%s" % (m.author.name, m.author.discriminator)),
-                ("USER_ID", str(m.author.id)),
-                ("NAME", str(author_name)),
-                ("BOT_TAG", ze_bot_tag, PARSE_MODE_NONE),
-                ("TIMESTAMP", time_string_final),
-                ("MESSAGE_ID", str(m.id)),
-                ("MESSAGE_CONTENT", m.content),
-                ("EMBEDS", embeds, PARSE_MODE_NONE),
-                ("ATTACHMENTS", attachments, PARSE_MODE_NONE),
-                ("EMOJI", emojis)
-            ])
-        else:
-            try:
-                member = guild.get_member(m.author.id)
-            except discord.NotFound:
-                member = m.author
+        for a in self.message.attachments:
+            self.attachments += await BuildAttachment(a, self.message.guild).flow()
 
-            user_colour = await member_colour_translator(member)
-            if previous_author != 0 and previous_timestamp != "":
-                cur_msg = await fill_out(channel, end_message, [])
-            cur_msg += await fill_out(channel, msg, [
-                ("AVATAR_URL", str(m.author.avatar_url)),
-                ("NAME_TAG", "%s#%s" % (m.author.name, m.author.discriminator)),
-                ("USER_ID", str(m.author.id)),
+        for r in self.message.reactions:
+            self.reactions += await BuildReaction(r, self.message.guild).flow()
+
+        if self.reactions:
+            self.reactions = f'<div class="chatlog__reactions">{self.reactions}</div>'
+
+        await self.generate_message_divider()
+
+        self.message_html += await fill_out(self.message.guild, message_body, [
+            ("MESSAGE_ID", str(self.message.id)),
+            ("MESSAGE_CONTENT", self.message.content, PARSE_MODE_NONE),
+            ("EMBEDS", self.embeds, PARSE_MODE_NONE),
+            ("ATTACHMENTS", self.attachments, PARSE_MODE_NONE),
+            ("EMOJI", self.reactions, PARSE_MODE_NONE)
+        ])
+
+        return self.message_html
+
+    async def generate_message_divider(self):
+        if self.previous_message is None or self.message.reference != "" or \
+                self.previous_message.author.id != self.message.author.id or \
+                self.message.created_at > (self.previous_message.created_at + timedelta(minutes=4)):
+
+            if self.previous_message is not None:
+                self.message_html += await fill_out(self.message.guild, end_message, [])
+
+            user_colour = self.user_colour_translate(self.message.guild, self.message.author)
+
+            is_bot = self.check_if_bot(self.message)
+
+            self.message_html += await fill_out(self.message.guild, start_message, [
+                ("REFERENCE", self.message.reference, PARSE_MODE_NONE),
+                ("AVATAR_URL", str(self.message.author.avatar_url), PARSE_MODE_NONE),
+                ("NAME_TAG", "%s#%s" % (self.message.author.name, self.message.author.discriminator)),
+                ("USER_ID", str(self.message.author.id)),
                 ("USER_COLOUR", user_colour),
-                ("NAME", str(author_name)),
-                ("BOT_TAG", ze_bot_tag, PARSE_MODE_NONE),
-                ("TIMESTAMP", time_string_final),
-                ("MESSAGE_ID", str(m.id)),
-                ("MESSAGE_CONTENT", m.content),
-                ("EMBEDS", embeds, PARSE_MODE_NONE),
-                ("ATTACHMENTS", attachments, PARSE_MODE_NONE),
-                ("EMOJI", emojis)
+                ("NAME", str(html.escape(self.message.author.display_name))),
+                ("BOT_TAG", is_bot, PARSE_MODE_NONE),
+                ("TIMESTAMP", self.time_string_create),
             ])
-            previous_author = m.author.id
-            previous_timestamp = time_string + timedelta(minutes=4)
 
-        messages_html += cur_msg
+    async def build_content(self):
+        if not self.message.content:
+            self.message.content = ""
+            return
 
-    guild_icon = guild.icon_url
-    if len(guild_icon) < 2:
-        guild_icon = "https://discord.com/assets/dd4dbc0016779df1378e7812eabaa04d.png"
-    guild_name = await escape_html(guild.name)
-    transcript = await fill_out(channel, total, [
-        ("SERVER_NAME", f"Guild: {guild_name}"),
-        ("SERVER_AVATAR_URL", str(guild_icon), PARSE_MODE_NONE),
-        ("CHANNEL_NAME", f"Channel: {channel.name}"),
-        ("MESSAGE_COUNT", str(len(messages))),
-        ("MESSAGES", messages_html, PARSE_MODE_NONE),
-        ("TIMEZONE", str(eastern)),
-    ])
+        if self.time_string_edit != "":
+            self.time_string_edit = f'<span class="chatlog__edited-timestamp" title="{self.time_string_edit}">' \
+                                    f'(edited)</span>'
 
-    return transcript
+        self.message.content = await fill_out(self.message.guild, message_content, [
+            ("MESSAGE_CONTENT", self.message.content, PARSE_MODE_MARKDOWN),
+            ("EDIT", self.time_string_edit, PARSE_MODE_NONE)
+        ])
 
+    async def build_reference(self):
+        if not self.message.reference:
+            self.message.reference = ""
+            return
 
-PARSE_MODE_NONE = 0
-PARSE_MODE_NO_MARKDOWN = 1
-PARSE_MODE_MARKDOWN = 2
-PARSE_MODE_EMBED = 3
-PARSE_MODE_EMBED_VALUE = 4
-PARSE_MODE_EMBED_EMOJI = 5
+        try:
+            message: discord.Message = await self.message.channel.fetch_message(self.message.reference.message_id)
+        except discord.NotFound:
+            return message_reference_unknown
 
+        is_bot = self.check_if_bot(message)
+        user_colour = self.user_colour_translate(self.message.guild, message.author)
 
-async def fill_out(channel, base, replacements):
-    for r in replacements:
-        if len(r) == 2:  # default case
-            k, v = r
-            r = (k, v, PARSE_MODE_MARKDOWN)
+        if not message.content:
+            message.content = "Click to see attachment"
 
-        k, v, mode = r
+        if message.embeds or message.attachments:
+            attachment_icon = \
+                '<img class="chatlog__reference-icon" ' \
+                'src="https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/discord-attachment.svg">'
+        else:
+            attachment_icon = ""
 
-        if mode != PARSE_MODE_NONE:
-            v = await escape_mentions(v)
-            v = await escape_mentions(v)
-            v = await unescape_mentions(v)
-            v = await parse_mentions(v, channel.guild)
-        if mode == PARSE_MODE_MARKDOWN:
-            v = await parse_markdown(v)
-        if mode == PARSE_MODE_EMBED:
-            v = await parse_embed_markdown(v)
-            v = await parse_markdown(v)
-            v = await parse_emoji(v)
-        if mode == PARSE_MODE_EMBED_VALUE:
-            v = await parse_embed_markdown(v)
-            v = await parse_emoji(v)
-        if mode == PARSE_MODE_EMBED_EMOJI:
-            v = await parse_emoji(v)
+        _, time_string_edit = self.set_time(message)
 
-        base = base.replace("{{" + k + "}}", v)
+        if time_string_edit != "":
+            time_string_edit = f'<span class="chatlog__reference-edited-timestamp" title="{time_string_edit}">(edited)'\
+                               f'</span>'
 
-    return base
+        self.message.reference = await fill_out(self.message.guild, message_reference, [
+            ("AVATAR_URL", str(message.author.avatar_url), PARSE_MODE_NONE),
+            ("BOT_TAG", is_bot, PARSE_MODE_NONE),
+            ("NAME_TAG", "%s#%s" % (message.author.name, message.author.discriminator)),
+            ("NAME", str(html.escape(message.author.display_name))),
+            ("USER_COLOUR", user_colour, PARSE_MODE_NONE),
+            ("CONTENT", message.content, PARSE_MODE_REFERENCE),
+            ("EDIT", time_string_edit, PARSE_MODE_NONE),
+            ("ATTACHMENT_ICON", attachment_icon, PARSE_MODE_NONE),
+            ("MESSAGE_ID", str(self.message.reference.message_id), PARSE_MODE_NONE)
+        ])
 
+    @staticmethod
+    def check_if_bot(message):
+        if message.author.bot:
+            return bot_tag
+        else:
+            return ""
 
-def read_file(filename):
-    with open(filename, "r") as f:
-        s = f.read()
-    return s
+    @staticmethod
+    def user_colour_translate(guild, author):
+        try:
+            member = guild.get_member(author.id)
+        except discord.NotFound:
+            member = author
 
+        if member is not None:
+            user_colour = member.colour
+            if '#000000' in str(user_colour):
+                user_colour = f"color: #%02x%02x%02x;" % (255, 255, 255)
+            else:
+                user_colour = ImageColor.getrgb(str(user_colour))
+                colour_r, colour_g, colour_b = user_colour
+                user_colour = f"color: #%02x%02x%02x;" % (colour_r, colour_g, colour_b)
+        else:
+            user_colour = f"color: #%02x%02x%02x;" % (255, 255, 255)
 
-img_types = [".png", ".jpeg", ".jpg", ".gif"]
-total = read_file(dir_path + "/chat_exporter_html/base.html")
-msg = read_file(dir_path + "/chat_exporter_html/message.html")
-bot_tag = read_file(dir_path + "/chat_exporter_html/bot-tag.html")
-msg_embed = read_file(dir_path + "/chat_exporter_html/message-embed.html")
-msg_embed_field = read_file(dir_path + "/chat_exporter_html/message-embed-field.html")
-msg_embed_field_inline = read_file(dir_path + "/chat_exporter_html/message-embed-field-inline.html")
-img_attachment = read_file(dir_path + "/chat_exporter_html/image-attachment.html")
-msg_attachment = read_file(dir_path + "/chat_exporter_html/message_attachment.html")
-emoji = read_file(dir_path + "/chat_exporter_html/emoji_attachment.html")
-custom_emoji = read_file(dir_path + "/chat_exporter_html/custom_emoji_attachment.html")
-continue_message = read_file(dir_path + "/chat_exporter_html/continue_message.html")
-end_message = read_file(dir_path + "/chat_exporter_html/end_message.html")
-embed_footer = read_file(dir_path + "/chat_exporter_html/embed_footer.html")
-embed_footer_image = read_file(dir_path + "/chat_exporter_html/embed_footer_image.html")
-embed_image = read_file(dir_path + "/chat_exporter_html/embed_image.html")
-embed_thumbnail = read_file(dir_path + "/chat_exporter_html/embed_thumbnail.html")
-embed_author = read_file(dir_path + "/chat_exporter_html/embed_author.html")
-embed_author_icon = read_file(dir_path + "/chat_exporter_html/embed_author_icon.html")
+        return user_colour
+
+    def set_time(self, message):
+        time_string = self.utc.localize(message.created_at).astimezone(self.timezone)
+        time_string_created = time_string.strftime(self.time_format)
+        if message.edited_at is not None:
+            time_string_edited = self.utc.localize(message.edited_at).astimezone(self.timezone)
+            time_string_edited = time_string_edited.strftime(self.time_format)
+            time_string_edited = "%s" % time_string_edited
+        else:
+            time_string_edited = ""
+
+        return time_string_created, time_string_edited

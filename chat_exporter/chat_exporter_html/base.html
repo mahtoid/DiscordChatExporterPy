@@ -186,6 +186,64 @@ img {
     grid-template-columns: auto 1fr;
 }
 
+.chatlog__reference-symbol {
+    grid-column: 1;
+    border-style: solid;
+    border-width: 2px 0 0 2px;
+    border-radius: 8px 0 0 0;
+    margin-left: 16px;
+    margin-top: 8px;
+}
+
+.chatlog__attachment-icon {
+    float: left;
+    height: 100%;
+    margin-right: 10px;
+}
+
+.chatlog__reference {
+    display: flex;
+    grid-column: 2;
+    margin-left: 1.2em;
+    margin-bottom: 0.25em;
+    font-size: 0.875em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    align-items: center;
+}
+
+.chatlog__reference-avatar {
+    border-radius: 50%;
+    height: 16px;
+    width: 16px;
+    margin-right: 0.25em;
+}
+
+.chatlog__reference-name {
+    margin-right: 0.25em;
+    font-weight: 600;
+}
+
+.chatlog__reference-link {
+    flex-grow: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chatlog__reference-link:hover {
+    text-decoration: none;
+}
+
+.chatlog__reference-content > * {
+    display: inline;
+}
+
+.chatlog__reference-edited-timestamp {
+    margin-left: 0.25em;
+    font-size: 0.8em;
+}
+
 .chatlog__author-avatar-container {
     grid-column: 1;
     width: 40px;
@@ -202,6 +260,10 @@ img {
     grid-column: 2;
     margin-left: 1.2em;
     min-width: 50%;
+}
+
+.chatlog__messages .chatlog__bot-tag {
+    top: -0.2em;
 }
 
 .chatlog__author-name {
@@ -237,8 +299,37 @@ img {
 .chatlog__attachment-thumbnail {
     vertical-align: top;
     max-width: 45vw;
-    max-height: 500px;
+    max-height: 250px;
     border-radius: 3px;
+}
+
+.chatlog__attachment-container {
+    height: 40px;
+    width: 100%;
+    max-width: 520px;
+    padding: 10px;
+    border: 1px solid;
+    border-radius: 3px;
+    overflow: hidden;
+    background-color: #2f3136;
+    border-color: #292b2f;
+}
+
+.chatlog__attachment-icon {
+    float: left;
+    height: 100%;
+    margin-right: 10px;
+}
+
+.chatlog__attachment-filesize {
+    color: #72767d;
+    font-size: 12px;
+}
+
+.chatlog__attachment-filename {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 .chatlog__embed {
@@ -384,8 +475,8 @@ img {
 
 .chatlog__bot-tag {
     position: relative;
-    top: -.2em;
     margin-left: 0.3em;
+    margin-right: 0.3em;
     padding: 0.05em 0.3em;
     border-radius: 3px;
     vertical-align: middle;
@@ -451,6 +542,32 @@ a {
 
 .chatlog__message-group {
     border-color: rgba(255, 255, 255, 0.1);
+}
+
+.chatlog__reference-symbol {
+    border-color: #4f545c;
+}
+
+.chatlog__reference-icon {
+    width: 20px;
+    display: inline-block;
+    vertical-align: bottom;
+}
+
+.chatlog__reference {
+    color: #b5b6b8;
+}
+
+.chatlog__reference-link {
+    color: #b5b6b8;
+}
+
+.chatlog__reference-link:hover {
+    color: #ffffff;
+}
+
+.chatlog__reference-edited-timestamp {
+    color: rgba(255, 255, 255, 0.2);
 }
 
 .chatlog__author-name {
@@ -616,6 +733,8 @@ a {
         }
     </script>
 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/styles/solarized-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/highlight.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.pre--multiline').forEach((block) => {
