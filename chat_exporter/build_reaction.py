@@ -1,7 +1,7 @@
 import re
 
-from emoji_convert import convert_emoji
-from build_html import fill_out, emoji, custom_emoji, PARSE_MODE_NONE
+from chat_exporter.emoji_convert import convert_emoji
+from chat_exporter.build_html import fill_out, emoji, custom_emoji, PARSE_MODE_NONE
 
 
 class BuildReaction:

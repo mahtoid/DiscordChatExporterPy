@@ -1,7 +1,7 @@
 import os
 
-from parse_mention import ParseMention
-from parse_markdown import ParseMarkdown
+from chat_exporter.parse_mention import ParseMention
+from chat_exporter.parse_markdown import ParseMarkdown
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 

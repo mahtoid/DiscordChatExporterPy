@@ -1,5 +1,5 @@
 import re
-from emoji_convert import convert_emoji
+from chat_exporter.emoji_convert import convert_emoji
 
 
 class ParseMarkdown:
@@ -73,7 +73,6 @@ class ParseMarkdown:
     def parse_normal_markdown(self):
 
         holder = [r"__(.*?)__", '<span style="text-decoration: underline">%s</span>'], \
-                 [r"_(.*?)_", '<em>%s</em>'], \
                  [r"\*\*(.*?)\*\*", '<strong>%s</strong>'], \
                  [r"\*(.*?)\*", '<em>%s</em>'], \
                  [r"~~(.*?)~~", '<span style="text-decoration: line-through">%s</span>'], \
@@ -142,11 +141,11 @@ class ParseMarkdown:
 
             affected_text = self.return_to_markdown(affected_text)
 
-            pattern = re.compile(r"^<br>|<br>$")
-            second_match = re.search(pattern, affected_text)
+            second_pattern = re.compile(r"^<br>|<br>$")
+            second_match = re.search(second_pattern, affected_text)
             while second_match is not None:
                 affected_text = re.sub(r"^<br>|<br>$", '', affected_text)
-                second_match = re.search(pattern, affected_text)
+                second_match = re.search(second_pattern, affected_text)
 
             self.content = self.content.replace(self.content[match.start():match.end()],
                                                 '<div class="pre pre--multiline %s">%s</div>' %

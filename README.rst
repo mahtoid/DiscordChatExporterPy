@@ -27,7 +27,7 @@ To install the repository, run the command:
 
 Usage
 -----
-Basic Usage
+**Basic Usage**
 
 .. code:: py
     
@@ -56,7 +56,7 @@ Basic Usage
 
 *Optional: If you want the transcript to display Members (Role) Colours then enable the Members Intent.*
 
-Customisable Usage
+**Customisable Usage**
 
 .. code:: py
 
@@ -79,7 +79,7 @@ Customisable Usage
 *Optional: limit and tz_info are both optional, but can be used to limit the amount of messages transcribed or set a 'local' (pytz) timezone for
 the bot to transcribe message times to.*
 
-Raw Usage
+**Raw Usage**
 
 .. code:: py
 

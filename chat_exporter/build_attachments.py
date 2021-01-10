@@ -1,6 +1,6 @@
 import math
 
-from build_html import fill_out, img_attachment, msg_attachment, audio_attachment, PARSE_MODE_NONE
+from chat_exporter.build_html import fill_out, img_attachment, msg_attachment, audio_attachment, PARSE_MODE_NONE
 
 
 class BuildAttachment:

@@ -12,13 +12,13 @@ import sys
 import traceback
 import html
 
-from build_embed import BuildEmbed
-from build_attachments import BuildAttachment
-from build_reaction import BuildReaction
-from build_html import fill_out, start_message, bot_tag, message_reference, message_reference_unknown, message_content,\
-    message_body, end_message, total, PARSE_MODE_NONE, PARSE_MODE_MARKDOWN, PARSE_MODE_REFERENCE
+from chat_exporter.build_embed import BuildEmbed
+from chat_exporter.build_attachments import BuildAttachment
+from chat_exporter.build_reaction import BuildReaction
+from chat_exporter.build_html import fill_out, start_message, bot_tag, message_reference, message_reference_unknown, \
+    message_content, message_body, end_message, total, PARSE_MODE_NONE, PARSE_MODE_MARKDOWN, PARSE_MODE_REFERENCE
 
-from parse_mention import pass_bot
+from chat_exporter.parse_mention import pass_bot
 
 
 bot = None
