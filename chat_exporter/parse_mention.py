@@ -40,7 +40,6 @@ class ParseMention:
         self.html_user_mention()
         self.normal_role_mention()
         self.html_role_mention()
-        # self.custom_emoji_parse() TODO: Investigate why we need this
 
         return self.content
 
@@ -164,19 +163,3 @@ class ParseMention:
                 self.content = self.content.replace(self.content[match.start() + offset:match.end() + offset],
                                                     '<span class="mention" title="%s">@%s</span>' % (
                                                         "Unknown", "Unknown"))
-
-    def custom_emoji_parse(self):
-        offset = 0
-        for match in re.finditer(self.REGEX_EMOJIS, self.content):
-            name = match.group(1)
-            replacement = name
-            self.content = self.content.replace(self.content[match.start() + offset:match.end() + offset],
-                                                replacement)
-            offset += len(replacement) - (match.end() - match.start())
-
-        for match in re.finditer(self.REGEX_EMOJIS_2, self.content):
-            name = match.group(1)
-            replacement = name
-            self.content = self.content.replace(self.content[match.start() + offset:match.end() + offset],
-                                                replacement)
-            offset += len(replacement) - (match.end() - match.start())

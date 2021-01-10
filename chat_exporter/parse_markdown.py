@@ -30,6 +30,8 @@ class ParseMarkdown:
 
     def special_embed_flow(self):
         self.https_http_links()
+        self.parse_normal_markdown()
+        self.parse_code_block_markdown()
         self.parse_emoji()
 
         return self.content
@@ -221,7 +223,7 @@ class ParseMarkdown:
     def https_http_links(self):
         content = re.sub("\n", "<br>", self.content)
         output = []
-        if "http://" in content or "https://" in content:
+        if "http://" in content or "https://" in content and "](" not in content:
             for word in content.replace("<br>", " <br>").split():
                 if word.startswith("&lt;") and word.endswith("&gt;"):
                     pattern = r"&lt;(.*)&gt;"
