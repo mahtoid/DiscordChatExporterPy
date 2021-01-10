@@ -47,6 +47,7 @@ def read_file(filename):
 # MESSAGES
 start_message = read_file(dir_path + "/chat_exporter_html/message/start.html")
 bot_tag = read_file(dir_path + "/chat_exporter_html/message/bot-tag.html")
+message_content = read_file(dir_path + "/chat_exporter_html/message/content.html")
 message_reference = read_file(dir_path + "/chat_exporter_html/message/reference.html")
 message_reference_unknown = read_file(dir_path + "/chat_exporter_html/message/reference_unknown.html")
 message_body = read_file(dir_path + "/chat_exporter_html/message/message.html")
@@ -70,9 +71,9 @@ emoji = read_file(dir_path + "/chat_exporter_html/reaction/emoji.html")
 custom_emoji = read_file(dir_path + "/chat_exporter_html/reaction/custom_emoji.html")
 
 # ATTACHMENT
-img_attachment = read_file(dir_path + "/chat_exporter_html/attachment/image-attachment.html")
-msg_attachment = read_file(dir_path + "/chat_exporter_html/attachment/message_attachment.html")
-audio_attachment = read_file(dir_path + "/chat_exporter_html/attachment/audio_attachment.html")
+img_attachment = read_file(dir_path + "/chat_exporter_html/attachment/image.html")
+msg_attachment = read_file(dir_path + "/chat_exporter_html/attachment/message.html")
+audio_attachment = read_file(dir_path + "/chat_exporter_html/attachment/audio.html")
 
 # GUILD / FULL TRANSCRIPT
 total = read_file(dir_path + "/chat_exporter_html/base.html")
