@@ -243,7 +243,8 @@ class Message:
         try:
             message: discord.Message = await self.message.channel.fetch_message(self.message.reference.message_id)
         except discord.NotFound:
-            return message_reference_unknown
+            self.message.reference = message_reference_unknown
+            return
 
         is_bot = self.check_if_bot(message)
         user_colour = self.user_colour_translate(self.message.guild, message.author)
