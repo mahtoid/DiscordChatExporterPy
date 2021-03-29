@@ -96,9 +96,11 @@ class Transcript:
 
     @classmethod
     async def export(cls, channel: discord.TextChannel, limit, timezone_string: str = "Europe/London") -> "Transcript":
-        messages = await channel.history(limit=limit, oldest_first=True).flatten()
         if limit:
+            messages = await channel.history(limit=limit).flatten()
             messages.reverse()
+        else:
+            messages = await channel.history(limit=limit, oldest_first=True).flatten()
         transcript = await Transcript(channel=channel, guild=channel.guild, messages=messages,
                                       timezone_string=timezone(timezone_string))\
             .build_transcript()
