@@ -49,29 +49,23 @@ class ParseMarkdown:
         self.content = self.content.replace("<br>", " ")
 
     def parse_emoji(self):
-        emoji_pattern = re.compile(r"&lt;:.*?:(\d*)&gt;")
-        emoji_animated = re.compile(r"&lt;a:.*?:(\d*)&gt;")
-
-        match = re.search(emoji_animated, self.content)
-        while match is not None:
-            emoji_id = match.group(1)
-            self.content = self.content.replace(self.content[match.start():match.end()],
-                                                f'<img class="emoji emoji--small" src="https://cdn.discordapp.com/'
-                                                f'emojis/{str(emoji_id)}.gif">')
-            match = re.search(emoji_animated, self.content)
+        holder = [r"&lt;:.*?:(\d*)&gt;", '<img class="emoji emoji--small" src="https://cdn.discordapp.com/'
+                                         'emojis/%s.png">'], \
+                 [r"&lt;a:.*?:(\d*)&gt;", '<img class="emoji emoji--small" src="https://cdn.discordapp.com/'
+                                          'emojis/%s.gif">']
 
         self.content = convert_emoji([word for word in self.content])
 
-        match = re.search(emoji_pattern, self.content)
-        while match is not None:
-            emoji_id = match.group(1)
-            self.content = self.content.replace(self.content[match.start():match.end()],
-                                                f'<img class="emoji emoji--small" src="https://cdn.discordapp.com/'
-                                                f'emojis/{str(emoji_id)}.png">')
-            match = re.search(emoji_pattern, self.content)
+        for x in holder:
+            p, r = x
+            match = re.search(p, self.content)
+            while match is not None:
+                emoji_id = match.group(1)
+                self.content = self.content.replace(self.content[match.start():match.end()],
+                                                    r % emoji_id)
+                match = re.search(p, self.content)
 
     def parse_normal_markdown(self):
-
         holder = [r"__(.*?)__", '<span style="text-decoration: underline">%s</span>'], \
                  [r"\*\*(.*?)\*\*", '<strong>%s</strong>'], \
                  [r"\*(.*?)\*", '<em>%s</em>'], \
@@ -91,35 +85,35 @@ class ParseMarkdown:
                 match = re.search(pattern, self.content)
 
         # > quote
+        self.content = self.content.split("<br>")
+        y = None
+        new_content = ""
         pattern = re.compile(r"^&gt;\s(.+)")
-        match = re.search(pattern, self.content)
-        while match is not None:
-            affected_text = match.group(1)
-            br_pattern = re.compile(r"^&gt;\s(.+?)<br>")
-            if re.search(br_pattern, self.content):
-                match = re.search(br_pattern, self.content)
-                affected_text = match.group(1)
-                self.content = self.content.replace(self.content[match.start():match.end()],
-                                                    '<div class="quote">%s</div>' % affected_text)
-            else:
-                self.content = self.content.replace(self.content[match.start():match.end()],
-                                                    '<div class="quote">%s</div>' % affected_text)
-            match = re.search(pattern, self.content)
 
-        pattern = re.compile(r"<br>&gt;\s(.+)")
-        match = re.search(pattern, self.content)
-        while match is not None:
-            affected_text = match.group(1)
-            br_pattern = re.compile(r"<br>&gt;\s(.+?)<br>")
-            if re.search(br_pattern, self.content):
-                match = re.search(br_pattern, self.content)
-                affected_text = match.group(1)
-                self.content = self.content.replace(self.content[match.start():match.end()],
-                                                    '<div class="quote">%s</div>' % affected_text)
+        if len(self.content) == 1:
+            if re.search(pattern, self.content[0]):
+                self.content = f'<div class="quote">{self.content[0][5:]}</div>'
+                return
+            self.content = self.content[0]
+            return
+
+        for x in self.content:
+            if re.search(pattern, x) and y:
+                y = y + "<br>" + x[5:]
+            elif not y:
+                if re.search(pattern, x):
+                    y = x[5:]
+                else:
+                    new_content = new_content + x + "<br>"
             else:
-                self.content = self.content.replace(self.content[match.start():match.end()],
-                                                    '<div class="quote">%s</div>' % affected_text)
-            match = re.search(pattern, self.content)
+                new_content = new_content + f'<div class="quote">{y}</div>'
+                new_content = new_content + x
+                y = ""
+
+        if y:
+            new_content = new_content + f'<div class="quote">{y}</div>'
+
+        self.content = new_content
 
     def parse_code_block_markdown(self):
         markdown_languages = ["asciidoc", "autohotkey", "bash", "coffeescript", "cpp", "cs", "css",
@@ -174,7 +168,7 @@ class ParseMarkdown:
 
     def parse_embed_markdown(self):
         # [Message](Link)
-        pattern = re.compile(r"\[(.+)?]\((.+)?\)")
+        pattern = re.compile(r"\[(.+?)]\((.+?)\)")
         match = re.search(pattern, self.content)
         while match is not None:
             affected_text = match.group(1)
@@ -182,6 +176,36 @@ class ParseMarkdown:
             self.content = self.content.replace(self.content[match.start():match.end()],
                                                 '<a href="%s">%s</a>' % (affected_url, affected_text))
             match = re.search(pattern, self.content)
+
+        self.content = self.content.split("\n")
+        y = None
+        new_content = ""
+        pattern = re.compile(r"^>\s(.+)")
+
+        if len(self.content) == 1:
+            if re.search(pattern, self.content[0]):
+                self.content = f'<div class="quote">{self.content[0][2:]}</div>'
+                return
+            self.content = self.content[0]
+            return
+
+        for x in self.content:
+            if re.search(pattern, x) and y:
+                y = y + "\n" + x[2:]
+            elif not y:
+                if re.search(pattern, x):
+                    y = x[2:]
+                else:
+                    new_content = new_content + x + "\n"
+            else:
+                new_content = new_content + f'<div class="quote">{y}</div>'
+                new_content = new_content + x
+                y = ""
+
+        if y:
+            new_content = new_content + f'<div class="quote">{y}</div>'
+
+        self.content = new_content
 
     @staticmethod
     def return_to_markdown(content):

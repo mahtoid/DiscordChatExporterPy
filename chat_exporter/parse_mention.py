@@ -132,7 +132,7 @@ class ParseMention:
 
             if member is not None:
                 replacement = '<span class="mention" title="%s">@%s</span>' \
-                              % (member, str(member_name))
+                              % (str(member_id), str(member_name))
                 self.content = self.content.replace(self.content[match.start() + offset:match.end() + offset],
                                                     replacement)
                 offset += len(replacement) - (match.end() - match.start())
@@ -155,7 +155,7 @@ class ParseMention:
 
             if member is not None:
                 replacement = '<span class="mention" title="%s">@%s</span>' \
-                              % (member, str(member_name))
+                              % (str(member_id), str(member_name))
                 self.content = self.content.replace(self.content[match.start() + offset:match.end() + offset],
                                                     replacement)
                 offset += len(replacement) - (match.end() - match.start())
