@@ -5,7 +5,7 @@ with open("README.rst") as fh:
 
 setup(
     name="chat_exporter",
-    version="1.3.0.4",
+    version="1.3.0.6",
     author="mahtoid",
     description="A simple Discord chat exporter for Python Discord bots.",
     long_description=long_description,
@@ -14,7 +14,7 @@ setup(
     package_data={'': [r'chat_exporter/chat_exporter_html/*.html']},
     include_package_data=True,
     license="GPL",
-    install_requires=["discord.py", "requests", "pytz", "grapheme", "emoji", "Pillow"],
+    install_requires=["discord.py", "requests", "pytz", "grapheme", "emoji", "Pillow", "dataclasses"],
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
