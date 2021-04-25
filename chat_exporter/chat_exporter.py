@@ -168,6 +168,7 @@ class Message:
         self.message = message
         self.previous_message = previous_message
         self.timezone = timezone_string
+        self.guild = message.guild
 
         self.time_string_create, self.time_string_edit = self.set_time(message)
 
@@ -180,20 +181,20 @@ class Message:
         await self.build_sticker()
 
         for e in self.message.embeds:
-            self.embeds += await BuildEmbed(e, self.message.guild).flow()
+            self.embeds += await BuildEmbed(e, self.guild).flow()
 
         for a in self.message.attachments:
-            self.attachments += await BuildAttachment(a, self.message.guild).flow()
+            self.attachments += await BuildAttachment(a, self.guild).flow()
 
         for r in self.message.reactions:
-            self.reactions += await BuildReaction(r, self.message.guild).flow()
+            self.reactions += await BuildReaction(r, self.guild).flow()
 
         if self.reactions:
             self.reactions = f'<div class="chatlog__reactions">{self.reactions}</div>'
 
         await self.generate_message_divider()
 
-        self.message_html += await fill_out(self.message.guild, message_body, [
+        self.message_html += await fill_out(self.guild, message_body, [
             ("MESSAGE_ID", str(self.message.id)),
             ("MESSAGE_CONTENT", self.message.content, PARSE_MODE_NONE),
             ("EMBEDS", self.embeds, PARSE_MODE_NONE),
@@ -209,13 +210,13 @@ class Message:
                 self.message.created_at > (self.previous_message.created_at + timedelta(minutes=4)):
 
             if self.previous_message is not None:
-                self.message_html += await fill_out(self.message.guild, end_message, [])
+                self.message_html += await fill_out(self.guild, end_message, [])
 
-            user_colour = self.user_colour_translate(self.message.guild, self.message.author)
+            user_colour = self.user_colour_translate(self.guild, self.message.author)
 
             is_bot = self.check_if_bot(self.message)
 
-            self.message_html += await fill_out(self.message.guild, start_message, [
+            self.message_html += await fill_out(self.guild, start_message, [
                 ("REFERENCE", self.message.reference, PARSE_MODE_NONE),
                 ("AVATAR_URL", str(self.message.author.avatar_url), PARSE_MODE_NONE),
                 ("NAME_TAG", "%s#%s" % (self.message.author.name, self.message.author.discriminator), PARSE_MODE_NONE),
@@ -235,18 +236,26 @@ class Message:
             self.time_string_edit = f'<span class="chatlog__edited-timestamp" title="{self.time_string_edit}">' \
                                     f'(edited)</span>'
 
-        self.message.content = await fill_out(self.message.guild, message_content, [
+        self.message.content = await fill_out(self.guild, message_content, [
             ("MESSAGE_CONTENT", self.message.content, PARSE_MODE_MARKDOWN),
             ("EDIT", self.time_string_edit, PARSE_MODE_NONE)
         ])
 
     async def build_sticker(self):
-        if not self.message.stickers or self.message.stickers[0].image_url is None:
+        if not self.message.stickers:
             return
 
-        self.message.content = await fill_out(self.message.guild, img_attachment, [
-            ("ATTACH_URL", str(self.message.stickers[0].image_url), PARSE_MODE_NONE),
-            ("ATTACH_URL_THUMB", str(self.message.stickers[0].image_url), PARSE_MODE_NONE)
+        sticker_image_url = self.message.stickers[0].image_url
+
+        if sticker_image_url is None:
+            sticker_image_url = (
+                f"https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/stickers/"
+                f"{self.message.stickers[0].pack_id}/{self.message.stickers[0].id}.gif"
+            )
+
+        self.message.content = await fill_out(self.guild, img_attachment, [
+            ("ATTACH_URL", str(sticker_image_url), PARSE_MODE_NONE),
+            ("ATTACH_URL_THUMB", str(sticker_image_url), PARSE_MODE_NONE)
         ])
 
     async def build_reference(self):
@@ -261,7 +270,7 @@ class Message:
             return
 
         is_bot = self.check_if_bot(message)
-        user_colour = self.user_colour_translate(self.message.guild, message.author)
+        user_colour = self.user_colour_translate(self.guild, message.author)
 
         if not message.content:
             message.content = "Click to see attachment"
@@ -279,7 +288,7 @@ class Message:
             time_string_edit = f'<span class="chatlog__reference-edited-timestamp" title="{time_string_edit}">(edited)'\
                                f'</span>'
 
-        self.message.reference = await fill_out(self.message.guild, message_reference, [
+        self.message.reference = await fill_out(self.guild, message_reference, [
             ("AVATAR_URL", str(message.author.avatar_url), PARSE_MODE_NONE),
             ("BOT_TAG", is_bot, PARSE_MODE_NONE),
             ("NAME_TAG", "%s#%s" % (message.author.name, message.author.discriminator), PARSE_MODE_NONE),

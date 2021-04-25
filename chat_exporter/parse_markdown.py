@@ -118,7 +118,7 @@ class ParseMarkdown:
     def parse_code_block_markdown(self):
         markdown_languages = ["asciidoc", "autohotkey", "bash", "coffeescript", "cpp", "cs", "css",
                               "diff", "fix", "glsl", "ini", "json", "md", "ml", "prolog", "py",
-                              "tex", "xl", "xml", "js"]
+                              "tex", "xl", "xml", "js", "html"]
         self.content = re.sub(r"\n", "<br>", self.content)
 
         # ```code```
