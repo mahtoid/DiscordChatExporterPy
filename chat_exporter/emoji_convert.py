@@ -43,7 +43,10 @@ cdn_fmt = "https://twemoji.maxcdn.com/v/latest/72x72/{codepoint}.png"
 
 
 def valid_src(src):
-    req = requests.head(src)
+    try:
+        req = requests.head(src)
+    except requests.exceptions.ConnectionError:
+        return False
     return req.status_code == 200
 
 
