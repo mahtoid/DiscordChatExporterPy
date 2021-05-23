@@ -130,7 +130,7 @@ class Transcript:
     async def build_guild(self, message_html):
         guild_icon = self.guild.icon_url
         if len(guild_icon) < 2:
-            guild_icon = "https://discord.com/assets/dd4dbc0016779df1378e7812eabaa04d.png"
+            guild_icon = "https://discord.com/assets/1f0bfc0865d324c2587920a7d80c609b.png"
         guild_name = html.escape(self.guild.name)
         self.html = await fill_out(self.guild, total, [
             ("SERVER_NAME", f"Guild: {guild_name}"),
