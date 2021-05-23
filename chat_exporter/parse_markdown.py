@@ -49,10 +49,12 @@ class ParseMarkdown:
         self.content = self.content.replace("<br>", " ")
 
     def parse_emoji(self):
-        holder = [r"&lt;:.*?:(\d*)&gt;", '<img class="emoji emoji--small" src="https://cdn.discordapp.com/'
-                                         'emojis/%s.png">'], \
-                 [r"&lt;a:.*?:(\d*)&gt;", '<img class="emoji emoji--small" src="https://cdn.discordapp.com/'
-                                          'emojis/%s.gif">']
+        holder = (
+            [r"&lt;:.*?:(\d*)&gt;", '<img class="emoji emoji--small" src="https://cdn.discordapp.com/emojis/%s.png">'],
+            [r"&lt;a:.*?:(\d*)&gt;", '<img class="emoji emoji--small" src="https://cdn.discordapp.com/emojis/%s.gif">'],
+            [r"<:.*?:(\d*)>", '<img class="emoji emoji--small" src="https://cdn.discordapp.com/emojis/%s.png">'],
+            [r"<a:.*?:(\d*)>", '<img class="emoji emoji--small" src="https://cdn.discordapp.com/emojis/%s.gif">'],
+        )
 
         self.content = convert_emoji([word for word in self.content])
 
