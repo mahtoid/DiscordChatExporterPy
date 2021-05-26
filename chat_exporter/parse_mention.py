@@ -34,12 +34,9 @@ class ParseMention:
         self.escape_mentions()
         self.escape_mentions()
         self.unescape_mentions()
-        self.normal_channel_mention()
-        self.html_channel_mention()
-        self.normal_user_mention()
-        self.html_user_mention()
-        self.normal_role_mention()
-        self.html_role_mention()
+        self.channel_mention()
+        self.member_mention()
+        self.role_mention()
 
         return self.content
 
@@ -64,120 +61,60 @@ class ParseMention:
         self.content = self.content.replace(self.ESCAPE_AMP, "&")
         pass
 
-    def normal_channel_mention(self):
-        offset = 0
-        match = re.search(self.REGEX_CHANNELS, self.content)
+    def channel_mention(self):
+        holder = self.REGEX_CHANNELS, self.REGEX_CHANNELS_2
+        for regex in holder:
+            match = re.search(regex, self.content)
+            while match is not None:
+                channel_id = int(match.group(1))
+                channel = self.guild.get_channel(channel_id)
 
-        while match is not None:
-            channel_id = int(match.group(1))
-            channel = self.guild.get_channel(channel_id)
+                if channel is None:
+                    replacement = '#deleted-channel'
+                else:
+                    replacement = '<span class="mention" title="%s">#%s</span>' \
+                                  % (channel.name, channel.name)
+                self.content = self.content.replace(self.content[match.start():match.end()], replacement)
 
-            if channel is None:
-                replacement = '#deleted-channel'
-            else:
-                replacement = '<span class="mention" title="%s">#%s</span>' \
-                              % (channel.name, channel.name)
-            self.content = self.content.replace(self.content[match.start() + offset:match.end() + offset], replacement)
+                match = re.search(regex, self.content)
 
-            offset += len(replacement) - (match.end() - match.start())
-            match = re.search(self.REGEX_CHANNELS, self.content)
+    def role_mention(self):
+        holder = self.REGEX_ROLES, self.REGEX_ROLES_2
+        for regex in holder:
+            match = re.search(regex, self.content)
+            while match is not None:
+                role_id = int(match.group(1))
+                role = self.guild.get_role(role_id)
 
-    def html_channel_mention(self):
-        offset = 0
-        match = re.search(self.REGEX_CHANNELS_2, self.content)
+                if role is None:
+                    replacement = '@deleted-role'
+                else:
+                    replacement = '<span style="color: #%02x%02x%02x;">@%s</span>' \
+                                  % (role.color.r, role.color.g, role.color.b, role.name)
+                self.content = self.content.replace(self.content[match.start():match.end()], replacement)
 
-        while match is not None:
-            channel_id = int(match.group(1))
-            channel = self.guild.get_channel(channel_id)
-            if channel is None:
-                replacement = '#deleted-channel'
-            else:
-                replacement = '<span class="mention" title="%s">#%s</span>' \
-                              % (channel.name, channel.name)
-            self.content = self.content.replace(self.content[match.start() + offset:match.end() + offset],
-                                                replacement)
+                match = re.search(regex, self.content)
 
-            offset += len(replacement) - (match.end() - match.start())
-            match = re.search(self.REGEX_CHANNELS_2, self.content)
+    def member_mention(self):
+        holder = self.REGEX_MEMBERS, self.REGEX_MEMBERS_2
+        for regex in holder:
+            match = re.search(regex, self.content)
+            while match is not None:
+                member_id = int(match.group(1))
 
-    def normal_role_mention(self):
-        offset = 0
-        match = re.search(self.REGEX_ROLES, self.content)
-        while match is not None:
-            role_id = int(match.group(1))
-            role = self.guild.get_role(role_id)
+                member = None
+                try:
+                    member = self.guild.get_member(member_id) or bot.get_user(member_id)
+                    member_name = member.display_name
+                except AttributeError:
+                    member_name = member
 
-            if role is None:
-                replacement = '@deleted-role'
-            else:
-                replacement = '<span style="color: #%02x%02x%02x;">@%s</span>' \
-                              % (role.color.r, role.color.g, role.color.b, role.name)
-            self.content = self.content.replace(self.content[match.start() + offset:match.end() + offset], replacement)
+                if member is not None:
+                    replacement = '<span class="mention" title="%s">@%s</span>' \
+                                  % (str(member_id), str(member_name))
+                else:
+                    replacement = '<span class="mention" title="Unknown">@Unknown</span>'
+                self.content = self.content.replace(self.content[match.start():match.end()],
+                                                    replacement)
 
-            offset += len(replacement) - (match.end() - match.start())
-            match = re.search(self.REGEX_ROLES, self.content)
-
-    def html_role_mention(self):
-        offset = 0
-        match = re.search(self.REGEX_ROLES_2, self.content)
-        while match is not None:
-            role_id = int(match.group(1))
-            role = self.guild.get_role(role_id)
-
-            if role is None:
-                replacement = '@deleted-role'
-            else:
-                replacement = '<span style="color: #%02x%02x%02x;">@%s</span>' \
-                              % (role.color.r, role.color.g, role.color.b, role.name)
-            self.content = self.content.replace(self.content[match.start() + offset:match.end() + offset], replacement)
-
-            offset += len(replacement) - (match.end() - match.start())
-            match = re.search(self.REGEX_ROLES_2, self.content)
-
-    def normal_user_mention(self):
-        offset = 0
-        match = re.search(self.REGEX_MEMBERS, self.content)
-        while match is not None:
-            member_id = int(match.group(1))
-
-            member = None
-            try:
-                member = self.guild.get_member(member_id) or bot.get_user(member_id)
-                member_name = member.display_name
-            except AttributeError:
-                member_name = member
-
-            if member is not None:
-                replacement = '<span class="mention" title="%s">@%s</span>' \
-                              % (str(member_id), str(member_name))
-            else:
-                replacement = '<span class="mention" title="Unknown">@Unknown</span>'
-            self.content = self.content.replace(self.content[match.start() + offset:match.end() + offset],
-                                                replacement)
-
-            offset += len(replacement) - (match.end() - match.start())
-            match = re.search(self.REGEX_MEMBERS, self.content)
-
-    def html_user_mention(self):
-        offset = 0
-        match = re.search(self.REGEX_MEMBERS_2, self.content)
-        while match is not None:
-            member_id = int(match.group(1))
-
-            member = None
-            try:
-                member = self.guild.get_member(member_id) or bot.get_user(member_id)
-                member_name = member.display_name
-            except AttributeError:
-                member_name = member
-
-            if member is not None:
-                replacement = '<span class="mention" title="%s">@%s</span>' \
-                              % (str(member_id), str(member_name))
-            else:
-                replacement = '<span class="mention" title="Unknown">@Unknown</span>'
-            self.content = self.content.replace(self.content[match.start() + offset:match.end() + offset],
-                                                replacement)
-
-            offset += len(replacement) - (match.end() - match.start())
-            match = re.search(self.REGEX_MEMBERS_2, self.content)
+                match = re.search(regex, self.content)
