@@ -117,9 +117,6 @@ img {
         transform: translate(-50%, -50%);
         font-weight: 600;
         padding: 100%;
-        /* This ruins those beutifully rounded buttons, but it's needed to prevent a FireFox bug with video and audio elemnts. */
-        /* The bug is that you can click trough the spoiler layer and play the video or audio, I could not identify the cause. */
-        /* I leave this here, in case someone is brave enough to venture in to madness that is undocumented browser behaviour. */
         border-radius: 20px;
         letter-spacing: 0.05em;
         font-size: 0.9em;
@@ -157,13 +154,13 @@ img {
 .mention {
     border-radius: 3px;
     padding: 0 2px;
-    color: #fdfdfd;
-    background: rgba(114, 137, 218, .4);
+    color: #dee0fc;
+    background: rgba(88, 101, 242, .3);
     font-weight: 500;
 }
 
 .mention:hover {
-    background: rgba(114, 137, 218, .7);
+    background: rgba(88, 101, 242, .6);
 }
 
 .emoji {
