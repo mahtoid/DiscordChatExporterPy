@@ -128,8 +128,14 @@ class Transcript:
         return self
 
     async def build_guild(self, message_html):
-        guild_icon = self.guild.icon_url
-        if len(guild_icon) < 2:
+
+        # TODO: Improve 2.0.0a support
+        try:
+            guild_icon = self.guild.icon_url
+        except AttributeError:
+            guild_icon = self.guild.icon
+
+        if not guild_icon or len(guild_icon) < 2:
             guild_icon = "https://discord.com/assets/1f0bfc0865d324c2587920a7d80c609b.png"
         guild_name = html.escape(self.guild.name)
         self.html = await fill_out(self.guild, total, [
@@ -216,9 +222,15 @@ class Message:
 
             is_bot = self.check_if_bot(self.message)
 
+            # TODO: Improve 2.0.0a support
+            try:
+                avatar_url = str(self.message.author.avatar_url)
+            except AttributeError:
+                avatar_url = str(self.message.author.avatar)
+
             self.message_html += await fill_out(self.guild, start_message, [
                 ("REFERENCE", self.message.reference, PARSE_MODE_NONE),
-                ("AVATAR_URL", str(self.message.author.avatar_url), PARSE_MODE_NONE),
+                ("AVATAR_URL", avatar_url, PARSE_MODE_NONE),
                 ("NAME_TAG", "%s#%s" % (self.message.author.name, self.message.author.discriminator), PARSE_MODE_NONE),
                 ("USER_ID", str(self.message.author.id)),
                 ("USER_COLOUR", user_colour),
@@ -245,7 +257,11 @@ class Message:
         if not self.message.stickers:
             return
 
-        sticker_image_url = self.message.stickers[0].image_url
+        # TODO: Improve 2.0.0a support (P.S. Stickers don't work for v2 yet)
+        try:
+            sticker_image_url = self.message.stickers[0].image_url
+        except AttributeError:
+            sticker_image_url = self.message.stickers[0].image
 
         if sticker_image_url is None:
             sticker_image_url = (
@@ -328,10 +344,12 @@ class Message:
         return user_colour
 
     def set_time(self, message):
-        time_string = self.utc.localize(message.created_at).astimezone(self.timezone)
+        created_at = message.created_at.replace(tzinfo=None)
+        time_string = self.utc.localize(created_at).astimezone(self.timezone)
         time_string_created = time_string.strftime(self.time_format)
         if message.edited_at is not None:
-            time_string_edited = self.utc.localize(message.edited_at).astimezone(self.timezone)
+            edited_at = message.edited_at.replace(tzinfo=None)
+            time_string_edited = self.utc.localize(edited_at).astimezone(self.timezone)
             time_string_edited = time_string_edited.strftime(self.time_format)
             time_string_edited = "%s" % time_string_edited
         else:
