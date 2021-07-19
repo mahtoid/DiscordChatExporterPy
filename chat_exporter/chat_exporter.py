@@ -1,19 +1,18 @@
 import io
 import re
 from pytz import timezone
-from PIL import ImageColor
 from datetime import timedelta
 from dataclasses import dataclass
 
 from typing import Optional, List
 
 import discord
-import sys
 import traceback
 import html
 
 from chat_exporter.build_embed import BuildEmbed
 from chat_exporter.build_attachments import BuildAttachment
+from chat_exporter.build_components import BuildComponents
 from chat_exporter.build_reaction import BuildReaction
 from chat_exporter.build_html import fill_out, start_message, bot_tag, message_reference, message_reference_unknown, \
     message_content, message_body, end_message, total, PARSE_MODE_NONE, PARSE_MODE_MARKDOWN, PARSE_MODE_REFERENCE, \
@@ -30,7 +29,11 @@ def init_exporter(_bot):
     pass_bot(bot)
 
 
-async def export(channel: discord.TextChannel, limit: int = None, set_timezone="Europe/London"):
+async def export(
+    channel: discord.TextChannel,
+    limit: int = None,
+    set_timezone="Europe/London"
+):
     # noinspection PyBroadException
     try:
         return (await Transcript.export(channel, limit, set_timezone)).html
@@ -39,8 +42,11 @@ async def export(channel: discord.TextChannel, limit: int = None, set_timezone="
         print(f"Please send a screenshot of the above error to https://www.github.com/mahtoid/DiscordChatExporterPy")
 
 
-async def raw_export(channel: discord.TextChannel, messages: List[discord.Message],
-                     set_timezone: str = "Europe/London"):
+async def raw_export(
+    channel: discord.TextChannel,
+    messages: List[discord.Message],
+    set_timezone: str = "Europe/London"
+):
     # noinspection PyBroadException
     try:
         return (await Transcript.raw_export(channel, messages, set_timezone)).html
@@ -54,7 +60,6 @@ async def quick_export(ctx):
     try:
         transcript = await Transcript.export(ctx.channel, None, "Europe/London")
     except Exception:
-        print("Error during transcript generation!", file=sys.stderr)
         traceback.print_exc()
         error_embed = discord.Embed(
             title="Transcript Generation Failed!",
@@ -95,24 +100,43 @@ class Transcript:
     html: Optional[str] = None
 
     @classmethod
-    async def export(cls, channel: discord.TextChannel, limit, timezone_string: str = "Europe/London") -> "Transcript":
+    async def export(
+        cls,
+        channel: discord.TextChannel,
+        limit: Optional[int],
+        timezone_string: str = "Europe/London"
+    ) -> "Transcript":
         if limit:
             messages = await channel.history(limit=limit).flatten()
             messages.reverse()
         else:
             messages = await channel.history(limit=limit, oldest_first=True).flatten()
-        transcript = await Transcript(channel=channel, guild=channel.guild, messages=messages,
-                                      timezone_string=timezone(timezone_string))\
-            .build_transcript()
+
+        transcript = await Transcript(
+            channel=channel,
+            guild=channel.guild,
+            messages=messages,
+            timezone_string=timezone(timezone_string)
+        ).build_transcript()
+
         return transcript
 
     @classmethod
-    async def raw_export(cls, channel: discord.TextChannel, messages: List[discord.Message],
-                         timezone_string: str = 'Europe/London') -> "Transcript":
+    async def raw_export(
+        cls,
+        channel: discord.TextChannel,
+        messages: List[discord.Message],
+        timezone_string: str = 'Europe/London'
+    ) -> "Transcript":
         messages.reverse()
-        transcript = await Transcript(channel=channel, guild=channel.guild, messages=messages,
-                                      timezone_string=timezone(timezone_string))\
-            .build_transcript()
+
+        transcript = await Transcript(
+            channel=channel,
+            guild=channel.guild,
+            messages=messages,
+            timezone_string=timezone(timezone_string)
+        ).build_transcript()
+
         return transcript
 
     async def build_transcript(self):
@@ -129,15 +153,17 @@ class Transcript:
 
     async def build_guild(self, message_html):
 
-        # TODO: Improve 2.0.0a support
-        try:
+        # discordpy beta
+        if hasattr(self.guild, "icon_url"):
             guild_icon = self.guild.icon_url
-        except AttributeError:
+        else:
             guild_icon = self.guild.icon
 
         if not guild_icon or len(guild_icon) < 2:
             guild_icon = "https://discord.com/assets/1f0bfc0865d324c2587920a7d80c609b.png"
+
         guild_name = html.escape(self.guild.name)
+
         self.html = await fill_out(self.guild, total, [
             ("SERVER_NAME", f"Guild: {guild_name}"),
             ("SERVER_AVATAR_URL", str(guild_icon), PARSE_MODE_NONE),
@@ -155,6 +181,7 @@ class Message:
     message_html: str = ""
     embeds: str = ""
     attachments: str = ""
+    components: str = ""
     reactions: str = ""
 
     bot_tag: Optional[str] = None
@@ -176,7 +203,7 @@ class Message:
         self.timezone = timezone_string
         self.guild = message.guild
 
-        self.time_string_create, self.time_string_edit = self.set_time(message)
+        self.time_string_create, self.time_string_edit = self.set_time()
 
     async def build_message(self):
         self.message.content = html.escape(self.message.content)
@@ -192,11 +219,19 @@ class Message:
         for a in self.message.attachments:
             self.attachments += await BuildAttachment(a, self.guild).flow()
 
+        # discordpy beta
+        if hasattr(self.message, "components"):
+            for c in self.message.components:
+                self.components += await BuildComponents(c, self.guild).flow()
+
         for r in self.message.reactions:
             self.reactions += await BuildReaction(r, self.guild).flow()
 
         if self.reactions:
             self.reactions = f'<div class="chatlog__reactions">{self.reactions}</div>'
+
+        if self.components:
+            self.components = f'<div class="chatlog__components">{self.components}</div>'
 
         await self.generate_message_divider()
 
@@ -205,6 +240,7 @@ class Message:
             ("MESSAGE_CONTENT", self.message.content, PARSE_MODE_NONE),
             ("EMBEDS", self.embeds, PARSE_MODE_NONE),
             ("ATTACHMENTS", self.attachments, PARSE_MODE_NONE),
+            ("COMPONENTS", self.components, PARSE_MODE_NONE),
             ("EMOJI", self.reactions, PARSE_MODE_NONE)
         ])
 
@@ -218,14 +254,14 @@ class Message:
             if self.previous_message is not None:
                 self.message_html += await fill_out(self.guild, end_message, [])
 
-            user_colour = self.user_colour_translate(self.guild, self.message.author)
+            user_colour = self.user_colour_translate(self.message.author)
 
             is_bot = self.check_if_bot(self.message)
 
-            # TODO: Improve 2.0.0a support
-            try:
+            # discordpy beta
+            if hasattr(self.message.author, "avatar_url"):
                 avatar_url = str(self.message.author.avatar_url)
-            except AttributeError:
+            else:
                 avatar_url = str(self.message.author.avatar)
 
             self.message_html += await fill_out(self.guild, start_message, [
@@ -245,8 +281,9 @@ class Message:
             return
 
         if self.time_string_edit != "":
-            self.time_string_edit = f'<span class="chatlog__edited-timestamp" title="{self.time_string_edit}">' \
-                                    f'(edited)</span>'
+            self.time_string_edit = (
+                f'<span class="chatlog__edited-timestamp" title="{self.time_string_edit}">(edited)</span>'
+            )
 
         self.message.content = await fill_out(self.guild, message_content, [
             ("MESSAGE_CONTENT", self.message.content, PARSE_MODE_MARKDOWN),
@@ -257,10 +294,10 @@ class Message:
         if not self.message.stickers:
             return
 
-        # TODO: Improve 2.0.0a support (P.S. Stickers don't work for v2 yet)
-        try:
+        # discordpy beta (P.S. Stickers don't work for v2 yet)
+        if hasattr(self.message.stickers[0], "image_url"):
             sticker_image_url = self.message.stickers[0].image_url
-        except AttributeError:
+        else:
             sticker_image_url = self.message.stickers[0].image
 
         if sticker_image_url is None:
@@ -286,23 +323,25 @@ class Message:
             return
 
         is_bot = self.check_if_bot(message)
-        user_colour = self.user_colour_translate(self.guild, message.author)
+        user_colour = self.user_colour_translate(message.author)
 
         if not message.content:
             message.content = "Click to see attachment"
 
         if message.embeds or message.attachments:
-            attachment_icon = \
-                '<img class="chatlog__reference-icon" ' \
+            attachment_icon = (
+                '<img class="chatlog__reference-icon" '
                 'src="https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/discord-attachment.svg">'
+            )
         else:
             attachment_icon = ""
 
-        _, time_string_edit = self.set_time(message)
+        _, time_string_edit = self.set_time()
 
         if time_string_edit != "":
-            time_string_edit = f'<span class="chatlog__reference-edited-timestamp" title="{time_string_edit}">(edited)'\
-                               f'</span>'
+            time_string_edit = (
+                f'<span class="chatlog__reference-edited-timestamp" title="{time_string_edit}">(edited)</span>'
+            )
 
         self.message.reference = await fill_out(self.guild, message_reference, [
             ("AVATAR_URL", str(message.author.avatar_url), PARSE_MODE_NONE),
@@ -323,36 +362,28 @@ class Message:
         else:
             return ""
 
-    @staticmethod
-    def user_colour_translate(guild, author):
+    def user_colour_translate(self, author: discord.Member):
         try:
-            member = guild.get_member(author.id)
+            member = self.guild.get_member(author.id)
         except discord.NotFound:
             member = author
 
+        user_colour = "#FFFFFF"
         if member is not None:
-            user_colour = member.colour
-            if '#000000' in str(user_colour):
-                user_colour = f"color: #%02x%02x%02x;" % (255, 255, 255)
-            else:
-                user_colour = ImageColor.getrgb(str(user_colour))
-                colour_r, colour_g, colour_b = user_colour
-                user_colour = f"color: #%02x%02x%02x;" % (colour_r, colour_g, colour_b)
-        else:
-            user_colour = f"color: #%02x%02x%02x;" % (255, 255, 255)
+            if '#000000' not in str(member.colour):
+                user_colour = member.colour
 
-        return user_colour
+        return f"color: {user_colour};"
 
-    def set_time(self, message):
-        created_at = message.created_at.replace(tzinfo=None)
-        time_string = self.utc.localize(created_at).astimezone(self.timezone)
-        time_string_created = time_string.strftime(self.time_format)
-        if message.edited_at is not None:
-            edited_at = message.edited_at.replace(tzinfo=None)
-            time_string_edited = self.utc.localize(edited_at).astimezone(self.timezone)
-            time_string_edited = time_string_edited.strftime(self.time_format)
-            time_string_edited = "%s" % time_string_edited
-        else:
-            time_string_edited = ""
+    def set_time(self):
+        created_at_str = self.to_local_time_str(self.message.created_at)
+        edited_at_str = self.to_local_time_str(self.message.edited_at) if self.message.edited_at is not None else ""
 
-        return time_string_created, time_string_edited
+        return created_at_str, edited_at_str
+
+    def to_local_time_str(self, time):
+        if not self.message.created_at.tzinfo:
+            time = timezone("UTC").localize(time)
+
+        local_time = time.astimezone(self.timezone)
+        return local_time.strftime(self.time_format)

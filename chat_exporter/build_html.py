@@ -53,6 +53,9 @@ message_reference_unknown = read_file(dir_path + "/chat_exporter_html/message/re
 message_body = read_file(dir_path + "/chat_exporter_html/message/message.html")
 end_message = read_file(dir_path + "/chat_exporter_html/message/end.html")
 
+# COMPONENTS
+component_button = read_file(dir_path + "/chat_exporter_html/component/component_button.html")
+
 # EMBED
 embed_body = read_file(dir_path + "/chat_exporter_html/embed/body.html")
 embed_title = read_file(dir_path + "/chat_exporter_html/embed/title.html")
