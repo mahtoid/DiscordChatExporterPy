@@ -220,7 +220,7 @@ class Message:
             self.attachments += await BuildAttachment(a, self.guild).flow()
 
         # discordpy beta
-        if hasattr(self.message, "components"):
+        if hasattr(self.message, "components") and discord.version_info.major == 2:
             for c in self.message.components:
                 self.components += await BuildComponents(c, self.guild).flow()
 
@@ -294,7 +294,7 @@ class Message:
         if not self.message.stickers:
             return
 
-        # discordpy beta (P.S. Stickers don't work for v2 yet)
+        # discordpy beta
         if hasattr(self.message.stickers[0], "image_url"):
             sticker_image_url = self.message.stickers[0].image_url
         else:
@@ -343,8 +343,14 @@ class Message:
                 f'<span class="chatlog__reference-edited-timestamp" title="{time_string_edit}">(edited)</span>'
             )
 
+        # discordpy beta
+        if hasattr(self.message.author, "avatar_url"):
+            avatar_url = self.message.author.avatar_url
+        else:
+            avatar_url = self.message.author.avatar
+
         self.message.reference = await fill_out(self.guild, message_reference, [
-            ("AVATAR_URL", str(message.author.avatar_url), PARSE_MODE_NONE),
+            ("AVATAR_URL", str(avatar_url), PARSE_MODE_NONE),
             ("BOT_TAG", is_bot, PARSE_MODE_NONE),
             ("NAME_TAG", "%s#%s" % (message.author.name, message.author.discriminator), PARSE_MODE_NONE),
             ("NAME", str(html.escape(message.author.display_name))),
