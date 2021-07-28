@@ -318,8 +318,10 @@ class Message:
 
         try:
             message: discord.Message = await self.message.channel.fetch_message(self.message.reference.message_id)
-        except discord.NotFound:
-            self.message.reference = message_reference_unknown
+        except (discord.NotFound, discord.HTTPException) as e:
+            self.message.reference = ""
+            if isinstance(e, discord.NotFound):
+                self.message.reference = message_reference_unknown
             return
 
         is_bot = self.check_if_bot(message)
