@@ -1,0 +1,14 @@
+<div class="chatlog__message-group">
+    <div class="chatlog__pin-avatar-container">
+        <img class="chatlog__pin-avatar" src="{{PIN_URL}}" />
+    </div>
+    <div class="chatlog__messages">
+        <div class="chatlog__message " data-message-id="{{MESSAGE_ID}}" id="message-{{MESSAGE_ID}}">
+            <span class="chatlog__reference-name" title="{{NAME_TAG}}" style="{{USER_COLOUR}}">{{NAME}}</span> has pinned
+            <a class="chatlog__pinned-link" href="#" onclick="scrollToMessage(event, '{{REF_MESSAGE_ID}}')">
+               a message
+            </a>
+            to this channel
+        </div>
+    </div>
+</div>
