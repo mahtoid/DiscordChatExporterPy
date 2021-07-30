@@ -16,7 +16,7 @@ from chat_exporter.build_components import BuildComponents
 from chat_exporter.build_reaction import BuildReaction
 from chat_exporter.build_html import fill_out, start_message, bot_tag, message_reference, message_reference_unknown, \
     message_content, message_body, end_message, total, PARSE_MODE_NONE, PARSE_MODE_MARKDOWN, PARSE_MODE_REFERENCE, \
-    img_attachment, message_pin
+    img_attachment, message_pin, message_thread
 from chat_exporter.parse_mention import pass_bot
 
 
@@ -145,7 +145,8 @@ class Transcript:
 
         for m in self.messages:
             message_html += await Message(m, previous_message, self.timezone_string).build_input()
-            previous_message = m if "pins_add" not in m.type else None
+            previous_message = m if "pins_add" not in str(m.type) and "thread_created" not in str(m.type)\
+                and m.type != 18 else None
 
         await self.build_guild(message_html)
 
@@ -210,8 +211,12 @@ class Message:
         self.message.content = html.escape(self.message.content)
         self.message.content = re.sub(r"\n", "<br>", self.message.content)
 
-        if "pins_add" in self.message.type:
+        if "pins_add" in str(self.message.type):
             await self.build_pin()
+            return self.message_html
+
+        elif "thread_created" in str(self.message.type) or self.message.type == 18:
+            await self.build_thread()
             return self.message_html
 
         else:
@@ -221,7 +226,10 @@ class Message:
     async def build_pin(self):
         await self.generate_message_divider(pinned=True)
         await self.build_pin_template()
-        self.previous_message = None
+
+    async def build_thread(self):
+        await self.generate_message_divider(pinned=True)
+        await self.build_thread_template()
 
     async def build_message(self):
         await self.build_content()
@@ -238,6 +246,17 @@ class Message:
             ("NAME_TAG", "%s#%s" % (self.message.author.name, self.message.author.discriminator), PARSE_MODE_NONE),
             ("MESSAGE_ID", str(self.message.id), PARSE_MODE_NONE),
             ("REF_MESSAGE_ID", str(self.message.reference.message_id), PARSE_MODE_NONE)
+        ])
+
+    async def build_thread_template(self):
+        self.message_html += await fill_out(self.guild, message_thread, [
+            ("THREAD_URL", "https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/discord-thread.svg",
+             PARSE_MODE_NONE),
+            ("THREAD_NAME", self.message.content, PARSE_MODE_NONE),
+            ("USER_COLOUR", self.user_colour_translate(self.message.author)),
+            ("NAME", str(html.escape(self.message.author.display_name))),
+            ("NAME_TAG", "%s#%s" % (self.message.author.name, self.message.author.discriminator), PARSE_MODE_NONE),
+            ("MESSAGE_ID", str(self.message.id), PARSE_MODE_NONE),
         ])
 
     async def build_assets(self):
