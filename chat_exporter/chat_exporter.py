@@ -180,7 +180,6 @@ class Message:
     previous_message: discord.Message
 
     message_html: str = ""
-    pins: str = ""
     embeds: str = ""
     attachments: str = ""
     components: str = ""
@@ -362,7 +361,7 @@ class Message:
             ("ATTACH_URL_THUMB", str(sticker_image_url), PARSE_MODE_NONE)
         ])
 
-    async def build_reference(self, pinned=False):
+    async def build_reference(self):
         if not self.message.reference:
             self.message.reference = ""
             return
