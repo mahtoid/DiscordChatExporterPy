@@ -341,19 +341,16 @@ class Message:
         ])
 
     async def build_sticker(self):
-        if not self.message.stickers:
+        if not self.message.stickers or not hasattr(self.message.stickers[0], "url"):
             return
 
-        # discordpy beta
-        if hasattr(self.message.stickers[0], "image_url"):
-            sticker_image_url = self.message.stickers[0].image_url
-        else:
-            sticker_image_url = self.message.stickers[0].image
+        sticker_image_url = self.message.stickers[0].url
 
-        if sticker_image_url is None:
+        if sticker_image_url.endswith(".json"):
+            sticker = await self.message.stickers[0].fetch()
             sticker_image_url = (
                 f"https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/stickers/"
-                f"{self.message.stickers[0].pack_id}/{self.message.stickers[0].id}.gif"
+                f"{sticker.pack_id}/{sticker.id}.gif"
             )
 
         self.message.content = await fill_out(self.guild, img_attachment, [
