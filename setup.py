@@ -14,7 +14,7 @@ setup(
     package_data={'': [r'chat_exporter/chat_exporter_html/*.html']},
     include_package_data=True,
     license="GPL",
-    install_requires=["discord.py", "requests", "pytz", "grapheme", "emoji"],
+    install_requires=["discord.py", "aiohttp", "pytz", "grapheme", "emoji"],
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",

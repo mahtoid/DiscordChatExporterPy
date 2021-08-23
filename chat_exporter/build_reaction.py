@@ -34,7 +34,7 @@ class BuildReaction:
         ])
 
     async def create_standard_emoji(self):
-        react_emoji = convert_emoji(self.reaction.emoji)
+        react_emoji = await convert_emoji(self.reaction.emoji)
         self.reaction = await fill_out(self.guild, emoji, [
             ("EMOJI", str(react_emoji), PARSE_MODE_NONE),
             ("EMOJI_COUNT", str(self.reaction.count), PARSE_MODE_NONE)
