@@ -6,41 +6,40 @@ class ParseMarkdown:
     def __init__(self, content):
         self.content = content
 
-    def standard_message_flow(self):
+    async def standard_message_flow(self):
         self.https_http_links()
         self.parse_normal_markdown()
         self.parse_code_block_markdown()
-        self.parse_emoji()
+        await self.parse_emoji()
 
         return self.content
 
-    def link_embed_flow(self):
+    async def link_embed_flow(self):
         self.parse_embed_markdown()
-        self.parse_emoji()
-        pass
+        await self.parse_emoji()
 
-    def standard_embed_flow(self):
+    async def standard_embed_flow(self):
         self.https_http_links()
         self.parse_embed_markdown()
         self.parse_normal_markdown()
         self.parse_code_block_markdown()
-        self.parse_emoji()
+        await self.parse_emoji()
 
         return self.content
 
-    def special_embed_flow(self):
+    async def special_embed_flow(self):
         self.https_http_links()
         self.parse_normal_markdown()
         self.parse_code_block_markdown()
-        self.parse_emoji()
+        await self.parse_emoji()
 
         return self.content
 
-    def message_reference_flow(self):
+    async def message_reference_flow(self):
         self.https_http_links()
         self.parse_normal_markdown()
         self.parse_code_block_markdown()
-        self.parse_emoji()
+        await self.parse_emoji()
         self.parse_br()
 
         return self.content
@@ -48,7 +47,7 @@ class ParseMarkdown:
     def parse_br(self):
         self.content = self.content.replace("<br>", " ")
 
-    def parse_emoji(self):
+    async def parse_emoji(self):
         holder = (
             [r"&lt;:.*?:(\d*)&gt;", '<img class="emoji emoji--small" src="https://cdn.discordapp.com/emojis/%s.png">'],
             [r"&lt;a:.*?:(\d*)&gt;", '<img class="emoji emoji--small" src="https://cdn.discordapp.com/emojis/%s.gif">'],
@@ -56,7 +55,7 @@ class ParseMarkdown:
             [r"<a:.*?:(\d*)>", '<img class="emoji emoji--small" src="https://cdn.discordapp.com/emojis/%s.gif">'],
         )
 
-        self.content = convert_emoji([word for word in self.content])
+        self.content = await convert_emoji([word for word in self.content])
 
         for x in holder:
             p, r = x

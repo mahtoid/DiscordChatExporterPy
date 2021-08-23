@@ -30,7 +30,7 @@ class BuildComponents:
     async def build_button(self, c):
         url = c.url if c.url else ""
         label = c.label if c.label else ""
-        emoji = convert_emoji(str(c.emoji)) if c.emoji else ""
+        emoji = await convert_emoji(str(c.emoji)) if c.emoji else ""
         style = self.styles[str(c.style).split(".")[1]]
 
         self.components += await fill_out(self.guild, component_button, [

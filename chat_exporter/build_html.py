@@ -24,14 +24,13 @@ async def fill_out(guild, base, replacements):
         if mode != PARSE_MODE_NONE:
             v = ParseMention(v, guild).flow()
         if mode == PARSE_MODE_MARKDOWN:
-            v = ParseMarkdown(v).standard_message_flow()
+            v = await ParseMarkdown(v).standard_message_flow()
         elif mode == PARSE_MODE_EMBED:
-            v = ParseMarkdown(v).standard_embed_flow()
+            v = await ParseMarkdown(v).standard_embed_flow()
         elif mode == PARSE_MODE_SPECIAL_EMBED:
-            v = ParseMarkdown(v).special_embed_flow()
+            v = await ParseMarkdown(v).special_embed_flow()
         elif mode == PARSE_MODE_REFERENCE:
-            v = ParseMarkdown(v).message_reference_flow()
-            pass
+            v = await ParseMarkdown(v).message_reference_flow()
 
         base = base.replace("{{" + k + "}}", v)
 

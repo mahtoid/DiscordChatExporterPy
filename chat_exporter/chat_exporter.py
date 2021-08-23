@@ -19,6 +19,7 @@ from chat_exporter.build_html import fill_out, start_message, bot_tag, message_r
     img_attachment, message_pin, message_thread
 from chat_exporter.parse_mention import pass_bot
 
+from chat_exporter.cache import clear_cache
 
 bot = None
 
@@ -150,6 +151,7 @@ class Transcript:
 
         await self.build_guild(message_html)
 
+        clear_cache()
         return self
 
     async def build_guild(self, message_html):
