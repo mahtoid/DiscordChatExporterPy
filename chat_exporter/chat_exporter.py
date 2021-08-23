@@ -225,11 +225,11 @@ class Message:
             return self.message_html
 
     async def build_pin(self):
-        await self.generate_message_divider(pinned=True)
+        await self.generate_message_divider(channel_audit=True)
         await self.build_pin_template()
 
     async def build_thread(self):
-        await self.generate_message_divider(pinned=True)
+        await self.generate_message_divider(channel_audit=True)
         await self.build_thread_template()
 
     async def build_message(self):
@@ -295,16 +295,19 @@ class Message:
 
         return self.message_html
 
-    async def generate_message_divider(self, pinned=False):
-        if pinned or \
-                self.previous_message is None or self.message.reference != "" or \
-                self.previous_message.author.id != self.message.author.id or \
-                self.message.created_at > (self.previous_message.created_at + timedelta(minutes=4)):
+    def _generate_message_divider_check(self):
+        return bool(
+            self.previous_message is None or self.message.reference != "" or
+            self.previous_message.author.id != self.message.author.id or self.message.webhook_id is not None or
+            self.message.created_at > (self.previous_message.created_at + timedelta(minutes=4))
+        )
 
+    async def generate_message_divider(self, channel_audit=False):
+        if channel_audit or self._generate_message_divider_check():
             if self.previous_message is not None:
                 self.message_html += await fill_out(self.guild, end_message, [])
 
-            if pinned:
+            if channel_audit:
                 return
 
             user_colour = self.user_colour_translate(self.message.author)
