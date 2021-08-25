@@ -70,16 +70,16 @@ async def convert(char):
     else:
         if len(char) == 1:
             return char
-        else:
-            shortcode = emoji.demojize(char, use_aliases=True)
-            name = shortcode.replace(":", "").replace("_", " ").replace("selector", "").title()
+
+        shortcode = emoji.demojize(char, use_aliases=True)
+        name = shortcode.replace(":", "").replace("_", " ").replace("selector", "").title()
 
     src = cdn_fmt.format(codepoint=await codepoint(["{cp:x}".format(cp=ord(c)) for c in char]))
 
     if await valid_src(src):
         return f'<img class="emoji emoji--small" src="{src}" alt="{char}" title="{name}" aria-label="Emoji: {name}">'
-    else:
-        return char
+
+    return char
 
 
 async def convert_emoji(string):

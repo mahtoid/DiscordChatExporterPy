@@ -59,7 +59,6 @@ class ParseMention:
         self.content = self.content.replace(self.ESCAPE_LT, "<")
         self.content = self.content.replace(self.ESCAPE_GT, ">")
         self.content = self.content.replace(self.ESCAPE_AMP, "&")
-        pass
 
     def channel_mention(self):
         holder = self.REGEX_CHANNELS, self.REGEX_CHANNELS_2

@@ -216,13 +216,13 @@ class Message:
             await self.build_pin()
             return self.message_html
 
-        elif "thread_created" in str(self.message.type) or self.message.type == 18:
+        if "thread_created" in str(self.message.type) or self.message.type == 18:
             await self.build_thread()
             return self.message_html
 
-        else:
-            await self.build_message()
-            return self.message_html
+
+        await self.build_message()
+        return self.message_html
 
     async def build_pin(self):
         await self.generate_message_divider(channel_audit=True)
@@ -419,8 +419,8 @@ class Message:
     def check_if_bot(message):
         if message.author.bot:
             return bot_tag
-        else:
-            return ""
+
+        return ""
 
     def user_colour_translate(self, author: discord.Member):
         try:
