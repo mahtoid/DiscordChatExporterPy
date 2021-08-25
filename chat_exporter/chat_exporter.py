@@ -163,7 +163,7 @@ class Transcript:
             guild_icon = self.guild.icon
 
         if not guild_icon or len(guild_icon) < 2:
-            guild_icon = "https://discord.com/assets/1f0bfc0865d324c2587920a7d80c609b.png"
+            guild_icon = "https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/discord-default.png"
 
         guild_name = html.escape(self.guild.name)
 
@@ -317,7 +317,7 @@ class Message:
             if hasattr(self.message.author, "avatar_url"):
                 avatar_url = str(self.message.author.avatar_url)
             else:
-                avatar_url = str(self.message.author.avatar)
+                avatar_url = str(self.message.author.display_avatar)
 
             self.message_html += await fill_out(self.guild, start_message, [
                 ("REFERENCE", self.message.reference, PARSE_MODE_NONE),
