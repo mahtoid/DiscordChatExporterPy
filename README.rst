@@ -113,7 +113,7 @@ Screenshots
 Links
 -----
 - `Wiki <https://github.com/mahtoid/DiscordChatExporterPy/wiki/>`_
-- `Discord Server <https://discord.gg/jeAdPaC>`_
+- `Discord Server <https://discord.gg/mq3hYaJSfa>`_
 
 Attributions
 ------------
