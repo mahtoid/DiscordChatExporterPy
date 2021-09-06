@@ -398,10 +398,10 @@ class Message:
             )
 
         # discordpy beta
-        if hasattr(self.message.author, "avatar_url"):
-            avatar_url = self.message.author.avatar_url
+        if hasattr(message.author, "avatar_url"):
+            avatar_url = message.author.avatar_url
         else:
-            avatar_url = self.message.author.avatar
+            avatar_url = message.author.avatar
 
         self.message.reference = await fill_out(self.guild, message_reference, [
             ("AVATAR_URL", str(avatar_url), PARSE_MODE_NONE),
