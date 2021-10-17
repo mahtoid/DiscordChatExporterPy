@@ -11,6 +11,7 @@ PARSE_MODE_MARKDOWN = 2
 PARSE_MODE_EMBED = 3
 PARSE_MODE_SPECIAL_EMBED = 4
 PARSE_MODE_REFERENCE = 5
+PARSE_MODE_EMOJI = 6
 
 
 async def fill_out(guild, base, replacements):
@@ -31,6 +32,8 @@ async def fill_out(guild, base, replacements):
             v = await ParseMarkdown(v).special_embed_flow()
         elif mode == PARSE_MODE_REFERENCE:
             v = await ParseMarkdown(v).message_reference_flow()
+        elif mode == PARSE_MODE_EMOJI:
+            v = await ParseMarkdown(v).special_emoji_flow()
 
         base = base.replace("{{" + k + "}}", v)
 
