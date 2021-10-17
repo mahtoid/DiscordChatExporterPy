@@ -44,6 +44,10 @@ class ParseMarkdown:
 
         return self.content
 
+    async def special_emoji_flow(self):
+        await self.parse_emoji()
+        return self.content
+
     def parse_br(self):
         self.content = self.content.replace("<br>", " ")
 
