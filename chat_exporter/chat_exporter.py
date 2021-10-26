@@ -32,9 +32,13 @@ def init_exporter(_bot):
 
 async def export(
     channel: discord.TextChannel,
+    guild: discord.Guild = None,
     limit: int = None,
-    set_timezone="Europe/London"
+    set_timezone="Europe/London",
 ):
+    if guild:
+        channel.guild = guild
+
     # noinspection PyBroadException
     try:
         return (await Transcript.export(channel, limit, set_timezone)).html
@@ -46,8 +50,12 @@ async def export(
 async def raw_export(
     channel: discord.TextChannel,
     messages: List[discord.Message],
+    guild: discord.Guild = None,
     set_timezone: str = "Europe/London"
 ):
+    if guild:
+        channel.guild = guild
+
     # noinspection PyBroadException
     try:
         return (await Transcript.raw_export(channel, messages, set_timezone)).html
@@ -56,10 +64,16 @@ async def raw_export(
         print(f"Please send a screenshot of the above error to https://www.github.com/mahtoid/DiscordChatExporterPy")
 
 
-async def quick_export(ctx):
+async def quick_export(
+    channel: discord.TextChannel,
+    guild: discord.Guild = None,
+):
+    if guild:
+        channel.guild = guild
+
     # noinspection PyBroadException
     try:
-        transcript = await Transcript.export(ctx.channel, None, "Europe/London")
+        transcript = await Transcript.export(channel, None, "Europe/London")
     except Exception:
         traceback.print_exc()
         error_embed = discord.Embed(
@@ -67,29 +81,28 @@ async def quick_export(ctx):
             description="Whoops! We've stumbled in to an issue here.",
             colour=discord.Colour.red()
         )
-        await ctx.channel.send(embed=error_embed)
+        await channel.send(embed=error_embed)
         print(f"Please send a screenshot of the above error to https://www.github.com/mahtoid/DiscordChatExporterPy")
         return
 
-    async for m in ctx.channel.history(limit=None):
+    async for m in channel.history(limit=None):
         try:
             for f in m.attachments:
-                if f"transcript-{ctx.channel.name}.html" in f.filename:
+                if f"transcript-{channel.name}.html" in f.filename:
                     await m.delete()
         except TypeError:
             continue
 
     # Save transcript
     transcript_embed = discord.Embed(
-        description=f"**Transcript Name:** transcript-{ctx.channel.name}\n\n"
-                    f"{ctx.author.mention} requested a transcript of the channel",
-        colour=discord.Colour.blurple()
+        description=f"**Transcript Name:** transcript-{channel.name}\n\n",
+        colour=discord.Colour.blurple(),
     )
 
     transcript_file = discord.File(io.BytesIO(transcript.html.encode()),
-                                   filename=f"transcript-{ctx.channel.name}.html")
+                                   filename=f"transcript-{channel.name}.html")
 
-    await ctx.send(embed=transcript_embed, file=transcript_file)
+    await channel.send(embed=transcript_embed, file=transcript_file)
 
 
 @dataclass
