@@ -49,12 +49,13 @@ Usage
     
     @bot.command()
     async def save(ctx):
-        await chat_exporter.quick_export(ctx)
+        await chat_exporter.quick_export(channel, guild)
     
     if __name__ == "__main__":
         bot.run("BOT_TOKEN_HERE")
 
-*Optional: If you want the transcript to display Members (Role) Colours then enable the Members Intent.*
+*Optional: If you want the transcript to display Members (Role) Colours then enable the Members Intent.
+Passing 'guild' is optional and is only necessary when using enhanced-dpy.*
 
 **Customisable Usage**
 
@@ -66,7 +67,7 @@ Usage
 
     @bot.command()
     async def save(ctx, limit: int, tz_info):
-        transcript = await chat_exporter.export(ctx.channel, limit, tz_info)
+        transcript = await chat_exporter.export(ctx.channel, guild, limit, tz_info)
 
         if transcript is None:
             return
@@ -77,7 +78,7 @@ Usage
         await ctx.send(file=transcript_file)
 
 *Optional: limit and tz_info are both optional, but can be used to limit the amount of messages transcribed or set a 'local' (pytz) timezone for
-the bot to transcribe message times to.*
+the bot to transcribe message times to. Passing 'guild' is optional and is only necessary when using enhanced-dpy.*
 
 **Raw Usage**
 
@@ -91,7 +92,7 @@ the bot to transcribe message times to.*
     async def purge(ctx, tz_info):
         deleted_messages = await ctx.channel.purge()
 
-        transcript = await chat_exporter.raw_export(ctx.channel, deleted_messages, tz_info)
+        transcript = await chat_exporter.raw_export(channel, guild, deleted_messages, tz_info)
 
         if transcript is None:
             return
@@ -101,7 +102,8 @@ the bot to transcribe message times to.*
 
         await ctx.send(file=transcript_file)
 
-*Optional: tz_info is optional, but can be used to set a 'local' (pytz) timezone for the bot to transcribe message times to.*
+*Optional: tz_info is optional, but can be used to set a 'local' (pytz) timezone for the bot to transcribe message times to.
+Passing 'guild' is optional and is only necessary when using enhanced-dpy.*
 
 Screenshots
 -----------
