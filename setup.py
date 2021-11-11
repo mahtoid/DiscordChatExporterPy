@@ -11,7 +11,7 @@ setup(
     long_description=long_description,
     url="https://github.com/mahtoid/DiscordChatExporterPy",
     packages=find_packages(),
-    package_data={'': [r'chat_exporter/chat_exporter_html/*.html']},
+    package_data={'': [r'chat_exporter/html/*.html']},
     include_package_data=True,
     license="GPL",
     install_requires=["discord.py", "aiohttp", "pytz", "grapheme", "emoji"],

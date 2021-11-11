@@ -1,10 +1,17 @@
 import discord
 
-from chat_exporter.emoji_convert import convert_emoji
-from chat_exporter.build_html import fill_out, component_button, PARSE_MODE_NONE, PARSE_MODE_MARKDOWN, PARSE_MODE_EMOJI
+from chat_exporter.ext.emoji_convert import convert_emoji
+from chat_exporter.ext.discord_utils import DiscordUtils
+from chat_exporter.ext.html_generator import (
+    fill_out,
+    component_button,
+    PARSE_MODE_NONE,
+    PARSE_MODE_MARKDOWN,
+    PARSE_MODE_EMOJI,
+)
 
 
-class BuildComponents:
+class Component:
     styles = {
         "primary": "#5865F2",
         "secondary": "grey",
@@ -29,17 +36,12 @@ class BuildComponents:
             await self.build_button(c)
 
     async def build_button(self, c):
-        icon = ""
         url = c.url if c.url else ""
         label = c.label if c.label else ""
-        emoji = await convert_emoji(str(c.emoji)) if c.emoji else ""
         style = self.styles[str(c.style).split(".")[1]]
+        icon = DiscordUtils.button_external_link if url else ""
+        emoji = await convert_emoji(str(c.emoji)) if c.emoji else ""
 
-        if url:
-            icon = (
-                ' <img class="chatlog__reference-icon" '
-                'src="https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/discord-external-link.svg"> '
-            )
         self.components += await fill_out(self.guild, component_button, [
             ("URL", str(url), PARSE_MODE_NONE),
             ("LABEL", str(label), PARSE_MODE_MARKDOWN),

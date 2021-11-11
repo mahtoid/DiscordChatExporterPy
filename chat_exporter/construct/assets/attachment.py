@@ -1,6 +1,7 @@
 import math
 
-from chat_exporter.build_html import (
+from chat_exporter.ext.discord_utils import DiscordUtils
+from chat_exporter.ext.html_generator import (
     fill_out,
     img_attachment,
     msg_attachment,
@@ -10,7 +11,7 @@ from chat_exporter.build_html import (
 )
 
 
-class BuildAttachment:
+class Attachment:
     def __init__(self, attachments, guild):
         self.attachments = attachments
         self.guild = guild
@@ -41,7 +42,7 @@ class BuildAttachment:
         ])
 
     async def audio(self):
-        file_icon = "https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/discord-audio.svg"
+        file_icon = DiscordUtils.file_attachment_audio
         file_size = self.get_file_size(self.attachments.size)
 
         self.attachments = await fill_out(self.guild, audio_attachment, [
@@ -89,14 +90,14 @@ class BuildAttachment:
 
         extension = self.attachments.url.rsplit('.', 1)[1]
         if extension in acrobat_types:
-            return "https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/discord-acrobat.svg"
+            return DiscordUtils.file_attachment_acrobat
         elif extension in webcode_types:
-            return "https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/discord-webcode.svg"
+            return DiscordUtils.file_attachment_webcode
         elif extension in code_types:
-            return "https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/discord-code.svg"
+            return DiscordUtils.file_attachment_code
         elif extension in document_types:
-            return "https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/discord-document.svg"
+            return DiscordUtils.file_attachment_document
         elif extension in archive_types:
-            return "https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/discord-archive.svg"
+            return DiscordUtils.file_attachment_archive
         else:
-            return "https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/discord-unknown.svg"
+            return DiscordUtils.file_attachment_unknown
