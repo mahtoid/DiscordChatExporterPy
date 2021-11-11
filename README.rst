@@ -64,20 +64,26 @@ Usage
 
     @bot.command()
     async def save(ctx: commands.Context, limit: int, tz_info):
-        transcript = await chat_exporter.export(ctx.channel, limit=limit, tz_info=tz_info)
+        transcript = await chat_exporter.export(
+            ctx.channel,
+            limit=limit,
+            tz_info=tz_info,
+        )
 
         if transcript is None:
             return
 
-         transcript_file = discord.File(io.BytesIO(transcript.encode()),
-                                        filename=f"transcript-{ctx.channel.name}.html")
+        transcript_file = discord.File(
+            io.BytesIO(transcript.encode()),
+            filename=f"transcript-{ctx.channel.name}.html",
+        )
 
         await ctx.send(file=transcript_file)
 
 | *Optional: limit and tz_info are both optional.*
 |     *'limit' is to set the amount of messages to acquire from the history.*
 |     *'tz_info' is to set your own custom timezone.*
-| 
+
 **Raw Usage**
 
 .. code:: py
@@ -90,13 +96,19 @@ Usage
     async def purge(ctx: commands.Context, tz_info):
         deleted_messages = await ctx.channel.purge()
 
-        transcript = await chat_exporter.raw_export(ctx.channel, messages=deleted_messages, tz_info=tz_info)
+        transcript = await chat_exporter.raw_export(
+            ctx.channel,
+            messages=deleted_messages,
+            tz_info=tz_info,
+        )
 
         if transcript is None:
             return
 
-         transcript_file = discord.File(io.BytesIO(transcript.encode()),
-                                        filename=f"transcript-{ctx.channel.name}.html")
+        transcript_file = discord.File(
+            io.BytesIO(transcript.encode()),
+            filename=f"transcript-{ctx.channel.name}.html",
+        )
 
         await ctx.send(file=transcript_file)
 
