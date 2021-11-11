@@ -36,9 +36,9 @@ async def quick_export(
 
 async def export(
     channel: discord.TextChannel,
-    guild: Optional[discord.Guild],
     limit: Optional[int] = None,
-    tz_info="UTC"
+    tz_info="UTC",
+    guild: Optional[discord.Guild] = None,
 ):
     if guild:
         channel.guild = guild
@@ -55,9 +55,9 @@ async def export(
 
 async def raw_export(
     channel: discord.TextChannel,
-    guild: Optional[discord.Guild],
     messages: List[discord.Message],
     tz_info="UTC",
+    guild: Optional[discord.Guild] = None,
 ):
     if guild:
         channel.guild = guild
