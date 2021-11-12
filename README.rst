@@ -83,7 +83,7 @@ Usage
 | *Optional: limit and tz_info are both optional.*
 |     *'limit' is to set the amount of messages to acquire from the history.*
 |     *'tz_info' is to set your own custom timezone.*
-
+| 
 **Raw Usage**
 
 .. code:: py
