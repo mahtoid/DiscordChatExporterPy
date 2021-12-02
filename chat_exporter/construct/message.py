@@ -272,6 +272,12 @@ class Message:
         previous_message: Optional[discord.Message] = None
 
         for message in self.messages:
-            message_html += await MessageConstruct(message, previous_message, self.pytz_timezone, self.guild).construct_message()
+            message_html += await MessageConstruct(
+                message,
+                previous_message,
+                self.pytz_timezone,
+                self.guild
+            ).construct_message()
+
             previous_message = message
         return message_html

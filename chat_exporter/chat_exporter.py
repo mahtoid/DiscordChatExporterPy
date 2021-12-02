@@ -8,7 +8,7 @@ from chat_exporter.construct.transcript import Transcript
 
 async def quick_export(
     channel: discord.TextChannel,
-    guild: Optional[discord.Guild],
+    guild: Optional[discord.Guild] = None,
 ):
     if guild:
         channel.guild = guild
@@ -30,7 +30,7 @@ async def quick_export(
         colour=discord.Colour.blurple()
     )
 
-    transcript_file = discord.File(io.BytesIO(transcript.html.encode()), filename=f"transcript-{channel.name}.html")
+    transcript_file = discord.File(io.BytesIO(transcript.encode()), filename=f"transcript-{channel.name}.html")
     await channel.send(embed=transcript_embed, file=transcript_file)
 
 
