@@ -11,8 +11,6 @@ DiscordChatExporterPy
 
 DiscordChatExporterPy is a Python lib for your discord.py (or forks) bot, allowing you to export Discord channel history in to a HTML file.
 
-**NOTE: If you are using discord.py 1.7.3, please use chat-exporter v1.7.2**
-
 Installing
 ----------
 To install the library to your bot, run the command:
@@ -26,6 +24,8 @@ To install the repository, run the command:
 .. code:: sh
 
     git clone https://github.com/mahtoid/DiscordChatExporterPy
+
+**NOTE: If you are using discord.py 1.7.3, please use chat-exporter v1.7.2**
 
 Usage
 -----
