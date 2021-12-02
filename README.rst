@@ -9,7 +9,9 @@ DiscordChatExporterPy
 
 .. |language| image:: https://img.shields.io/github/languages/top/mahtoid/discordchatexporterpy
 
-DiscordChatExporterPy is a Python plugin for your discord.py bot, allowing you to export a discord channels history within a guild.
+DiscordChatExporterPy is a Python lib for your discord.py (or forks) bot, allowing you to export Discord channel history in to a HTML file.
+
+**NOTE: If you are using discord.py 1.7.3, please use chat-exporter v1.7.2**
 
 Installing
 ----------
