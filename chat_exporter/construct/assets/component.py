@@ -1,4 +1,4 @@
-import discord
+from chat_exporter.ext.discord_import import discord
 
 from chat_exporter.ext.emoji_convert import convert_emoji
 from chat_exporter.ext.discord_utils import DiscordUtils

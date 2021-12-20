@@ -1,9 +1,8 @@
 import io
 from typing import List, Optional
 
-import discord
-
 from chat_exporter.construct.transcript import Transcript
+from chat_exporter.ext.discord_import import discord
 
 
 async def quick_export(

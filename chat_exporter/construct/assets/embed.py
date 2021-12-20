@@ -1,4 +1,4 @@
-import discord
+from chat_exporter.ext.discord_import import discord
 
 from chat_exporter.ext.html_generator import (
     fill_out,

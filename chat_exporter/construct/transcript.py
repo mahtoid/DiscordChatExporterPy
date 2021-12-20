@@ -3,7 +3,7 @@ import traceback
 
 from typing import List, Optional
 
-import discord
+from chat_exporter.ext.discord_import import discord
 
 from chat_exporter.construct.message import Message
 from chat_exporter.ext.cache import clear_cache

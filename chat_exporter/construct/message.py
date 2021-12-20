@@ -4,7 +4,7 @@ from typing import List, Optional
 from pytz import timezone
 from datetime import timedelta
 
-import discord
+from chat_exporter.ext.discord_import import discord
 
 from chat_exporter.construct.assets import Attachment, Component, Embed, Reaction
 from chat_exporter.ext.discord_utils import DiscordUtils
@@ -237,7 +237,11 @@ class MessageConstruct:
     async def _gather_user_colour(self, author: discord.Member):
         member = self.guild.get_member(author.id)
         if not member:
-            member = await self.guild.fetch_member(author.id)
+            try:
+                member = await self.guild.fetch_member(author.id)
+            except Exception:
+                # This is disgusting, but has to be done for NextCord
+                member = None
         user_colour = member.colour if member and str(member.colour) != "#000000" else "#FFFFFF"
         return f"color: {user_colour};"
 
