@@ -23,7 +23,7 @@ class TranscriptDAO:
     ):
         self.channel = channel
         self.messages = messages
-        self.limit = limit
+        self.limit = int(limit) if limit else None
         self.pytz_timezone = pytz_timezone
 
     async def build_transcript(self):

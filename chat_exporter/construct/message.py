@@ -88,7 +88,7 @@ class MessageConstruct:
             return
 
         if self.message_edited_at:
-            self.message_edited_at = _set_edit_at
+            self.message_edited_at = _set_edit_at(self.message_edited_at)
 
         self.message.content = await fill_out(self.guild, message_content, [
             ("MESSAGE_CONTENT", self.message.content, PARSE_MODE_MARKDOWN),
