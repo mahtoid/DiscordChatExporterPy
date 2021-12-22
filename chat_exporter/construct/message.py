@@ -109,7 +109,7 @@ class MessageConstruct:
             return
 
         is_bot = _gather_user_bot(message.author)
-        user_colour = self._gather_user_colour(message.author)
+        user_colour = await self._gather_user_colour(message.author)
 
         if not message.content:
             message.content = "Click to see attachment"
@@ -121,8 +121,10 @@ class MessageConstruct:
         if message_edited_at:
             message_edited_at = _set_edit_at(message_edited_at)
 
+        avatar_url = self.message.author.avatar if self.message.author.avatar else DiscordUtils.default_avatar
+
         self.message.reference = await fill_out(self.guild, message_reference, [
-            ("AVATAR_URL", str(message.author.avatar_url), PARSE_MODE_NONE),
+            ("AVATAR_URL", str(avatar_url), PARSE_MODE_NONE),
             ("BOT_TAG", is_bot, PARSE_MODE_NONE),
             ("NAME_TAG", "%s#%s" % (message.author.name, message.author.discriminator), PARSE_MODE_NONE),
             ("NAME", str(html.escape(message.author.display_name))),
@@ -216,7 +218,7 @@ class MessageConstruct:
     async def build_pin_template(self):
         self.message_html += await fill_out(self.guild, message_pin, [
             ("PIN_URL", DiscordUtils.pinned_message_icon, PARSE_MODE_NONE),
-            ("USER_COLOUR", self._gather_user_colour(self.message.author)),
+            ("USER_COLOUR", await self._gather_user_colour(self.message.author)),
             ("NAME", str(html.escape(self.message.author.display_name))),
             ("NAME_TAG", "%s#%s" % (self.message.author.name, self.message.author.discriminator), PARSE_MODE_NONE),
             ("MESSAGE_ID", str(self.message.id), PARSE_MODE_NONE),
@@ -228,7 +230,7 @@ class MessageConstruct:
             ("THREAD_URL", DiscordUtils.thread_channel_icon,
              PARSE_MODE_NONE),
             ("THREAD_NAME", self.message.content, PARSE_MODE_NONE),
-            ("USER_COLOUR", self._gather_user_colour(self.message.author)),
+            ("USER_COLOUR", await self._gather_user_colour(self.message.author)),
             ("NAME", str(html.escape(self.message.author.display_name))),
             ("NAME_TAG", "%s#%s" % (self.message.author.name, self.message.author.discriminator), PARSE_MODE_NONE),
             ("MESSAGE_ID", str(self.message.id), PARSE_MODE_NONE),
