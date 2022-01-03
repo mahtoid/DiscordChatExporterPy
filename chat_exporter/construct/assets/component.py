@@ -7,7 +7,6 @@ from chat_exporter.ext.html_generator import (
     component_button,
     PARSE_MODE_NONE,
     PARSE_MODE_MARKDOWN,
-    PARSE_MODE_EMOJI,
 )
 
 
@@ -45,7 +44,7 @@ class Component:
         self.components += await fill_out(self.guild, component_button, [
             ("URL", str(url), PARSE_MODE_NONE),
             ("LABEL", str(label), PARSE_MODE_MARKDOWN),
-            ("EMOJI", str(emoji), PARSE_MODE_EMOJI),
+            ("EMOJI", str(emoji), PARSE_MODE_NONE),
             ("ICON", str(icon), PARSE_MODE_NONE),
             ("STYLE", style, PARSE_MODE_NONE)
         ])
