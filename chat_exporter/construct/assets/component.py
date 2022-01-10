@@ -7,7 +7,9 @@ from chat_exporter.ext.html_generator import (
     component_button,
     component_menu,
     component_menu_options,
+    component_menu_options_emoji,
     PARSE_MODE_NONE,
+    PARSE_MODE_EMOJI,
     PARSE_MODE_MARKDOWN,
 )
 
@@ -70,10 +72,18 @@ class Component:
     async def build_menu_options(self, options):
         content = []
         for option in options:
-            content.append(await fill_out(self.guild, component_menu_options, [
-                ("TITLE", str(option.label), PARSE_MODE_MARKDOWN),
-                ("DESCRIPTION", str(option.description) if option.description else "", PARSE_MODE_MARKDOWN)
-            ]))
+            if option.emoji:
+                content.append(await fill_out(self.guild, component_menu_options_emoji, [
+                    ("EMOJI", str(option.emoji), PARSE_MODE_EMOJI),
+                    ("TITLE", str(option.label), PARSE_MODE_MARKDOWN),
+                    ("DESCRIPTION", str(option.description) if option.description else "", PARSE_MODE_MARKDOWN)
+                ]))
+            else:
+                content.append(await fill_out(self.guild, component_menu_options, [
+                    ("TITLE", str(option.label), PARSE_MODE_MARKDOWN),
+                    ("DESCRIPTION", str(option.description) if option.description else "", PARSE_MODE_MARKDOWN)
+                ]))
+
 
         if content:
             content = f'<div id="dropdownMenu{self.menu_div_id}" class="dropdownContent">{"".join(content)}</div>'
