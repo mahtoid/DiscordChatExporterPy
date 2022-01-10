@@ -11,3 +11,4 @@ class DiscordUtils:
     file_attachment_unknown: str = 'https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/discord-unknown.svg'
     button_external_link: str = '<img class="chatlog__reference-icon" src="https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/discord-external-link.svg">'
     reference_attachment_icon: str = '<img class="chatlog__reference-icon" src="https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/discord-attachment.svg">'
+    interaction_dropdown_icon: str = '<img class="chatlog__dropdown-icon" src="https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/discord-dropdown.svg">'

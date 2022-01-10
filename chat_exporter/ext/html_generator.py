@@ -59,6 +59,8 @@ end_message = read_file(dir_path + "/html/message/end.html")
 
 # COMPONENTS
 component_button = read_file(dir_path + "/html/component/component_button.html")
+component_menu = read_file(dir_path + "/html/component/component_menu.html")
+component_menu_options = read_file(dir_path + "/html/component/component_menu_options.html")
 
 # EMBED
 embed_body = read_file(dir_path + "/html/embed/body.html")
