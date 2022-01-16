@@ -50,6 +50,7 @@ class Component:
         emoji = await convert_emoji(str(c.emoji)) if c.emoji else ""
 
         self.components += await fill_out(self.guild, component_button, [
+            ("DISABLED", "chatlog__component-disabled" if c.disabled else "", PARSE_MODE_NONE),
             ("URL", str(url), PARSE_MODE_NONE),
             ("LABEL", str(label), PARSE_MODE_MARKDOWN),
             ("EMOJI", str(emoji), PARSE_MODE_NONE),
@@ -60,9 +61,13 @@ class Component:
     async def build_menu(self, c):
         placeholder = c.placeholder if c.placeholder else ""
         options = c.options
-        content = await self.build_menu_options(options)
+        content = ""
+
+        if not c.disabled:
+            content = await self.build_menu_options(options)
 
         self.components += await fill_out(self.guild, component_menu, [
+            ("DISABLED", "chatlog__component-disabled" if c.disabled else "", PARSE_MODE_NONE),
             ("ID", str(self.menu_div_id), PARSE_MODE_NONE),
             ("PLACEHOLDER", str(placeholder), PARSE_MODE_MARKDOWN),
             ("CONTENT", str(content), PARSE_MODE_NONE),
@@ -83,7 +88,6 @@ class Component:
                     ("TITLE", str(option.label), PARSE_MODE_MARKDOWN),
                     ("DESCRIPTION", str(option.description) if option.description else "", PARSE_MODE_MARKDOWN)
                 ]))
-
 
         if content:
             content = f'<div id="dropdownMenu{self.menu_div_id}" class="dropdownContent">{"".join(content)}</div>'
