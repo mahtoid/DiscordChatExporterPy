@@ -30,6 +30,8 @@
 # Github: https://github.com/glasnt/emojificate                                  #
 ##################################################################################
 import unicodedata
+
+import requests.exceptions
 from grapheme import graphemes
 import emoji
 import aiohttp
@@ -46,7 +48,7 @@ async def valid_src(src):
         async with aiohttp.ClientSession() as session:
             async with session.get(src) as resp:
                 return resp.status == 200
-    except aiohttp.ClientConnectorError:
+    except (aiohttp.ClientConnectorError, requests.exceptions.SSLError):
         return False
 
 
