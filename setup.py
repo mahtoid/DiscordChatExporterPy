@@ -7,6 +7,7 @@ setup(
     name="chat_exporter",
     version="2.0",
     author="mahtoid",
+    author_email="info@mahto.id",
     description="A simple Discord chat exporter for Python Discord bots.",
     long_description=long_description,
     url="https://github.com/mahtoid/DiscordChatExporterPy",

@@ -1,4 +1,3 @@
 include README.rst
 include LICENSE
 recursive-include chat_exporter/html *.html
-recursive-include *.py
