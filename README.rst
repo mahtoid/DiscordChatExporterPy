@@ -9,7 +9,7 @@ DiscordChatExporterPy
 
 .. |language| image:: https://img.shields.io/github/languages/top/mahtoid/discordchatexporterpy
 
-DiscordChatExporterPy is a Python plugin for your discord.py bot, allowing you to export a discord channels history within a guild.
+DiscordChatExporterPy is a Python lib for your discord.py (or forks) bot, allowing you to export Discord channel history in to a HTML file.
 
 Installing
 ----------
@@ -24,6 +24,8 @@ To install the repository, run the command:
 .. code:: sh
 
     git clone https://github.com/mahtoid/DiscordChatExporterPy
+
+**NOTE: If you are using discord.py 1.7.3, please use chat-exporter v1.7.3**
 
 Usage
 -----
@@ -44,18 +46,15 @@ Usage
     @bot.event
     async def on_ready():
         print("Live: " + bot.user.name)
-        chat_exporter.init_exporter(bot)
     
     
     @bot.command()
-    async def save(ctx):
-        await chat_exporter.quick_export(channel, guild)
+    async def save(ctx: commands.Context):
+        await chat_exporter.quick_export(ctx.channel)
     
     if __name__ == "__main__":
         bot.run("BOT_TOKEN_HERE")
 
-*Optional: If you want the transcript to display Members (Role) Colours then enable the Members Intent.
-Passing 'guild' is optional and is only necessary when using enhanced-dpy.*
 
 **Customisable Usage**
 
@@ -66,20 +65,27 @@ Passing 'guild' is optional and is only necessary when using enhanced-dpy.*
     ...
 
     @bot.command()
-    async def save(ctx, limit: int, tz_info):
-        transcript = await chat_exporter.export(ctx.channel, guild, limit, tz_info)
+    async def save(ctx: commands.Context, limit: int, tz_info):
+        transcript = await chat_exporter.export(
+            ctx.channel,
+            limit=limit,
+            tz_info=tz_info,
+        )
 
         if transcript is None:
             return
 
-         transcript_file = discord.File(io.BytesIO(transcript.encode()),
-                                        filename=f"transcript-{ctx.channel.name}.html")
+        transcript_file = discord.File(
+            io.BytesIO(transcript.encode()),
+            filename=f"transcript-{ctx.channel.name}.html",
+        )
 
         await ctx.send(file=transcript_file)
 
-*Optional: limit and tz_info are both optional, but can be used to limit the amount of messages transcribed or set a 'local' (pytz) timezone for
-the bot to transcribe message times to. Passing 'guild' is optional and is only necessary when using enhanced-dpy.*
-
+| *Optional: limit and tz_info are both optional.*
+|     *'limit' is to set the amount of messages to acquire from the history.*
+|     *'tz_info' is to set your own custom timezone.*
+| 
 **Raw Usage**
 
 .. code:: py
@@ -89,21 +95,27 @@ the bot to transcribe message times to. Passing 'guild' is optional and is only 
     ...
 
     @bot.command()
-    async def purge(ctx, tz_info):
+    async def purge(ctx: commands.Context, tz_info):
         deleted_messages = await ctx.channel.purge()
 
-        transcript = await chat_exporter.raw_export(channel, guild, deleted_messages, tz_info)
+        transcript = await chat_exporter.raw_export(
+            ctx.channel,
+            messages=deleted_messages,
+            tz_info=tz_info,
+        )
 
         if transcript is None:
             return
 
-         transcript_file = discord.File(io.BytesIO(transcript.encode()),
-                                        filename=f"transcript-{ctx.channel.name}.html")
+        transcript_file = discord.File(
+            io.BytesIO(transcript.encode()),
+            filename=f"transcript-{ctx.channel.name}.html",
+        )
 
         await ctx.send(file=transcript_file)
 
-*Optional: tz_info is optional, but can be used to set a 'local' (pytz) timezone for the bot to transcribe message times to.
-Passing 'guild' is optional and is only necessary when using enhanced-dpy.*
+| *Optional: tz_info is optional.*
+|     *'tz_info' is to set your own custom timezone.*
 
 Screenshots
 -----------

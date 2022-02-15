@@ -1,15 +1,4 @@
 import re
-from typing import Optional
-
-import discord
-
-
-bot: Optional[discord.Client] = None
-
-
-def pass_bot(_bot):
-    global bot
-    bot = _bot
 
 
 class ParseMention:
@@ -108,7 +97,7 @@ class ParseMention:
 
                 member = None
                 try:
-                    member = self.guild.get_member(member_id) or bot.get_user(member_id)
+                    member = self.guild.get_member(member_id)
                     member_name = member.display_name
                 except AttributeError:
                     member_name = member
