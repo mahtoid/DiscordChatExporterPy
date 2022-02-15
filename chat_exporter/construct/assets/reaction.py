@@ -1,10 +1,10 @@
 import re
 
-from chat_exporter.emoji_convert import convert_emoji
-from chat_exporter.build_html import fill_out, emoji, custom_emoji, PARSE_MODE_NONE
+from chat_exporter.ext.emoji_convert import convert_emoji
+from chat_exporter.ext.html_generator import fill_out, emoji, custom_emoji, PARSE_MODE_NONE
 
 
-class BuildReaction:
+class Reaction:
     def __init__(self, reaction, guild):
         self.reaction = reaction
         self.guild = guild
