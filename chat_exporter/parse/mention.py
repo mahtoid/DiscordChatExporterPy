@@ -1,4 +1,16 @@
 import re
+from typing import Optional
+
+from chat_exporter.ext.discord_import import discord
+
+bot: Optional[discord.Client] = None
+
+
+def pass_bot(_bot):
+    # Bot is used to fetch a user who is no longer inside a guild
+    # This will stop the user from appearing as 'Unknown' which some people do not want
+    global bot
+    bot = _bot
 
 
 class ParseMention:
@@ -97,7 +109,7 @@ class ParseMention:
 
                 member = None
                 try:
-                    member = self.guild.get_member(member_id)
+                    member = self.guild.get_member(member_id) or bot.get_user(member_id)
                     member_name = member.display_name
                 except AttributeError:
                     member_name = member
