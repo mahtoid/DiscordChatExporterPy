@@ -25,7 +25,20 @@ To install the repository, run the command:
 
     git clone https://github.com/mahtoid/DiscordChatExporterPy
 
-**NOTE: If you are using discord.py 1.7.3, please use chat-exporter v1.7.3**
+**Important**
+
+You can check your version of discord.py with this command:
+
+.. code:: sh
+
+    python -c 'import discord; print(discord.__version__)'
+    
+If you are using discord.py 1.7.3, please use chat-exporter 1.7.3. To install this version, run these commands:
+ 
+.. code:: sh
+ 
+    pip uninstall -y chat-exporter
+    pip install chat-exporter==1.7.3
 
 Usage
 -----
