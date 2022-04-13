@@ -114,12 +114,8 @@ class ParseMention:
                 except AttributeError:
                     member_name = member
 
-                if member is not None:
-                    replacement = '<span class="mention" title="%s">@%s</span>' \
-                                  % (str(member_id), str(member_name))
-                else:
-                    replacement = '<span class="mention" title="%s">@Unknown</span>' \
-                                  % (str(member_id))
+                replacement = '<span class="mention" title="%s">@%s</span>' \
+                              % (str(member_id), str(member_name))
                 self.content = self.content.replace(self.content[match.start():match.end()],
                                                     replacement)
 
