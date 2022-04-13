@@ -118,7 +118,8 @@ class ParseMention:
                     replacement = '<span class="mention" title="%s">@%s</span>' \
                                   % (str(member_id), str(member_name))
                 else:
-                    replacement = '<span class="mention" title="Unknown">@Unknown</span>'
+                    replacement = '<span class="mention" title="%s">@Unknown</span>' \
+                                  % (str(member_id))
                 self.content = self.content.replace(self.content[match.start():match.end()],
                                                     replacement)
 
