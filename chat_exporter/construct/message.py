@@ -48,11 +48,13 @@ class MessageConstruct:
         message: discord.Message,
         previous_message: Optional[discord.Message],
         pytz_timezone,
+        military_time: bool,
         guild: discord.Guild,
     ):
         self.message = message
         self.previous_message = previous_message
         self.pytz_timezone = pytz_timezone
+        self.military_time = military_time
         self.guild = guild
         self.message_created_at, self.message_edited_at = self.set_time()
 
@@ -121,7 +123,7 @@ class MessageConstruct:
         if message_edited_at:
             message_edited_at = _set_edit_at(message_edited_at)
 
-        avatar_url = self.message.author.avatar if self.message.author.avatar else DiscordUtils.default_avatar
+        avatar_url = message.author.avatar if message.author.avatar else DiscordUtils.default_avatar
 
         self.message.reference = await fill_out(self.guild, message_reference, [
             ("AVATAR_URL", str(avatar_url), PARSE_MODE_NONE),
@@ -168,9 +170,6 @@ class MessageConstruct:
         if self.reactions:
             self.reactions = f'<div class="chatlog__reactions">{self.reactions}</div>'
 
-        if self.components:
-            self.components = f'<div class="chatlog__components">{self.components}</div>'
-
     async def build_message_template(self):
         await self.generate_message_divider()
 
@@ -200,7 +199,6 @@ class MessageConstruct:
             if channel_audit:
                 return
 
-            user_colour = await self._gather_user_colour(self.message.author)
             is_bot = _gather_user_bot(self.message.author)
             avatar_url = self.message.author.avatar if self.message.author.avatar else DiscordUtils.default_avatar
 
@@ -209,7 +207,8 @@ class MessageConstruct:
                 ("AVATAR_URL", str(avatar_url), PARSE_MODE_NONE),
                 ("NAME_TAG", "%s#%s" % (self.message.author.name, self.message.author.discriminator), PARSE_MODE_NONE),
                 ("USER_ID", str(self.message.author.id)),
-                ("USER_COLOUR", str(user_colour)),
+                ("USER_COLOUR", await self._gather_user_colour(self.message.author)),
+                ("USER_ICON", await self._gather_user_icon(self.message.author), PARSE_MODE_NONE),
                 ("NAME", str(html.escape(self.message.author.display_name))),
                 ("BOT_TAG", str(is_bot), PARSE_MODE_NONE),
                 ("TIMESTAMP", str(self.message_created_at)),
@@ -236,16 +235,28 @@ class MessageConstruct:
             ("MESSAGE_ID", str(self.message.id), PARSE_MODE_NONE),
         ])
 
-    async def _gather_user_colour(self, author: discord.Member):
+    async def _gather_member(self, author: discord.Member):
         member = self.guild.get_member(author.id)
-        if not member:
-            try:
-                member = await self.guild.fetch_member(author.id)
-            except Exception:
-                # This is disgusting, but has to be done for NextCord
-                member = None
+
+        if member:
+            return member
+
+        try:
+            return await self.guild.fetch_member(author.id)
+        except Exception:
+            return None
+
+    async def _gather_user_colour(self, author: discord.Member):
+        member = await self._gather_member(author)
         user_colour = member.colour if member and str(member.colour) != "#000000" else "#FFFFFF"
         return f"color: {user_colour};"
+
+    async def _gather_user_icon(self, author: discord.Member):
+        member = await self._gather_member(author)
+
+        if member and member.display_icon:
+            return f"<img class='chatlog__role-icon' src='{member.display_icon}' alt='Role Icon'>"
+        return ""
 
     def set_time(self, message: Optional[discord.Message] = None):
         message = message if message else self.message
@@ -259,6 +270,10 @@ class MessageConstruct:
             time = timezone("UTC").localize(time)
 
         local_time = time.astimezone(timezone(self.pytz_timezone))
+
+        if self.military_time:
+            return local_time.strftime("%b %d, %Y %H:%M")
+
         return local_time.strftime("%b %d, %Y %I:%M %p")
 
 
@@ -268,10 +283,12 @@ class Message:
         messages: List[discord.Message],
         guild: discord.Guild,
         pytz_timezone,
+        military_time,
     ):
         self.messages = messages
         self.guild = guild
         self.pytz_timezone = pytz_timezone
+        self.military_time = military_time
 
     async def gather(self) -> str:
         message_html: str = ""
@@ -282,6 +299,7 @@ class Message:
                 message,
                 previous_message,
                 self.pytz_timezone,
+                self.military_time,
                 self.guild
             ).construct_message()
 

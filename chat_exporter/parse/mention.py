@@ -74,7 +74,7 @@ class ParseMention:
                     replacement = '#deleted-channel'
                 else:
                     replacement = '<span class="mention" title="%s">#%s</span>' \
-                                  % (channel.name, channel.name)
+                                  % (channel.id, channel.name)
                 self.content = self.content.replace(self.content[match.start():match.end()], replacement)
 
                 match = re.search(regex, self.content)
@@ -118,7 +118,8 @@ class ParseMention:
                     replacement = '<span class="mention" title="%s">@%s</span>' \
                                   % (str(member_id), str(member_name))
                 else:
-                    replacement = '<span class="mention" title="Unknown">@Unknown</span>'
+                    replacement = '<span class="mention" title="%s">&lt;@%s></span>' \
+                                  % (str(member_id), str(member_id))
                 self.content = self.content.replace(self.content[match.start():match.end()],
                                                     replacement)
 

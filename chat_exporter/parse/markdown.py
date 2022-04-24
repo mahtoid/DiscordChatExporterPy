@@ -1,3 +1,4 @@
+import html
 import re
 from chat_exporter.ext.emoji_convert import convert_emoji
 
@@ -135,7 +136,7 @@ class ParseMarkdown:
 
             for language in markdown_languages:
                 if affected_text.lower().startswith(language):
-                    language_class = "language=" + language
+                    language_class = f"language-{language}"
                     _, _, affected_text = affected_text.partition('<br>')
 
             affected_text = self.return_to_markdown(affected_text)
@@ -246,9 +247,14 @@ class ParseMarkdown:
                                           '%s' % affected_url)
             match = re.search(pattern, content)
 
-        return content
+        return content.lstrip().rstrip()
 
     def https_http_links(self):
+        def remove_silent_link(url):
+            if url.startswith("<<") and url.endswith(">>"):
+                return url[1:-1]
+            return url
+
         content = re.sub("\n", "<br>", self.content)
         output = []
         if "http://" in content or "https://" in content and "](" not in content:
@@ -259,23 +265,23 @@ class ParseMarkdown:
                     url = f'<a href="{url}">{url}</a>'
                     output.append(url)
                 elif "https://" in word:
-                    pattern = r"https://[^\s<*]*"
+                    pattern = r"https://[^\s>\"*]*"
                     word_link = re.search(pattern, word).group()
                     if word_link.endswith(")"):
                         output.append(word)
                         continue
                     word_full = f'<a href="{word_link}">{word_link}</a>'
                     word = re.sub(pattern, word_full, word)
-                    output.append(word)
+                    output.append(remove_silent_link(word))
                 elif "http://" in word:
-                    pattern = r"http://[^\s<*]*"
+                    pattern = r"http://[^\s>\"*]*"
                     word_link = re.search(pattern, word).group()
                     if word_link.endswith(")"):
                         output.append(word)
                         continue
                     word_full = f'<a href="{word_link}">{word_link}</a>'
                     word = re.sub(pattern, word_full, word)
-                    output.append(word)
+                    output.append(remove_silent_link(word))
                 else:
                     output.append(word)
             content = " ".join(output)

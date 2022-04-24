@@ -19,6 +19,7 @@ async def quick_export(
             limit=None,
             messages=None,
             pytz_timezone="UTC",
+            military_time=False,
             bot=bot,
             ).export()
         ).html
@@ -32,7 +33,7 @@ async def quick_export(
     )
 
     transcript_file = discord.File(io.BytesIO(transcript.encode()), filename=f"transcript-{channel.name}.html")
-    await channel.send(embed=transcript_embed, file=transcript_file)
+    return await channel.send(embed=transcript_embed, file=transcript_file)
 
 
 async def export(
@@ -41,6 +42,7 @@ async def export(
     tz_info="UTC",
     guild: Optional[discord.Guild] = None,
     bot: Optional[discord.Client] = None,
+    military_time: Optional[bool] = False,
 ):
     if guild:
         channel.guild = guild
@@ -51,6 +53,7 @@ async def export(
             limit=limit,
             messages=None,
             pytz_timezone=tz_info,
+            military_time=military_time,
             bot=bot,
         ).export()
     ).html
@@ -62,6 +65,7 @@ async def raw_export(
     tz_info="UTC",
     guild: Optional[discord.Guild] = None,
     bot: Optional[discord.Client] = None,
+    military_time: Optional[bool] = False,
 ):
     if guild:
         channel.guild = guild
@@ -72,6 +76,28 @@ async def raw_export(
             limit=None,
             messages=messages,
             pytz_timezone=tz_info,
+            military_time=military_time,
             bot=bot,
         ).export()
     ).html
+
+
+async def quick_link(
+    channel: discord.TextChannel,
+    message: discord.Message
+):
+    embed = discord.Embed(
+        title="Transcript Link",
+        description=(
+            f"[Click here to view the transcript](https://mahto.id/chat-exporter?url={message.attachments[0].url})"
+        ),
+        colour=discord.Colour.blurple(),
+    )
+
+    return await channel.send(embed=embed)
+
+
+async def link(
+    message: discord.Message
+):
+    return "https://mahto.id/chat-exporter?url=" + message.attachments[0].url

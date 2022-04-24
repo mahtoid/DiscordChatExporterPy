@@ -23,18 +23,25 @@ class TranscriptDAO:
         limit: Optional[int],
         messages: Optional[List[discord.Message]],
         pytz_timezone,
+        military_time: bool,
         bot: Optional[discord.Client],
     ):
         self.channel = channel
         self.messages = messages
         self.limit = int(limit) if limit else None
+        self.military_time = military_time
         self.pytz_timezone = pytz_timezone
 
         if bot:
             pass_bot(bot)
 
     async def build_transcript(self):
-        message_html = await Message(self.messages, self.channel.guild, self.pytz_timezone).gather()
+        message_html = await Message(
+            self.messages,
+            self.channel.guild,
+            self.pytz_timezone,
+            self.military_time,
+        ).gather()
         await self.export_transcript(message_html)
         clear_cache()
         Component.menu_div_id = 0
