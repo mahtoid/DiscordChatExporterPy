@@ -172,6 +172,8 @@ class ParseMarkdown:
                                                 '<span class="pre pre-inline">%s</span>' % affected_text)
             match = re.search(pattern, self.content)
 
+        self.content = re.sub(r"<br>", "\n", self.content)
+
     def parse_embed_markdown(self):
         # [Message](Link)
         pattern = re.compile(r"\[(.+?)]\((.+?)\)")
