@@ -39,7 +39,7 @@ class ParseMarkdown:
     async def message_reference_flow(self):
         self.https_http_links()
         self.parse_normal_markdown()
-        self.parse_code_block_markdown()
+        self.parse_code_block_markdown(reference=True)
         await self.parse_emoji()
         self.parse_br()
 
@@ -121,7 +121,7 @@ class ParseMarkdown:
 
         self.content = new_content
 
-    def parse_code_block_markdown(self):
+    def parse_code_block_markdown(self, reference=False):
         markdown_languages = ["asciidoc", "autohotkey", "bash", "coffeescript", "cpp", "cs", "css",
                               "diff", "fix", "glsl", "ini", "json", "md", "ml", "prolog", "py",
                               "tex", "xl", "xml", "js", "html"]
@@ -146,10 +146,19 @@ class ParseMarkdown:
             while second_match is not None:
                 affected_text = re.sub(r"^<br>|<br>$", '', affected_text)
                 second_match = re.search(second_pattern, affected_text)
+            affected_text = re.sub("  ", "&nbsp;&nbsp;", affected_text)
 
-            self.content = self.content.replace(self.content[match.start():match.end()],
-                                                '<div class="pre pre--multiline %s">%s</div>' %
-                                                (language_class, affected_text))
+            if not reference:
+                self.content = self.content.replace(
+                    self.content[match.start():match.end()],
+                    '<div class="pre pre--multiline %s">%s</div>' % (language_class, affected_text)
+                )
+            else:
+                self.content = self.content.replace(
+                    self.content[match.start():match.end()],
+                    '<span class="pre pre-inline">%s</span>' % affected_text
+                )
+
             match = re.search(pattern, self.content)
 
         # ``code``
@@ -253,9 +262,12 @@ class ParseMarkdown:
 
     def https_http_links(self):
         def remove_silent_link(url):
-            if url.startswith("<<") and url.endswith(">>"):
+            if url.startswith("&lt;<") and url.endswith(">&gt;"):
                 return url[1:-1]
             return url
+
+        # Escaping < >
+        self.content = self.content.replace("<", "&lt;").replace(">", "&gt;")
 
         content = re.sub("\n", "<br>", self.content)
         output = []
