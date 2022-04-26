@@ -42,8 +42,6 @@ body:
     label: Bug Traceback
     description: If necessary, paste the console logs here
     placeholder: Copy Pasta of the errors printed in to your console.
-  validations:
-    required: false
 
 - type: file
   attributes:
