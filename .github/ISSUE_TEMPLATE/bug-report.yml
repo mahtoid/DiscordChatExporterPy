@@ -42,10 +42,12 @@ body:
     label: Bug Traceback
     description: If necessary, paste the console logs here
     placeholder: Copy Pasta of the errors printed in to your console.
+  validations:
+    required: false
 
-- type: file
+- type: textarea
   attributes:
-    label: Bug Screenshot
-    description: If necessary, upload a screenshot of the bug here
+    label: Additional Information
+    description: If necessary, upload a screenshot of the bug here - as well as any additional information.
   validations:
     required: false
