@@ -15,9 +15,9 @@
     <br />
     <a href="https://discord.gg/mq3hYaJSfa">Join Discord</a>
     ·
-    <a href="https://github.com/mahtoid/DiscordChatExporterPy/issues">Report Bug</a>
+    <a href="https://github.com/mahtoid/DiscordChatExporterPy/issues/new?assignees=&labels=bug&template=bug-report.yml">Report Bug</a>
     ·
-    <a href="https://github.com/mahtoid/DiscordChatExporterPy/issues">Request Feature</a>
+    <a href="https://github.com/mahtoid/DiscordChatExporterPy/issues/new?assignees=&labels=enhancement&template=feature-request.yml">Request Feature</a>
   </p>
 </div>
 
@@ -191,14 +191,6 @@ async def purge(ctx: commands.Context, tz_info: str, military_time: bool):
     <img src="https://raw.githubusercontent.com/mahtoid/DiscordChatExporterPy/master/.screenshots/html_output.png">
     </details>
 </ol>
-</details>
-<details><summary><b>Buttons & Menus</b></summary>
-<ol>
-<details><summary>Discord</summary>
-</details>
-<details><summary>Chat-Exporter</summary></details>
-</ol>
-
 </details>
 <p align="right">(<a href="#top">back to top</a>)</p>
 
