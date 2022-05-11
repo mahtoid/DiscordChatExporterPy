@@ -121,11 +121,7 @@ class MessageConstruct:
         if message_edited_at:
             message_edited_at = _set_edit_at(message_edited_at)
 
-        avatar_url = DiscordUtils.default_avatar
-        if self.message.author.avatar: 
-            avatar_url = self.message.author.avatar
-        elif self.message.author.display_avatar: 
-            avatar_url = self.message.author.display_avatar
+        avatar_url = self.message.author.display_avatar if self.message.author.display_avatar else DiscordUtils.default_avatar
 
         self.message.reference = await fill_out(self.guild, message_reference, [
             ("AVATAR_URL", str(avatar_url), PARSE_MODE_NONE),
@@ -206,11 +202,7 @@ class MessageConstruct:
 
             user_colour = await self._gather_user_colour(self.message.author)
             is_bot = _gather_user_bot(self.message.author)
-            avatar_url = DiscordUtils.default_avatar
-            if self.message.author.avatar: 
-                avatar_url = self.message.author.avatar
-            elif self.message.author.display_avatar: 
-                avatar_url = self.message.author.display_avatar
+            avatar_url = self.message.author.display_avatar if self.message.author.display_avatar else DiscordUtils.default_avatar
 
             self.message_html += await fill_out(self.guild, start_message, [
                 ("REFERENCE", self.message.reference, PARSE_MODE_NONE),
