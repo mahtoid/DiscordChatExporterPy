@@ -172,6 +172,7 @@ If you have any issues or suggestions - open an issue on the Github Repository o
         .emoji--small {
             width: 1em;
             height: 1em;
+            padding-bottom: 4px;
         }
 
         .emoji--large {
@@ -240,6 +241,10 @@ If you have any issues or suggestions - open an issue on the Github Repository o
 
         .chatlog__reference-link:hover {
             text-decoration: none;
+        }
+
+        .chatlog__reference-attachment-icon {
+            flex-grow: 500;
         }
 
         .chatlog__reference-content > * {
@@ -502,11 +507,11 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             margin-right: 0.35em;
             font-size: 0.875em;
             color: white;
-            font-weight: 600;
+            font-weight: 500;
         }
 
         .chatlog__button-label img {
-            margin-bottom: 4px;
+            padding-right: 5px;
         }
 
         .chatlog__reactions {
@@ -791,6 +796,13 @@ If you have any issues or suggestions - open an issue on the Github Repository o
           padding-left: 25px
         }
 
+        .chatlog__role-icon {
+            height: 16px;
+            width: 16px;
+            margin-left: 5px;
+            transform: translateY(2px);
+        }
+
         .dropdownContent {
           z-index: 1;
           display: none;
@@ -822,7 +834,7 @@ If you have any issues or suggestions - open an issue on the Github Repository o
         .chatlog__dropdown-icon {
           right: 0px;
           width: 25px;
-          margin-top: -4px;
+          margin-top: -12px;
           position: absolute;
           padding-right: 4px;
         }
@@ -836,6 +848,8 @@ If you have any issues or suggestions - open an issue on the Github Repository o
         .dropdownButton:hover { border: 1px solid #040405; }
         .chatlog__component-dropdown-show { display: block; }
         .chatlog__component-dropdown a:hover { background-color: #292B2F; }
+
+        .cursor_pointer { cursor: pointer; }
 
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/styles/solarized-dark.min.css">

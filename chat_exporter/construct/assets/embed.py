@@ -82,6 +82,11 @@ class Embed:
 
     async def build_fields(self):
         self.fields = ""
+
+        # This does not have to be here, but Pycord.
+        if not self.embed.fields:
+            return
+
         for field in self.embed.fields:
             if field.inline:
                 self.fields += await fill_out(self.guild, embed_field_inline, [

@@ -1,6 +1,5 @@
 from chat_exporter.ext.discord_import import discord
 
-from chat_exporter.ext.emoji_convert import convert_emoji
 from chat_exporter.ext.discord_utils import DiscordUtils
 from chat_exporter.ext.html_generator import (
     fill_out,
@@ -17,18 +16,20 @@ from chat_exporter.ext.html_generator import (
 class Component:
     styles = {
         "primary": "#5865F2",
-        "secondary": "grey",
-        "success": "#57F287",
-        "danger": "#ED4245",
+        "secondary": "#4F545C",
+        "success": "#2D7D46",
+        "danger": "#D83C3E",
         "blurple": "#5865F2",
-        "grey": "grey",
-        "gray": "grey",
-        "green": "#57F287",
-        "red": "#ED4245",
-        "link": "grey",
+        "grey": "#4F545C",
+        "gray": "#4F545C",
+        "green": "#2D7D46",
+        "red": "#D83C3E",
+        "link": "#4F545C",
     }
 
     components: str = ""
+    menus: str = ""
+    buttons: str = ""
     menu_div_id: int = 0
 
     def __init__(self, component, guild):
@@ -47,13 +48,13 @@ class Component:
         label = c.label if c.label else ""
         style = self.styles[str(c.style).split(".")[1]]
         icon = DiscordUtils.button_external_link if url else ""
-        emoji = await convert_emoji(str(c.emoji)) if c.emoji else ""
+        emoji = str(c.emoji) if c.emoji else ""
 
-        self.components += await fill_out(self.guild, component_button, [
+        self.buttons += await fill_out(self.guild, component_button, [
             ("DISABLED", "chatlog__component-disabled" if c.disabled else "", PARSE_MODE_NONE),
             ("URL", str(url), PARSE_MODE_NONE),
             ("LABEL", str(label), PARSE_MODE_MARKDOWN),
-            ("EMOJI", str(emoji), PARSE_MODE_NONE),
+            ("EMOJI", str(emoji), PARSE_MODE_EMOJI),
             ("ICON", str(icon), PARSE_MODE_NONE),
             ("STYLE", style, PARSE_MODE_NONE)
         ])
@@ -66,7 +67,7 @@ class Component:
         if not c.disabled:
             content = await self.build_menu_options(options)
 
-        self.components += await fill_out(self.guild, component_menu, [
+        self.menus += await fill_out(self.guild, component_menu, [
             ("DISABLED", "chatlog__component-disabled" if c.disabled else "", PARSE_MODE_NONE),
             ("ID", str(self.menu_div_id), PARSE_MODE_NONE),
             ("PLACEHOLDER", str(placeholder), PARSE_MODE_MARKDOWN),
@@ -97,4 +98,11 @@ class Component:
     async def flow(self):
         for c in self.component.children:
             await self.build_component(c)
+
+        if self.menus:
+            self.components += f'<div class="chatlog__components">{self.menus}</div>'
+
+        if self.buttons:
+            self.components += f'<div class="chatlog__components">{self.buttons}</div>'
+
         return self.components
