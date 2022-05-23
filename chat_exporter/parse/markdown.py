@@ -1,4 +1,3 @@
-import html
 import re
 from chat_exporter.ext.emoji_convert import convert_emoji
 
@@ -300,3 +299,6 @@ class ParseMarkdown:
                     output.append(word)
             content = " ".join(output)
             self.content = re.sub("<br>", "\n", content)
+
+        # Un-Escaping < >
+        self.content = self.content.replace("&lt;", "<").replace("&gt;", ">")
