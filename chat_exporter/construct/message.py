@@ -123,8 +123,7 @@ class MessageConstruct:
         if message_edited_at:
             message_edited_at = _set_edit_at(message_edited_at)
 
-        avatar_url = message.author.avatar if message.author.avatar else DiscordUtils.default_avatar
-
+        avatar_url = message.author.display_avatar if message.author.display_avatar else DiscordUtils.default_avatar
         self.message.reference = await fill_out(self.guild, message_reference, [
             ("AVATAR_URL", str(avatar_url), PARSE_MODE_NONE),
             ("BOT_TAG", is_bot, PARSE_MODE_NONE),
@@ -200,7 +199,7 @@ class MessageConstruct:
                 return
 
             is_bot = _gather_user_bot(self.message.author)
-            avatar_url = self.message.author.avatar if self.message.author.avatar else DiscordUtils.default_avatar
+            avatar_url = self.message.author.display_avatar if self.message.author.display_avatar else DiscordUtils.default_avatar
 
             self.message_html += await fill_out(self.guild, start_message, [
                 ("REFERENCE", self.message.reference, PARSE_MODE_NONE),
