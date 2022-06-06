@@ -1,0 +1,53 @@
+name: Bug Report
+description: Found a bug? Report it here.
+labels: [bug]
+
+body:
+- type: markdown
+  attributes:
+    value: |
+      **Guidelines:**
+
+      - Make sure this is not a duplicate issue by [checking here](https://github.com/mahtoid/DiscordChatExporterPy/issues?q=is%3Aissue).
+      - Include one bug per issue, please create multiple issues for each individual bug you find.
+      - Please provide an appropriate title related to your issue, for example: "Missing 'Component' for 'Message' Object".
+      - Please be descriptive and provide as much detail as possible, it'll save a lot of time for the both of us in trying to reproduce the issue.
+
+- type: input
+  attributes:
+    label: DiscordChatExporterPy Version
+    description: Which version of chat-exporter are you using?
+    placeholder: ver X.Y.Z (`pip show chat-exporter`)
+  validations:
+    required: true
+
+- type: input
+  attributes:
+    label: Discord Version
+    description: What version of discord.py (or fork) version are you using?
+    placeholder: discord.py ver X.Y.Z (`pip show discord.py`)
+  validations:
+    required: true
+
+- type: textarea
+  attributes:
+    label: Bug Description
+    description: Clear and thorough description of the bug.
+    placeholder: When I was doing X, then Y happened instead of Z.
+  validations:
+    required: true
+
+- type: textarea
+  attributes:
+    label: Bug Traceback
+    description: If necessary, paste the console logs here
+    placeholder: Copy Pasta of the errors printed in to your console.
+  validations:
+    required: false
+
+- type: textarea
+  attributes:
+    label: Additional Information
+    description: If necessary, upload a screenshot of the bug here - as well as any additional information.
+  validations:
+    required: false

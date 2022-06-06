@@ -38,7 +38,7 @@ class ParseMarkdown:
     async def message_reference_flow(self):
         self.https_http_links()
         self.parse_normal_markdown()
-        self.parse_code_block_markdown()
+        self.parse_code_block_markdown(reference=True)
         await self.parse_emoji()
         self.parse_br()
 
@@ -120,7 +120,7 @@ class ParseMarkdown:
 
         self.content = new_content
 
-    def parse_code_block_markdown(self):
+    def parse_code_block_markdown(self, reference=False):
         markdown_languages = ["asciidoc", "autohotkey", "bash", "coffeescript", "cpp", "cs", "css",
                               "diff", "fix", "glsl", "ini", "json", "md", "ml", "prolog", "py",
                               "tex", "xl", "xml", "js", "html"]
@@ -135,7 +135,7 @@ class ParseMarkdown:
 
             for language in markdown_languages:
                 if affected_text.lower().startswith(language):
-                    language_class = "language=" + language
+                    language_class = f"language-{language}"
                     _, _, affected_text = affected_text.partition('<br>')
 
             affected_text = self.return_to_markdown(affected_text)
@@ -145,10 +145,19 @@ class ParseMarkdown:
             while second_match is not None:
                 affected_text = re.sub(r"^<br>|<br>$", '', affected_text)
                 second_match = re.search(second_pattern, affected_text)
+            affected_text = re.sub("  ", "&nbsp;&nbsp;", affected_text)
 
-            self.content = self.content.replace(self.content[match.start():match.end()],
-                                                '<div class="pre pre--multiline %s">%s</div>' %
-                                                (language_class, affected_text))
+            if not reference:
+                self.content = self.content.replace(
+                    self.content[match.start():match.end()],
+                    '<div class="pre pre--multiline %s">%s</div>' % (language_class, affected_text)
+                )
+            else:
+                self.content = self.content.replace(
+                    self.content[match.start():match.end()],
+                    '<span class="pre pre-inline">%s</span>' % affected_text
+                )
+
             match = re.search(pattern, self.content)
 
         # ``code``
@@ -170,6 +179,8 @@ class ParseMarkdown:
             self.content = self.content.replace(self.content[match.start():match.end()],
                                                 '<span class="pre pre-inline">%s</span>' % affected_text)
             match = re.search(pattern, self.content)
+
+        self.content = re.sub(r"<br>", "\n", self.content)
 
     def parse_embed_markdown(self):
         # [Message](Link)
@@ -246,9 +257,17 @@ class ParseMarkdown:
                                           '%s' % affected_url)
             match = re.search(pattern, content)
 
-        return content
+        return content.lstrip().rstrip()
 
     def https_http_links(self):
+        def remove_silent_link(url):
+            if url.startswith("&lt;<") and url.endswith(">&gt;"):
+                return url[1:-1]
+            return url
+
+        # Escaping < >
+        self.content = self.content.replace("<", "&lt;").replace(">", "&gt;")
+
         content = re.sub("\n", "<br>", self.content)
         output = []
         if "http://" in content or "https://" in content and "](" not in content:
@@ -259,24 +278,27 @@ class ParseMarkdown:
                     url = f'<a href="{url}">{url}</a>'
                     output.append(url)
                 elif "https://" in word:
-                    pattern = r"https://[^\s<*]*"
+                    pattern = r"https://[^\s>\"*]*"
                     word_link = re.search(pattern, word).group()
                     if word_link.endswith(")"):
                         output.append(word)
                         continue
                     word_full = f'<a href="{word_link}">{word_link}</a>'
                     word = re.sub(pattern, word_full, word)
-                    output.append(word)
+                    output.append(remove_silent_link(word))
                 elif "http://" in word:
-                    pattern = r"http://[^\s<*]*"
+                    pattern = r"http://[^\s>\"*]*"
                     word_link = re.search(pattern, word).group()
                     if word_link.endswith(")"):
                         output.append(word)
                         continue
                     word_full = f'<a href="{word_link}">{word_link}</a>'
                     word = re.sub(pattern, word_full, word)
-                    output.append(word)
+                    output.append(remove_silent_link(word))
                 else:
                     output.append(word)
             content = " ".join(output)
             self.content = re.sub("<br>", "\n", content)
+
+        # Un-Escaping < >
+        self.content = self.content.replace("&lt;", "<").replace("&gt;", ">")

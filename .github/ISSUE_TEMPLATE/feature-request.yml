@@ -1,0 +1,21 @@
+name: Feature Request
+description: Think you have a cool idea? Request it here
+labels: [enhancement]
+
+body:
+- type: markdown
+  attributes:
+    value: |
+      **Guidelines:**
+
+      - Make sure this is not a duplicate feature request by [checking here](https://github.com/mahtoid/DiscordChatExporterPy/issues?q=is%3Aissue).
+      - Include one feature request per issue, please create multiple issues for each feature request you have.
+      - Please provide an appropriate title related to your issue, for example: "Adding chat-exporter support for Button interactions".
+      - Please be descriptive and provide as much detail as possible, it'll help me imagine the feature you are requesting faster.
+
+- type: textarea
+  attributes:
+    label: Feature Description
+    description: Clear and thorough description of the feature request.
+  validations:
+    required: true
