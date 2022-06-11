@@ -253,13 +253,15 @@ class MessageConstruct:
     async def _gather_user_icon(self, author: discord.Member):
         member = await self._gather_member(author)
 
-        if member:
-            if hasattr(member, "display_icon") and member.display_icon:
-                return f"<img class='chatlog__role-icon' src='{member.display_icon}' alt='Role Icon'>"
-            elif hasattr(member, "top_role") and member.top_role:
-                if member.top_role.icon:
-                    return f"<img class='chatlog__role-icon' src='{member.top_role.icon}' alt='Role Icon'>"           
-        return ""
+        if not member:
+            return ""
+
+        if hasattr(member, "display_icon") and member.display_icon:
+            return f"<img class='chatlog__role-icon' src='{member.display_icon}' alt='Role Icon'>"
+        elif hasattr(member, "top_role") and member.top_role and member.top_role.icon:
+            return f"<img class='chatlog__role-icon' src='{member.top_role.icon}' alt='Role Icon'>"
+        else:
+            return ""
 
     def set_time(self, message: Optional[discord.Message] = None):
         message = message if message else self.message
