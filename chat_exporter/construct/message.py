@@ -260,8 +260,7 @@ class MessageConstruct:
             return f"<img class='chatlog__role-icon' src='{member.display_icon}' alt='Role Icon'>"
         elif hasattr(member, "top_role") and member.top_role and member.top_role.icon:
             return f"<img class='chatlog__role-icon' src='{member.top_role.icon}' alt='Role Icon'>"
-        else:
-            return ""
+        return ""
 
     def set_time(self, message: Optional[discord.Message] = None):
         message = message if message else self.message
