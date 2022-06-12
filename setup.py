@@ -1,15 +1,17 @@
 from setuptools import setup, find_packages
 
-with open("README.md") as fh:
-    long_description = fh.read()
+from pathlib import Path
+this_directory = Path(__file__).parent
+long_description = (this_directory / "README.md").read_text()
 
 setup(
     name="chat_exporter",
-    version="2.1",
+    version="2.2",
     author="mahtoid",
     author_email="info@mahto.id",
     description="A simple Discord chat exporter for Python Discord bots.",
     long_description=long_description,
+    long_description_content_type="text/markdown",
     url="https://github.com/mahtoid/DiscordChatExporterPy",
     packages=find_packages(),
     package_data={'': [r'chat_exporter/html/*.html']},
