@@ -265,17 +265,14 @@ class ParseMarkdown:
                 return url[1:-1]
             return url
 
-        # Escaping < >
-        self.content = self.content.replace("<", "&lt;").replace(">", "&gt;")
-
         content = re.sub("\n", "<br>", self.content)
         output = []
         if "http://" in content or "https://" in content and "](" not in content:
             for word in content.replace("<br>", " <br>").split():
                 if word.startswith("&lt;") and word.endswith("&gt;"):
-                    pattern = r"&lt;(.*)&gt;"
+                    pattern = r"&lt;https?:\/\/(.*)&gt;"
                     url = re.search(pattern, word).group(1)
-                    url = f'<a href="{url}">{url}</a>'
+                    url = f'<a href="https://{url}">https://{url}</a>'
                     output.append(url)
                 elif "https://" in word:
                     pattern = r"https://[^\s>\"*]*"
@@ -299,6 +296,3 @@ class ParseMarkdown:
                     output.append(word)
             content = " ".join(output)
             self.content = re.sub("<br>", "\n", content)
-
-        # Un-Escaping < >
-        self.content = self.content.replace("&lt;", "<").replace("&gt;", ">")

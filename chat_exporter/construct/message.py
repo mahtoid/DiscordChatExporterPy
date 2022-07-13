@@ -92,6 +92,7 @@ class MessageConstruct:
         if self.message_edited_at:
             self.message_edited_at = _set_edit_at(self.message_edited_at)
 
+        self.message.content = html.escape(self.message.content)
         self.message.content = await fill_out(self.guild, message_content, [
             ("MESSAGE_CONTENT", self.message.content, PARSE_MODE_MARKDOWN),
             ("EDIT", self.message_edited_at, PARSE_MODE_NONE)
