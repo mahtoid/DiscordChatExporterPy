@@ -281,31 +281,23 @@ class MessageConstruct:
         return local_time.strftime("%b %d, %Y %I:%M %p")
 
 
-class Message:
-    def __init__(
-        self,
-        messages: List[discord.Message],
-        guild: discord.Guild,
-        pytz_timezone,
-        military_time,
-    ):
-        self.messages = messages
-        self.guild = guild
-        self.pytz_timezone = pytz_timezone
-        self.military_time = military_time
+async def gather_messages(
+    messages: List[discord.Message],
+    guild: discord.Guild,
+    pytz_timezone,
+    military_time,
+):
+    message_html: str = ""
+    previous_message: Optional[discord.Message] = None
 
-    async def gather(self) -> str:
-        message_html: str = ""
-        previous_message: Optional[discord.Message] = None
+    for message in messages:
+        message_html += await MessageConstruct(
+            message,
+            previous_message,
+            pytz_timezone,
+            military_time,
+            guild
+        ).construct_message()
 
-        for message in self.messages:
-            message_html += await MessageConstruct(
-                message,
-                previous_message,
-                self.pytz_timezone,
-                self.military_time,
-                self.guild
-            ).construct_message()
-
-            previous_message = message
-        return message_html
+        previous_message = message
+    return message_html

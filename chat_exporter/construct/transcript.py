@@ -5,7 +5,7 @@ from typing import List, Optional
 
 from chat_exporter.ext.discord_import import discord
 
-from chat_exporter.construct.message import Message
+from chat_exporter.construct.message import gather_messages
 from chat_exporter.construct.assets.component import Component
 
 from chat_exporter.ext.cache import clear_cache
@@ -36,12 +36,12 @@ class TranscriptDAO:
             pass_bot(bot)
 
     async def build_transcript(self):
-        message_html = await Message(
+        message_html = await gather_messages(
             self.messages,
             self.channel.guild,
             self.pytz_timezone,
             self.military_time,
-        ).gather()
+        )
         await self.export_transcript(message_html)
         clear_cache()
         Component.menu_div_id = 0
