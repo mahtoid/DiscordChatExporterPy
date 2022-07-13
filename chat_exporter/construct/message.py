@@ -203,10 +203,15 @@ class MessageConstruct:
             if channel_audit:
                 return
 
+            reference_symbol = ""
             is_bot = _gather_user_bot(self.message.author)
             avatar_url = self.message.author.display_avatar if self.message.author.display_avatar else DiscordUtils.default_avatar
 
+            if self.message.reference != "":
+                reference_symbol = "<div class='chatlog__reference-symbol'></div>"
+
             self.message_html += await fill_out(self.guild, start_message, [
+                ("REFERENCE_SYMBOL", reference_symbol, PARSE_MODE_NONE),
                 ("REFERENCE", self.message.reference, PARSE_MODE_NONE),
                 ("AVATAR_URL", str(avatar_url), PARSE_MODE_NONE),
                 ("NAME_TAG", "%s#%s" % (self.message.author.name, self.message.author.discriminator), PARSE_MODE_NONE),
