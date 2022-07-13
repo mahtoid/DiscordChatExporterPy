@@ -170,7 +170,10 @@ class MessageConstruct:
             self.reactions = f'<div class="chatlog__reactions">{self.reactions}</div>'
 
     async def build_message_template(self):
-        await self.generate_message_divider()
+        started = await self.generate_message_divider()
+
+        if started:
+            return self.message_html
 
         self.message_html += await fill_out(self.guild, message_body, [
             ("MESSAGE_ID", str(self.message.id)),
@@ -178,7 +181,9 @@ class MessageConstruct:
             ("EMBEDS", self.embeds, PARSE_MODE_NONE),
             ("ATTACHMENTS", self.attachments, PARSE_MODE_NONE),
             ("COMPONENTS", self.components, PARSE_MODE_NONE),
-            ("EMOJI", self.reactions, PARSE_MODE_NONE)
+            ("EMOJI", self.reactions, PARSE_MODE_NONE),
+            ("TIMESTAMP", self.message_created_at, PARSE_MODE_NONE),
+            ("TIME", self.message_created_at.split()[-2], PARSE_MODE_NONE),
         ])
 
         return self.message_html
@@ -211,7 +216,15 @@ class MessageConstruct:
                 ("NAME", str(html.escape(self.message.author.display_name))),
                 ("BOT_TAG", str(is_bot), PARSE_MODE_NONE),
                 ("TIMESTAMP", str(self.message_created_at)),
+                ("MESSAGE_ID", str(self.message.id)),
+                ("MESSAGE_CONTENT", self.message.content, PARSE_MODE_NONE),
+                ("EMBEDS", self.embeds, PARSE_MODE_NONE),
+                ("ATTACHMENTS", self.attachments, PARSE_MODE_NONE),
+                ("COMPONENTS", self.components, PARSE_MODE_NONE),
+                ("EMOJI", self.reactions, PARSE_MODE_NONE)
             ])
+
+            return True
 
     async def build_pin_template(self):
         self.message_html += await fill_out(self.guild, message_pin, [

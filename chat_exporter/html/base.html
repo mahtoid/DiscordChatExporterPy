@@ -62,6 +62,16 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             object-fit: contain;
         }
 
+        .chatlog__markdown {
+            max-width: 100%;
+            line-height: 1.3;
+            overflow-wrap: break-word;
+        }
+
+        .chatlog__markdown-preserve {
+            white-space: pre-wrap;
+        }
+
         .markdown {
             max-width: 100%;
             line-height: 1.3;
@@ -184,14 +194,9 @@ If you have any issues or suggestions - open an issue on the Github Repository o
 
         .chatlog {
             max-width: 100%;
-        }
-
-        .chatlog__message-group {
-            display: grid;
-            margin: 0 0.6em;
-            padding: 0.9em 0;
-            border-top: 1px solid;
-            grid-template-columns: auto 1fr;
+            padding: 1rem 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .chatlog__reference-symbol {
@@ -209,51 +214,95 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             margin-right: 10px;
         }
 
+        .chatlog__message-aside {
+            grid-column: 1;
+            width: 72px;
+            padding: 0.15rem 0.15rem 0 0.15rem;
+            text-align: center;
+        }
+
+        .chatlog__message:hover {
+            background-color: #32353b;
+        }
+
+        .chatlog__message:hover .chatlog__short-timestamp {
+            display: block;
+        }
+
+        .chatlog__short-timestamp {
+            display: none;
+            color: #a3a6aa;
+            font-size: 0.75rem;
+            font-weight: 500;
+            direction: ltr;
+            unicode-bidi: bidi-override;
+        }
+
+        .chatlog__message-primary {
+            grid-column: 2;
+            min-width: 0;
+        }
+
         .chatlog__reference {
             display: flex;
-            grid-column: 2;
-            margin-left: 1.2em;
-            margin-bottom: 0.25em;
-            font-size: 0.875em;
+            margin-bottom: 0.15rem;
+            align-items: center;
+            color: #b5b6b8;
+            font-size: 0.875rem;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            align-items: center;
         }
 
         .chatlog__reference-avatar {
-            border-radius: 50%;
-            height: 16px;
             width: 16px;
-            margin-right: 0.25em;
+            height: 16px;
+            margin-right: 0.25rem;
+            border-radius: 50%;
         }
 
-        .chatlog__reference-name {
-            margin-right: 0.25em;
+        .chatlog__reference-author {
+            margin-right: 0.3rem;
             font-weight: 600;
         }
 
-        .chatlog__reference-link {
-            flex-grow: 1;
+        .chatlog__reference-content {
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
+        .chatlog__reference-link {
+            cursor: pointer;
+        }
+
+        .chatlog__reference-link * {
+            display: inline;
+            pointer-events: none;
+        }
+
+        .chatlog__reference-link .hljs {
+            display: inline;
+        }
+
         .chatlog__reference-link:hover {
-            text-decoration: none;
+            color: #ffffff;
+        }
+
+        .chatlog__reference-link:hover *:not(.chatlog__markdown-spoiler) {
+            color: inherit;
+        }
+
+        .chatlog__reference-edited-timestamp {
+            margin-left: 0.25rem;
+            color: #a3a6aa;
+            font-size: 0.75rem;
+            font-weight: 500;
+            direction: ltr;
+            unicode-bidi: bidi-override;
         }
 
         .chatlog__reference-attachment-icon {
             flex-grow: 500;
-        }
-
-        .chatlog__reference-content > * {
-            display: inline;
-        }
-
-        .chatlog__reference-edited-timestamp {
-            margin-left: 0.25em;
-            font-size: 0.8em;
         }
 
         .chatlog__author-avatar-container {
@@ -301,15 +350,26 @@ If you have any issues or suggestions - open an issue on the Github Repository o
         }
 
         .chatlog__timestamp {
-            margin-left: 0.3em;
-            font-size: 0.75em;
+            margin-left: 0.3rem;
+            color: #a3a6aa;
+            font-size: 0.75rem;
+            font-weight: 500;
+            direction: ltr;
+            unicode-bidi: bidi-override;
+        }
+
+        .chatlog__content {
+            padding-right: 1rem;
+            font-size: 0.95rem;
+            word-wrap: break-word;
         }
 
         .chatlog__message {
-            padding: 0.1em 0.3em;
-            margin: 0 -0.3em;
-            background-color: transparent;
-            transition: background-color 1s ease;
+            display: grid;
+            grid-template-columns: auto 1fr;
+            padding: 0.15rem 0;
+            direction: ltr;
+            unicode-bidi: bidi-override;
         }
 
         .chatlog__content {
@@ -320,6 +380,12 @@ If you have any issues or suggestions - open an issue on the Github Repository o
         .chatlog__edited-timestamp {
             margin-left: 0.15em;
             font-size: 0.8em;
+        }
+
+        .chatlog__avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
         }
 
         .chatlog__attachment {
@@ -599,10 +665,29 @@ If you have any issues or suggestions - open an issue on the Github Repository o
         /* Chatlog */
 
         .chatlog__message-group {
+            margin-bottom: 1rem;
             border-color: rgba(255, 255, 255, 0.1);
         }
 
+        .chatlog__message-container {
+            background-color: transparent;
+            transition: background-color 1s ease;
+        }
+
+        .chatlog__message-container--highlighted {
+            background-color: rgba(114, 137, 218, 0.2);
+        }
+
+        .chatlog__message-container--pinned {
+            background-color: rgba(249, 168, 37, 0.05);
+        }
+
         .chatlog__reference-symbol {
+            height: 10px;
+            margin: 6px 4px 4px 36px;
+            border-left: 2px solid #4f545c;
+            border-top: 2px solid #4f545c;
+            border-radius: 8px 0 0 0;
             border-color: #4f545c;
         }
 
@@ -613,7 +698,14 @@ If you have any issues or suggestions - open an issue on the Github Repository o
         }
 
         .chatlog__reference {
+            display: flex;
+            margin-bottom: 0.15rem;
+            align-items: center;
             color: #b5b6b8;
+            font-size: 0.875rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .chatlog__reference-link {
@@ -861,7 +953,7 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             if (element !== null && element !== undefined) {
                 event.preventDefault();
 
-                element.classList.add('chatlog__message--highlighted');
+                element.classList.add('chatlog__message-container--highlighted');
 
                 window.scrollTo({
                     top: element.getBoundingClientRect().top - document.body.getBoundingClientRect().top - (window.innerHeight / 2),
@@ -869,7 +961,7 @@ If you have any issues or suggestions - open an issue on the Github Repository o
                 });
 
                 window.setTimeout(function() {
-                    element.classList.remove('chatlog__message--highlighted');
+                    element.classList.remove('chatlog__message-container--highlighted');
                 }, 2000);
             }
         }
