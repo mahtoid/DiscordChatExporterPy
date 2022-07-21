@@ -71,7 +71,7 @@ async def convert(char):
         if len(char) == 1:
             return char
         else:
-            shortcode = emoji.demojize(char, use_aliases=True)
+            shortcode = emoji.demojize(char)
             name = shortcode.replace(":", "").replace("_", " ").replace("selector", "").title()
 
     src = cdn_fmt.format(codepoint=await codepoint(["{cp:x}".format(cp=ord(c)) for c in char]))
