@@ -214,6 +214,10 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             margin-right: 10px;
         }
 
+        .chatlog__header {
+            margin-bottom: 0.1rem;
+        }
+
         .chatlog__message-aside {
             grid-column: 1;
             width: 72px;
@@ -305,19 +309,6 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             flex-grow: 500;
         }
 
-        .chatlog__author-avatar-container {
-            grid-column: 1;
-            width: 40px;
-            height: 40px;
-        }
-
-        .chatlog__author-avatar {
-            border-radius: 50%;
-            height: 40px;
-            width: 40px;
-        }
-
-
         .chatlog__pin-avatar-container {
             grid-column: 1;
             width: 40px;
@@ -332,17 +323,6 @@ If you have any issues or suggestions - open an issue on the Github Repository o
         .chatlog__thread-name {
             color: white;
             font-weight: 600;
-        }
-
-
-        .chatlog__messages {
-            grid-column: 2;
-            margin-left: 1.2em;
-            min-width: 50%;
-        }
-
-        .chatlog__messages .chatlog__bot-tag {
-            top: -0.2em;
         }
 
         .chatlog__author-name {
@@ -372,9 +352,8 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             unicode-bidi: bidi-override;
         }
 
-        .chatlog__edited-timestamp {
-            margin-left: 0.15em;
-            font-size: 0.8em;
+        .chatlog__message .chatlog__bot-tag {
+            top: -0.2em;
         }
 
         .chatlog__avatar {
@@ -485,6 +464,7 @@ If you have any issues or suggestions - open an issue on the Github Repository o
         .chatlog__embed-description {
             font-weight: 500;
             font-size: 0.85em;
+            color: rgba(255, 255, 255, 0.6);
         }
 
         .chatlog__embed-fields {
@@ -509,10 +489,12 @@ If you have any issues or suggestions - open an issue on the Github Repository o
         .chatlog__embed-field-name {
             margin-bottom: 0.2em;
             font-weight: 600;
+            color: #ffffff;
         }
 
         .chatlog__embed-field-value {
             font-weight: 500;
+            color: rgba(255, 255, 255, 0.6);
         }
 
         .chatlog__embed-thumbnail {
@@ -535,6 +517,7 @@ If you have any issues or suggestions - open an issue on the Github Repository o
 
         .chatlog__embed-footer {
             margin-top: 0.6em;
+            color: rgba(255, 255, 255, 0.6);
         }
 
         .chatlog__embed-footer-icon {
@@ -585,6 +568,7 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             margin: 0.35em 0.1em 0.1em 0.1em;
             padding: 0.2em 0.35em;
             border-radius: 8px;
+            background-color: rgba(255, 255, 255, 0.05);
         }
 
         .chatlog__reaction-count {
@@ -651,12 +635,6 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             color: #b9bbbe !important;
         }
 
-        /* === Preamble === */
-
-        .preamble__entry {
-            color: #ffffff;
-        }
-
         /* Chatlog */
 
         .chatlog__message-group {
@@ -671,10 +649,6 @@ If you have any issues or suggestions - open an issue on the Github Repository o
 
         .chatlog__message-container--highlighted {
             background-color: rgba(114, 137, 218, 0.2);
-        }
-
-        .chatlog__message-container--pinned {
-            background-color: rgba(249, 168, 37, 0.05);
         }
 
         .chatlog__reference-symbol {
@@ -736,10 +710,6 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             background-color: rgba(249, 168, 37, 0.05);
         }
 
-        .chatlog__edited-timestamp {
-            color: rgba(255, 255, 255, 0.2);
-        }
-
         .chatlog__embed-color-pill--default {
             background-color: rgba(79, 84, 92, 1);
         }
@@ -759,26 +729,6 @@ If you have any issues or suggestions - open an issue on the Github Repository o
 
         .chatlog__embed-title {
             color: #ffffff;
-        }
-
-        .chatlog__embed-description {
-            color: rgba(255, 255, 255, 0.6);
-        }
-
-        .chatlog__embed-field-name {
-            color: #ffffff;
-        }
-
-        .chatlog__embed-field-value {
-            color: rgba(255, 255, 255, 0.6);
-        }
-
-        .chatlog__embed-footer {
-            color: rgba(255, 255, 255, 0.6);
-        }
-
-        .chatlog__reaction {
-            background-color: rgba(255, 255, 255, 0.05);
         }
 
         .chatlog__reaction-count {
