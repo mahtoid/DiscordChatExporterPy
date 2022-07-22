@@ -34,6 +34,15 @@ To clone the repository locally, run the command:
 git clone https://github.com/mahtoid/DiscordChatExporterPy
 ```
 
+<details><summary><b>Using discord.py 1.7.3 (or fork equivalent)?</b></summary>
+
+To use this library with your discord.py 1.7.3 bot, you will need to install chat-exporter 1.7.3. To do that, install the library to your virtual environment, for bot usage, with the command:
+
+```sh
+pip install chat-exporter==1.7.3
+```
+</details>
+
 <p align="right">(<a href="#top">back to top</a>)</p>
 
 ---
