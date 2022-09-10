@@ -21,7 +21,7 @@ from chat_exporter.ext.html_generator import (
 
 
 def _gather_checker():
-    if hasattr(discord.Embed, "Empty"):
+    if hasattr(discord.Embed, "Empty") and discord.module != "nextcord":
         return discord.Embed.Empty
     return None
 
