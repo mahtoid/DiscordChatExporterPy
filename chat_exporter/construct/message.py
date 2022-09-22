@@ -42,6 +42,7 @@ class MessageConstruct:
     reactions: str = ""
     components: str = ""
     attachments: str = ""
+    time_format: str = ""
 
     def __init__(
         self,
@@ -50,24 +51,31 @@ class MessageConstruct:
         pytz_timezone,
         military_time: bool,
         guild: discord.Guild,
+        meta_data: dict
     ):
         self.message = message
         self.previous_message = previous_message
         self.pytz_timezone = pytz_timezone
         self.military_time = military_time
         self.guild = guild
+
+        self.time_format = "%A, %d %B %Y at %I:%M %p"
+        if self.military_time:
+            self.time_format = "%A, %d %B %Y at %H:%M"
+
         self.message_created_at, self.message_edited_at = self.set_time()
+        self.meta_data = meta_data
 
     async def construct_message(
         self,
-    ) -> str:
-        if self.message.type == "pins_added":
+    ) -> (str, dict):
+        if "pins_add" in self.message.type:
             await self.build_pin()
-        elif self.message.type == "thread_created":
+        elif "thread_created" in self.message.type:
             await self.build_thread()
         else:
             await self.build_message()
-        return self.message_html
+        return self.message_html, self.meta_data
 
     async def build_message(self):
         await self.build_content()
@@ -75,6 +83,7 @@ class MessageConstruct:
         await self.build_sticker()
         await self.build_assets()
         await self.build_message_template()
+        await self.build_meta_data()
 
     async def build_pin(self):
         await self.generate_message_divider(channel_audit=True)
@@ -84,6 +93,21 @@ class MessageConstruct:
         await self.generate_message_divider(channel_audit=True)
         await self.build_thread_template()
 
+    async def build_meta_data(self):
+        user_id = self.message.author.id
+
+        if user_id in self.meta_data:
+            self.meta_data[user_id][4] += 1
+        else:
+            user_name_discriminator = self.message.author.name + "#" + self.message.author.discriminator
+            user_created_at = self.message.author.created_at
+            user_bot = _gather_user_bot(self.message.author)
+            user_avatar = (
+                self.message.author.display_avatar if self.message.author.display_avatar
+                else DiscordUtils.default_avatar
+            )
+            self.meta_data[user_id] = [user_name_discriminator, user_created_at, user_bot, user_avatar, 1]
+
     async def build_content(self):
         if not self.message.content:
             self.message.content = ""
@@ -92,6 +116,7 @@ class MessageConstruct:
         if self.message_edited_at:
             self.message_edited_at = _set_edit_at(self.message_edited_at)
 
+        self.message.content = html.escape(self.message.content)
         self.message.content = await fill_out(self.guild, message_content, [
             ("MESSAGE_CONTENT", self.message.content, PARSE_MODE_MARKDOWN),
             ("EDIT", self.message_edited_at, PARSE_MODE_NONE)
@@ -170,7 +195,10 @@ class MessageConstruct:
             self.reactions = f'<div class="chatlog__reactions">{self.reactions}</div>'
 
     async def build_message_template(self):
-        await self.generate_message_divider()
+        started = await self.generate_message_divider()
+
+        if started:
+            return self.message_html
 
         self.message_html += await fill_out(self.guild, message_body, [
             ("MESSAGE_ID", str(self.message.id)),
@@ -178,7 +206,9 @@ class MessageConstruct:
             ("EMBEDS", self.embeds, PARSE_MODE_NONE),
             ("ATTACHMENTS", self.attachments, PARSE_MODE_NONE),
             ("COMPONENTS", self.components, PARSE_MODE_NONE),
-            ("EMOJI", self.reactions, PARSE_MODE_NONE)
+            ("EMOJI", self.reactions, PARSE_MODE_NONE),
+            ("TIMESTAMP", self.message_created_at, PARSE_MODE_NONE),
+            ("TIME", self.message_created_at.split()[-1], PARSE_MODE_NONE),
         ])
 
         return self.message_html
@@ -198,10 +228,21 @@ class MessageConstruct:
             if channel_audit:
                 return
 
+            reference_symbol = ""
             is_bot = _gather_user_bot(self.message.author)
             avatar_url = self.message.author.display_avatar if self.message.author.display_avatar else DiscordUtils.default_avatar
 
+            if self.message.reference != "":
+                reference_symbol = "<div class='chatlog__reference-symbol'></div>"
+
+            time = self.message.created_at
+            if not self.message.created_at.tzinfo:
+                time = timezone("UTC").localize(time)
+
+            default_timestamp = time.astimezone(timezone(self.pytz_timezone)).strftime("%d-%m-%Y %H:%M")
+
             self.message_html += await fill_out(self.guild, start_message, [
+                ("REFERENCE_SYMBOL", reference_symbol, PARSE_MODE_NONE),
                 ("REFERENCE", self.message.reference, PARSE_MODE_NONE),
                 ("AVATAR_URL", str(avatar_url), PARSE_MODE_NONE),
                 ("NAME_TAG", "%s#%s" % (self.message.author.name, self.message.author.discriminator), PARSE_MODE_NONE),
@@ -211,7 +252,16 @@ class MessageConstruct:
                 ("NAME", str(html.escape(self.message.author.display_name))),
                 ("BOT_TAG", str(is_bot), PARSE_MODE_NONE),
                 ("TIMESTAMP", str(self.message_created_at)),
+                ("DEFAULT_TIMESTAMP", str(default_timestamp), PARSE_MODE_NONE),
+                ("MESSAGE_ID", str(self.message.id)),
+                ("MESSAGE_CONTENT", self.message.content, PARSE_MODE_NONE),
+                ("EMBEDS", self.embeds, PARSE_MODE_NONE),
+                ("ATTACHMENTS", self.attachments, PARSE_MODE_NONE),
+                ("COMPONENTS", self.components, PARSE_MODE_NONE),
+                ("EMOJI", self.reactions, PARSE_MODE_NONE)
             ])
+
+            return True
 
     async def build_pin_template(self):
         self.message_html += await fill_out(self.guild, message_pin, [
@@ -276,36 +326,32 @@ class MessageConstruct:
         local_time = time.astimezone(timezone(self.pytz_timezone))
 
         if self.military_time:
-            return local_time.strftime("%b %d, %Y %H:%M")
+            return local_time.strftime(self.time_format)
 
-        return local_time.strftime("%b %d, %Y %I:%M %p")
+        return local_time.strftime(self.time_format)
 
 
-class Message:
-    def __init__(
-        self,
-        messages: List[discord.Message],
-        guild: discord.Guild,
-        pytz_timezone,
-        military_time,
-    ):
-        self.messages = messages
-        self.guild = guild
-        self.pytz_timezone = pytz_timezone
-        self.military_time = military_time
+async def gather_messages(
+    messages: List[discord.Message],
+    guild: discord.Guild,
+    pytz_timezone,
+    military_time,
+) -> (str, dict):
+    message_html: str = ""
+    meta_data: dict = {}
+    previous_message: Optional[discord.Message] = None
 
-    async def gather(self) -> str:
-        message_html: str = ""
-        previous_message: Optional[discord.Message] = None
+    for message in messages:
+        content_html, meta_data = await MessageConstruct(
+            message,
+            previous_message,
+            pytz_timezone,
+            military_time,
+            guild,
+            meta_data
+        ).construct_message()
+        message_html += content_html
+        previous_message = message
 
-        for message in self.messages:
-            message_html += await MessageConstruct(
-                message,
-                previous_message,
-                self.pytz_timezone,
-                self.military_time,
-                self.guild
-            ).construct_message()
-
-            previous_message = message
-        return message_html
+    message_html += "</div>"
+    return message_html, meta_data

@@ -19,7 +19,9 @@ async def quick_export(
             limit=None,
             messages=None,
             pytz_timezone="UTC",
-            military_time=False,
+            military_time=True,
+            fancy_times=True,
+            support_dev=True,
             bot=bot,
             ).export()
         ).html
@@ -42,7 +44,9 @@ async def export(
     tz_info="UTC",
     guild: Optional[discord.Guild] = None,
     bot: Optional[discord.Client] = None,
-    military_time: Optional[bool] = False,
+    military_time: Optional[bool] = True,
+    fancy_times: Optional[bool] = True,
+    support_dev: Optional[bool] = True,
 ):
     if guild:
         channel.guild = guild
@@ -54,6 +58,8 @@ async def export(
             messages=None,
             pytz_timezone=tz_info,
             military_time=military_time,
+            fancy_times=fancy_times,
+            support_dev=support_dev,
             bot=bot,
         ).export()
     ).html
@@ -66,6 +72,8 @@ async def raw_export(
     guild: Optional[discord.Guild] = None,
     bot: Optional[discord.Client] = None,
     military_time: Optional[bool] = False,
+    fancy_times: Optional[bool] = True,
+    support_dev: Optional[bool] = True,
 ):
     if guild:
         channel.guild = guild
@@ -77,6 +85,8 @@ async def raw_export(
             messages=messages,
             pytz_timezone=tz_info,
             military_time=military_time,
+            fancy_times=fancy_times,
+            support_dev=support_dev,
             bot=bot,
         ).export()
     ).html

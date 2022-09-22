@@ -1,12 +1,23 @@
-            <div class="chatlog__message " data-message-id="{{MESSAGE_ID}}" id="message-{{MESSAGE_ID}}">
-                {{MESSAGE_CONTENT}}
+            <div id="chatlog__message-container-{{MESSAGE_ID}}" class="chatlog__message-container" data-message-id="{{MESSAGE_ID}}">
+                    <div class="chatlog__message">
 
-                {{ATTACHMENTS}}
+                        <div class="chatlog__message-aside">
+                            <div class="chatlog__short-timestamp" title="{{TIMESTAMP}}">{{TIME}}</div>
+                        </div>
 
-                {{EMBEDS}}
+                        <div class="chatlog__message-primary">
+                            <div class="chatlog__content chatlog__markdown" data-message-id="{{MESSAGE_ID}}" id="message-{{MESSAGE_ID}}">
+                                {{MESSAGE_CONTENT}}
 
-                {{COMPONENTS}}
+                                {{ATTACHMENTS}}
 
-                {{EMOJI}}
+                                {{EMBEDS}}
 
+                                {{COMPONENTS}}
+
+                                {{EMOJI}}
+
+                            </div>
+                        </div>
+                    </div>
             </div>

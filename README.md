@@ -95,6 +95,7 @@ This would be the main function to use within chat-exporter.
 `limit`: Integer value to set the limit (amount of messages) the chat exporter gathers when grabbing the history (default=unlimited).<br/>
 `tz_info`: String value of a [TZ Database name](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List) to set a custom timezone for the exported messages (default=UTC)<br/>
 `military_time`: Boolean value to set a 24h format for times within your exported chat (default=False | 12h format)<br/>
+`fancy_times`: Boolean value which toggles the 'fancy times' (Today|Yesterday|Day)<br/>
 `bot`: `commands.Bot` object to gather members who are no longer in your guild.
 
 **Return Argument:**<br/>
@@ -112,7 +113,7 @@ async def save(ctx: commands.Context, limit: int, tz_info: str, military_time: b
         ctx.channel,
         limit=limit,
         tz_info=tz_info,
-        military_time=military_time
+        military_time=military_time,
         bot=bot,
     )
 
@@ -142,6 +143,7 @@ This would be for people who want to filter what content to export.
 **Optional Argument(s):**<br/>
 `tz_info`: String value of a [TZ Database name](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List) to set a custom timezone for the exported messages (default=UTC)<br/>
 `military_time`: Boolean value to set a 24h format for times within your exported chat (default=False | 12h format)<br/>
+`fancy_times`: Boolean value which toggles the 'fancy times' (Today|Yesterday|Day)<br/>
 `bot`: `commands.Bot` object to gather members who are no longer in your guild.
 
 **Return Argument:**<br/>
@@ -255,7 +257,7 @@ async def save(ctx: commands.Context):
         filename=f"transcript-{ctx.channel.name}.html",
     )
 
-    message = await ctx.send(transcript_file)
+    message = await ctx.send(file=transcript_file)
     link = await chat_exporter.link(message)
 
     await ctx.send("Click this link to view the transcript online: " + link)

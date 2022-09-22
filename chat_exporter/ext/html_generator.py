@@ -56,6 +56,7 @@ message_thread = read_file(dir_path + "/html/message/thread.html")
 message_reference_unknown = read_file(dir_path + "/html/message/reference_unknown.html")
 message_body = read_file(dir_path + "/html/message/message.html")
 end_message = read_file(dir_path + "/html/message/end.html")
+meta_data_temp = read_file(dir_path + "/html/message/meta.html")
 
 # COMPONENTS
 component_button = read_file(dir_path + "/html/component/component_button.html")
@@ -88,3 +89,6 @@ video_attachment = read_file(dir_path + "/html/attachment/video.html")
 
 # GUILD / FULL TRANSCRIPT
 total = read_file(dir_path + "/html/base.html")
+
+# SCRIPT
+fancy_time = read_file(dir_path + "/html/script/fancy_time.html")
