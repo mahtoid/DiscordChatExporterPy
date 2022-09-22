@@ -1,17 +1,20 @@
+import datetime
 import html
 import traceback
 
 from typing import List, Optional
 
+import pytz
+
 from chat_exporter.ext.discord_import import discord
 
-from chat_exporter.construct.message import Message
+from chat_exporter.construct.message import gather_messages
 from chat_exporter.construct.assets.component import Component
 
 from chat_exporter.ext.cache import clear_cache
 from chat_exporter.parse.mention import pass_bot
 from chat_exporter.ext.discord_utils import DiscordUtils
-from chat_exporter.ext.html_generator import fill_out, total, PARSE_MODE_NONE
+from chat_exporter.ext.html_generator import fill_out, total, meta_data_temp, fancy_time, PARSE_MODE_NONE
 
 
 class TranscriptDAO:
@@ -24,43 +27,89 @@ class TranscriptDAO:
         messages: Optional[List[discord.Message]],
         pytz_timezone,
         military_time: bool,
+        fancy_times: bool,
+        support_dev: bool,
         bot: Optional[discord.Client],
     ):
         self.channel = channel
         self.messages = messages
         self.limit = int(limit) if limit else None
         self.military_time = military_time
+        self.fancy_times = fancy_times
+        self.support_dev = support_dev
         self.pytz_timezone = pytz_timezone
 
         if bot:
             pass_bot(bot)
 
     async def build_transcript(self):
-        message_html = await Message(
+        message_html, meta_data = await gather_messages(
             self.messages,
             self.channel.guild,
             self.pytz_timezone,
             self.military_time,
-        ).gather()
-        await self.export_transcript(message_html)
+        )
+        await self.export_transcript(message_html, meta_data)
         clear_cache()
         Component.menu_div_id = 0
         return self
 
-    async def export_transcript(self, message_html: str):
+    async def export_transcript(self, message_html: str, meta_data: str):
         guild_icon = self.channel.guild.icon if (
                 self.channel.guild.icon and len(self.channel.guild.icon) > 2
         ) else DiscordUtils.default_avatar
 
         guild_name = html.escape(self.channel.guild.name)
 
+        timezone = pytz.timezone(self.pytz_timezone)
+        time_now = datetime.datetime.now(timezone).strftime("%e %B %Y at %T (%Z)")
+
+        meta_data_html: str = ""
+        for data in meta_data:
+            creation_time = meta_data[int(data)][1].astimezone(timezone).strftime("%d/%m/%y @ %T")
+
+            meta_data_html += await fill_out(self.channel.guild, meta_data_temp, [
+                ("USER_ID", str(data), PARSE_MODE_NONE),
+                ("USERNAME", str(meta_data[int(data)][0][:-5]), PARSE_MODE_NONE),
+                ("DISCRIMINATOR", str(meta_data[int(data)][0][-5:])),
+                ("BOT", str(meta_data[int(data)][2]), PARSE_MODE_NONE),
+                ("CREATED_AT", str(creation_time), PARSE_MODE_NONE),
+                ("USER_AVATAR", str(meta_data[int(data)][3]), PARSE_MODE_NONE),
+                ("MESSAGE_COUNT", str(meta_data[int(data)][4]))
+            ])
+
+        channel_creation_time = self.channel.created_at.astimezone(timezone).strftime("%d/%m/%y @ %T")
+
+        channel_topic = f'<span class="panel__channel-topic">{self.channel.topic}</span>' if self.channel.topic else ""
+
+        sd = (
+            '<div class="meta__support">'
+            '    <a href="https://ko-fi.com/mahtoid">DONATE</a>'
+            '</div>'
+        ) if self.support_dev else ""
+
+        _fancy_time = ""
+
+        if self.fancy_times:
+            _fancy_time = await fill_out(self.channel.guild, fancy_time, [
+                ("TIMEZONE", str(self.pytz_timezone), PARSE_MODE_NONE)
+            ])
+
         self.html = await fill_out(self.channel.guild, total, [
-            ("SERVER_NAME", f"Guild: {guild_name}"),
+            ("SERVER_NAME", f"{guild_name}"),
             ("SERVER_AVATAR_URL", str(guild_icon), PARSE_MODE_NONE),
-            ("CHANNEL_NAME", f"Channel: {self.channel.name}"),
+            ("CHANNEL_NAME", f"{self.channel.name}"),
             ("MESSAGE_COUNT", str(len(self.messages))),
             ("MESSAGES", message_html, PARSE_MODE_NONE),
+            ("META_DATA", meta_data_html, PARSE_MODE_NONE),
             ("TIMEZONE", str(self.pytz_timezone)),
+            ("DATE_TIME", str(time_now)),
+            ("CHANNEL_CREATED_AT", str(channel_creation_time), PARSE_MODE_NONE),
+            ("CHANNEL_TOPIC", str(channel_topic), PARSE_MODE_NONE),
+            ("CHANNEL_ID", str(self.channel.id), PARSE_MODE_NONE),
+            ("MESSAGE_PARTICIPANTS", str(len(meta_data)), PARSE_MODE_NONE),
+            ("FANCY_TIME", _fancy_time, PARSE_MODE_NONE),
+            ("SD", sd, PARSE_MODE_NONE)
         ])
 
 
@@ -73,5 +122,7 @@ class Transcript(TranscriptDAO):
         try:
             return await super().build_transcript()
         except Exception:
+            self.html = "Whoops! Something went wrong..."
             traceback.print_exc()
-            print(f"Please send a screenshot of the above error to https://www.github.com/mahtoid/DiscordChatExporterPy")
+            print("Please send a screenshot of the above error to https://www.github.com/mahtoid/DiscordChatExporterPy")
+            return self

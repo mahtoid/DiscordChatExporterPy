@@ -1,11 +1,29 @@
 <div class="chatlog__message-group">
-    {{REFERENCE}}
-    <div class="chatlog__author-avatar-container">
-        <img class="chatlog__author-avatar" src="{{AVATAR_URL}}" />
+    <div id="chatlog__message-container-{{MESSAGE_ID}}" class="chatlog__message-container" data-message-id="{{MESSAGE_ID}}">
+        <div class="chatlog__message">
+            <div class="chatlog__message-aside">
+                {{REFERENCE_SYMBOL}}
+                <img class="chatlog__avatar" src="{{AVATAR_URL}}" />
+            </div>
+            <div class="chatlog__message-primary">
+                {{REFERENCE}}
+                <div class="chatlog__header">
+                    <span class="chatlog__author-name" title="{{NAME_TAG}}" data-user-id="{{USER_ID}}" style="{{USER_COLOUR}}">{{NAME}}{{USER_ICON}}</span>
+                    {{BOT_TAG}}
+                    <span class="chatlog__timestamp" data-timestamp="{{TIMESTAMP}}">{{DEFAULT_TIMESTAMP}}</span>
+                </div>
+
+                <div class="chatlog__content chatlog__markdown" data-message-id="{{MESSAGE_ID}}" id="message-{{MESSAGE_ID}}">
+                    {{MESSAGE_CONTENT}}
+
+                    {{ATTACHMENTS}}
+
+                    {{EMBEDS}}
+
+                    {{COMPONENTS}}
+
+                    {{EMOJI}}
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="chatlog__messages">
-        <span class="chatlog__author-name" title="{{NAME_TAG}}" data-user-id="{{USER_ID}}" style="{{USER_COLOUR}}">{{NAME}}{{USER_ICON}}</span>
-
-        {{BOT_TAG}}
-
-        <span class="chatlog__timestamp">{{TIMESTAMP}}</span>
