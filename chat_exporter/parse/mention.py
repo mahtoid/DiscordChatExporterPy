@@ -1,6 +1,9 @@
 import re
 from typing import Optional
 
+import pytz
+import datetime
+
 from chat_exporter.ext.discord_import import discord
 
 bot: Optional[discord.Client] = None
@@ -22,6 +25,16 @@ class ParseMention:
     REGEX_CHANNELS_2 = r"<#([0-9]+)>"
     REGEX_EMOJIS = r"&lt;a?(:[^\n:]+:)[0-9]+&gt;"
     REGEX_EMOJIS_2 = r"<a?(:[^\n:]+:)[0-9]+>"
+    REGEX_TIME_HOLDER = (
+        [r"&lt;t:([0-9]+):t&gt;", "%H:%M"],
+        [r"&lt;t:([0-9]+):T&gt;", "%T"],
+        [r"&lt;t:([0-9]+):d&gt;", "%d/%m/%Y"],
+        [r"&lt;t:([0-9]+):D&gt;", "%e %B %Y"],
+        [r"&lt;t:([0-9]+):f&gt;", "%e %B %Y %H:%M"],
+        [r"&lt;t:([0-9]+):F&gt;", "%A, %e %B %Y %H:%M"],
+        [r"&lt;t:([0-9]+):R&gt;", "%e %B %Y %H:%M"],
+        [r"&lt;t:([0-9]+)&gt;", "%e %B %Y %H:%M"]
+    )
 
     ESCAPE_LT = "______lt______"
     ESCAPE_GT = "______gt______"
@@ -31,17 +44,18 @@ class ParseMention:
         self.content = content
         self.guild = guild
 
-    def flow(self):
-        self.escape_mentions()
-        self.escape_mentions()
-        self.unescape_mentions()
-        self.channel_mention()
-        self.member_mention()
-        self.role_mention()
+    async def flow(self):
+        await self.escape_mentions()
+        await self.escape_mentions()
+        await self.unescape_mentions()
+        await self.channel_mention()
+        await self.member_mention()
+        await self.role_mention()
+        await self.time_mention()
 
         return self.content
 
-    def escape_mentions(self):
+    async def escape_mentions(self):
         for match in re.finditer("(%s|%s|%s|%s|%s|%s|%s|%s)"
                                  % (self.REGEX_ROLES, self.REGEX_MEMBERS, self.REGEX_CHANNELS, self.REGEX_EMOJIS,
                                     self.REGEX_ROLES_2, self.REGEX_MEMBERS_2, self.REGEX_CHANNELS_2,
@@ -56,13 +70,13 @@ class ParseMention:
 
             self.content = pre_content + match_content + post_content
 
-    def unescape_mentions(self):
+    async def unescape_mentions(self):
         self.content = self.content.replace(self.ESCAPE_LT, "<")
         self.content = self.content.replace(self.ESCAPE_GT, ">")
         self.content = self.content.replace(self.ESCAPE_AMP, "&")
         pass
 
-    def channel_mention(self):
+    async def channel_mention(self):
         holder = self.REGEX_CHANNELS, self.REGEX_CHANNELS_2
         for regex in holder:
             match = re.search(regex, self.content)
@@ -79,7 +93,7 @@ class ParseMention:
 
                 match = re.search(regex, self.content)
 
-    def role_mention(self):
+    async def role_mention(self):
         holder = self.REGEX_ROLES, self.REGEX_ROLES_2
         for regex in holder:
             match = re.search(regex, self.content)
@@ -100,7 +114,7 @@ class ParseMention:
 
                 match = re.search(regex, self.content)
 
-    def member_mention(self):
+    async def member_mention(self):
         holder = self.REGEX_MEMBERS, self.REGEX_MEMBERS_2
         for regex in holder:
             match = re.search(regex, self.content)
@@ -120,6 +134,28 @@ class ParseMention:
                 else:
                     replacement = '<span class="mention" title="%s">&lt;@%s></span>' \
                                   % (str(member_id), str(member_id))
+                self.content = self.content.replace(self.content[match.start():match.end()],
+                                                    replacement)
+
+                match = re.search(regex, self.content)
+
+    async def time_mention(self):
+        holder = self.REGEX_TIME_HOLDER
+        timezone = pytz.timezone(self.guild.timezone)
+
+        for p in holder:
+            regex, strf = p
+            match = re.search(regex, self.content)
+            while match is not None:
+                time = datetime.datetime.fromtimestamp(int(match.group(1)), timezone)
+                ui_time = time.strftime(strf)
+                tooltip_time = time.strftime("%A, %e %B %Y at %H:%M")
+                original = match.group().replace("&lt;", "<").replace("&gt;", ">")
+                replacement = (
+                    f'<span class="unix-timestamp" data-timestamp="{tooltip_time}" raw-content="{original}">'
+                    f'{ui_time}</span>'
+                )
+
                 self.content = self.content.replace(self.content[match.start():match.end()],
                                                     replacement)
 

@@ -23,7 +23,7 @@ async def fill_out(guild, base, replacements):
         k, v, mode = r
 
         if mode != PARSE_MODE_NONE:
-            v = ParseMention(v, guild).flow()
+            v = await ParseMention(v, guild).flow()
         if mode == PARSE_MODE_MARKDOWN:
             v = await ParseMarkdown(v).standard_message_flow()
         elif mode == PARSE_MODE_EMBED:
@@ -92,3 +92,5 @@ total = read_file(dir_path + "/html/base.html")
 
 # SCRIPT
 fancy_time = read_file(dir_path + "/html/script/fancy_time.html")
+channel_topic = read_file(dir_path + "/html/script/channel_topic.html")
+channel_subject = read_file(dir_path + "/html/script/channel_subject.html")
