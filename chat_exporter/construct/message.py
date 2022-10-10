@@ -59,9 +59,9 @@ class MessageConstruct:
         self.military_time = military_time
         self.guild = guild
 
-        self.time_format = "%A, %d %B %Y at %I:%M %p"
+        self.time_format = "%A, %e %B %Y %I:%M %p"
         if self.military_time:
-            self.time_format = "%A, %d %B %Y at %H:%M"
+            self.time_format = "%A, %e %B %Y %H:%M"
 
         self.message_created_at, self.message_edited_at = self.set_time()
         self.meta_data = meta_data
@@ -106,7 +106,15 @@ class MessageConstruct:
                 self.message.author.display_avatar if self.message.author.display_avatar
                 else DiscordUtils.default_avatar
             )
-            self.meta_data[user_id] = [user_name_discriminator, user_created_at, user_bot, user_avatar, 1]
+            user_joined_at = self.message.author.joined_at
+            user_display_name = (
+                f'<div class="meta__display-name">{self.message.author.display_name}</div>'
+                if self.message.author.display_name != self.message.author.name
+                else ""
+            )
+            self.meta_data[user_id] = [
+                user_name_discriminator, user_created_at, user_bot, user_avatar, 1, user_joined_at, user_display_name
+            ]
 
     async def build_content(self):
         if not self.message.content:

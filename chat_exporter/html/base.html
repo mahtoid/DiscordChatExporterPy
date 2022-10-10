@@ -131,6 +131,7 @@ If you have any issues or suggestions - open an issue on the Github Repository o
 
         .spoiler--hidden {
             cursor: pointer;
+            background-color: #202225;
         }
 
         .spoiler-text {
@@ -138,7 +139,7 @@ If you have any issues or suggestions - open an issue on the Github Repository o
         }
 
         .spoiler--hidden .spoiler-text {
-            color: rgba(0, 0, 0, 0);
+            opacity: 0;
         }
 
         .spoiler--hidden .spoiler-text::selection {
@@ -201,6 +202,12 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             padding: 2px;
             border-radius: 3px;
             font-size: 0.85em;
+        }
+
+        .unix-timestamp {
+            background: #40444b;
+            border-radius: 3px;
+            padding: 0 2px;
         }
 
         .mention {
@@ -397,10 +404,6 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             padding: 0.15rem 0;
             direction: ltr;
             unicode-bidi: bidi-override;
-        }
-
-        .chatlog__message .chatlog__bot-tag {
-            top: -0.2em;
         }
 
         .chatlog__avatar {
@@ -625,17 +628,29 @@ If you have any issues or suggestions - open an issue on the Github Repository o
         }
 
         .chatlog__bot-tag {
-            position: relative;
-            margin-left: 0.3em;
-            margin-right: 0.3em;
-            padding: 0.05em 0.3em;
-            border-radius: 3px;
-            vertical-align: middle;
-            line-height: 1.3;
-            background: #7289da;
+            background: #5865f2;
             color: #ffffff;
-            font-size: 0.625em;
+            padding: 0 0.2rem;
+            margin-top: 0.5em;
+            border-radius: 0.1875rem;
+            margin-left: 0.07rem;
+            position: relative;
+            vertical-align: top;
+            display: inline-flex;
+            flex-shrink: 0;
+            text-indent: 0;
             font-weight: 500;
+            font-size: 10px;
+            line-height: 15px;
+        }
+
+        .chatlog__reference .chatlog__bot-tag {
+            margin-right: 0.3rem;
+            margin-top: 0;
+        }
+
+        .meta__details .chatlog__bot-tag {
+            margin-left: 1ch;
         }
 
         /* Postamble */
@@ -875,16 +890,16 @@ If you have any issues or suggestions - open an issue on the Github Repository o
         }
 
         .info__title {
-            font-size: 32px;
-            font-weight: 700;
+            font-size: 30px;
+            font-weight: 500;
             line-height: 40px;
-            margin: 8px 0;
         }
 
         .info__subject {
             color: #b9bbbe;
             font-size: 16px;
-            line-height:20px;
+            line-height: 20px;
+            font-family: "Whitney";
         }
 
         .info__channel-message-count {
@@ -951,20 +966,42 @@ If you have any issues or suggestions - open an issue on the Github Repository o
         .meta-popout {
             position: absolute;
             z-index: 6969;
-            background-color: #36393f;
+            background-color: #292b2f;
             box-shadow:
                 0 2px 10px 0 rgb(0 0 0 / 20%),
                 0 0 0 1px rgb(32 34 37 / 60%);
-            width: 250px;
+            width: 280px;
             border-radius: 5px;
             overflow: hidden;
             transform: scale(0);
             transform-origin: top left;
         }
 
+        .meta-popout img {
+            height: 16px;
+            width: 16px;
+        }
+
+        .meta__img-border {
+            border-radius: 50%;
+        }
+
         .meta-popout.mounted {
             transform: scale(1);
             transition: transform .3 ease-in-out;;
+        }
+
+        .meta__divider {
+            height: 4px;
+            width: 4px;
+            border-radius: 50%;
+            background-color: #4f545c;
+        }
+
+        .meta__divider-2 {
+            margin: 5px 12px 10px;
+            height: 1px;
+            background-color: #4f545c;
         }
 
         .meta__header {
@@ -973,7 +1010,7 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             align-items: center;
             justify-content: center;
             background-color: #202225;
-            padding: 20px 10px;
+            padding-top: 10px;
         }
 
         .meta__header img {
@@ -987,22 +1024,33 @@ If you have any issues or suggestions - open an issue on the Github Repository o
 
         .meta__details {
             display: flex;
-            align-items: center;
-            justify-content: center;
             flex-wrap: wrap;
+            padding-bottom: 7px;
+        }
+
+        .meta__display-name {
+            font-weight: 500;
+            color: #fff;
+            opacity: 0.9;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            font-family: 'Ginto';
+            font-size: 12px;
         }
 
         .meta__user {
-            font-weight: 600;
+            font-weight: 500;
             color: #fff;
             text-overflow: ellipsis;
             overflow: hidden;
+            font-family: 'Ginto';
         }
 
         .meta__discriminator {
             font-weight: 500;
             color: #fff;
             opacity: .6;
+            font-family: 'Ginto';
         }
 
         .meta-popout .meta__header .bot {
@@ -1011,6 +1059,9 @@ If you have any issues or suggestions - open an issue on the Github Repository o
 
         .meta__description {
             padding: 10px;
+            background-color: #18191c;
+            margin: 10px;
+            border-radius: 5%;
         }
 
         .meta__field {
@@ -1022,12 +1073,16 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             color: #72767d;
             text-transform: uppercase;
             font-size: 12px;
+            line-height: 16px;
             margin-bottom: 1px;
         }
 
         .meta__value {
-            font-size: 13px;
-            line-height: 14px;
+            font-size: 14px;
+            line-height: 16px;
+            align-items: center;
+            display: flex;
+            column-gap: 6px;
         }
 
         .meta__support {
@@ -1242,8 +1297,8 @@ If you have any issues or suggestions - open an issue on the Github Repository o
     </div>
 
     <div class="info">
-        <span class="info__title">Welcome to <b>#{{CHANNEL_NAME}}</b></span>
-        <span class="info__subject">This is the start of the #{{CHANNEL_NAME}} channel.</span>
+        <span class="info__title">Welcome to #{{CHANNEL_NAME}}!</span>
+        {{SUBJECT}}
     </div>
 
     <div class="chatlog">
@@ -1262,11 +1317,11 @@ If you have any issues or suggestions - open an issue on the Github Repository o
 <div id="summary-popout" class="summary-popout">
     <div class="meta__header">
          <img src="{{SERVER_AVATAR_URL}}" alt="Avatar">
+    </div>
+    <div class="meta__description">
         <div class="meta__details">
             <div class="meta__user">{{SERVER_NAME}}</div>
         </div>
-    </div>
-    <div class="meta__description">
         <div class="meta__field">
             <div class="meta__title">Channel ID</div>
             <div class="meta__value">{{CHANNEL_ID}}</div>
@@ -1282,10 +1337,6 @@ If you have any issues or suggestions - open an issue on the Github Repository o
         <div class="meta__field">
             <div class="meta__title">Total Message Participants</div>
             <div class="meta__value">{{MESSAGE_PARTICIPANTS}}</div>
-        </div>
-        <div class="meta__field">
-            <div class="meta__title">Transcript Timezone</div>
-            <div class="meta__value">{{TIMEZONE}}</div>
         </div>
         {{SD}}
     </div>
@@ -1438,6 +1489,14 @@ If you have any issues or suggestions - open an issue on the Github Repository o
 
     <!-- Timestamps: Tooltips -->
     tippy('.chatlog__timestamp', {
+        placement: 'top',
+        animation: 'fade',
+        content: (reference) => reference.getAttribute('data-timestamp'),
+        theme: 'disc',
+    });
+
+    <!-- Timestamps: Tooltips -->
+    tippy('.unix-timestamp', {
         placement: 'top',
         animation: 'fade',
         content: (reference) => reference.getAttribute('data-timestamp'),

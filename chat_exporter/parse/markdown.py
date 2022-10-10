@@ -1,3 +1,4 @@
+import html
 import re
 from chat_exporter.ext.emoji_convert import convert_emoji
 
@@ -225,13 +226,16 @@ class ParseMarkdown:
 
     @staticmethod
     def return_to_markdown(content):
-        holders = [r"<strong>(.*?)</strong>", '**%s**'], \
-                  [r"<em>([^<>]+)</em>", '*%s*'], \
-                  [r'<span style="text-decoration: underline">([^<>]+)</span>', '__%s__'], \
-                  [r'<span style="text-decoration: line-through">([^<>]+)</span>', '~~%s~~'], \
-                  [r'<div class="quote">(.*?)</div>', '> %s'], \
-                  [r'<span class="spoiler spoiler--hidden" onclick="showSpoiler\(event, this\)"> <span '
-                   r'class="spoiler-text">(.*?)<\/span><\/span>', '||%s||']
+        holders = (
+            [r"<strong>(.*?)</strong>", '**%s**'],
+            [r"<em>([^<>]+)</em>", '*%s*'],
+            [r'<span style="text-decoration: underline">([^<>]+)</span>', '__%s__'],
+            [r'<span style="text-decoration: line-through">([^<>]+)</span>', '~~%s~~'],
+            [r'<div class="quote">(.*?)</div>', '> %s'],
+            [r'<span class="spoiler spoiler--hidden" onclick="showSpoiler\(event, this\)"> <span '
+             r'class="spoiler-text">(.*?)<\/span><\/span>', '||%s||'],
+            [r'<span class="unix-timestamp" data-timestamp=".*?" raw-content="(.*?)">.*?</span>', '%s']
+        )
 
         for x in holders:
             p, r = x
@@ -241,7 +245,7 @@ class ParseMarkdown:
             while match is not None:
                 affected_text = match.group(1)
                 content = content.replace(content[match.start():match.end()],
-                                          r % affected_text)
+                                          r % html.escape(affected_text))
                 match = re.search(pattern, content)
 
         pattern = re.compile(r'<a href="(.*?)">(.*?)</a>')
@@ -260,22 +264,32 @@ class ParseMarkdown:
         return content.lstrip().rstrip()
 
     def https_http_links(self):
-        def remove_silent_link(url):
-            if url.startswith("&lt;<") and url.endswith(">&gt;"):
-                return url[1:-1]
+        def remove_silent_link(url, raw_url=None):
+            pattern = rf"`.*{raw_url}.*`"
+            match = re.search(pattern, self.content)
+
+            if "&lt;" in url and "&gt;" in url and not match:
+                return url.replace("&lt;", "").replace("&gt;", "")
             return url
 
         content = re.sub("\n", "<br>", self.content)
         output = []
         if "http://" in content or "https://" in content and "](" not in content:
             for word in content.replace("<br>", " <br>").split():
-                if word.startswith("&lt;") and word.endswith("&gt;"):
+
+                if "http" not in word:
+                    output.append(word)
+                    continue
+
+                if "&lt;" in word and "&gt;" in word:
                     pattern = r"&lt;https?:\/\/(.*)&gt;"
-                    url = re.search(pattern, word).group(1)
-                    url = f'<a href="https://{url}">https://{url}</a>'
-                    output.append(url)
+                    match_url = re.search(pattern, word).group(1)
+                    url = f'<a href="https://{match_url}">https://{match_url}</a>'
+                    word = word.replace("https://" + match_url, url)
+                    word = word.replace("http://" + match_url, url)
+                    output.append(remove_silent_link(word, match_url))
                 elif "https://" in word:
-                    pattern = r"https://[^\s>\"*]*"
+                    pattern = r"https://[^\s>`\"*]*"
                     word_link = re.search(pattern, word).group()
                     if word_link.endswith(")"):
                         output.append(word)
@@ -284,7 +298,7 @@ class ParseMarkdown:
                     word = re.sub(pattern, word_full, word)
                     output.append(remove_silent_link(word))
                 elif "http://" in word:
-                    pattern = r"http://[^\s>\"*]*"
+                    pattern = r"http://[^\s>`\"*]*"
                     word_link = re.search(pattern, word).group()
                     if word_link.endswith(")"):
                         output.append(word)
