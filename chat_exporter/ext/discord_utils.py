@@ -1,4 +1,5 @@
 class DiscordUtils:
+    logo: str = 'https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/discord-logo.svg'
     default_avatar: str = 'https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/discord-default.png'
     pinned_message_icon: str = 'https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/discord-pinned.svg'
     thread_channel_icon: str = 'https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/discord-thread.svg'

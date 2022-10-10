@@ -14,7 +14,9 @@ from chat_exporter.construct.assets.component import Component
 from chat_exporter.ext.cache import clear_cache
 from chat_exporter.parse.mention import pass_bot
 from chat_exporter.ext.discord_utils import DiscordUtils
-from chat_exporter.ext.html_generator import fill_out, total, meta_data_temp, fancy_time, PARSE_MODE_NONE
+from chat_exporter.ext.html_generator import (
+    fill_out, total, channel_topic, meta_data_temp, fancy_time, channel_subject, PARSE_MODE_NONE
+)
 
 
 class TranscriptDAO:
@@ -38,6 +40,9 @@ class TranscriptDAO:
         self.fancy_times = fancy_times
         self.support_dev = support_dev
         self.pytz_timezone = pytz_timezone
+
+        # This is to pass timezone in to mention.py without rewriting
+        setattr(discord.Guild, "timezone", self.pytz_timezone)
 
         if bot:
             pass_bot(bot)
@@ -66,7 +71,8 @@ class TranscriptDAO:
 
         meta_data_html: str = ""
         for data in meta_data:
-            creation_time = meta_data[int(data)][1].astimezone(timezone).strftime("%d/%m/%y @ %T")
+            creation_time = meta_data[int(data)][1].astimezone(timezone).strftime("%b %d, %Y")
+            joined_time = meta_data[int(data)][5].astimezone(timezone).strftime("%b %d, %Y")
 
             meta_data_html += await fill_out(self.channel.guild, meta_data_temp, [
                 ("USER_ID", str(data), PARSE_MODE_NONE),
@@ -74,13 +80,34 @@ class TranscriptDAO:
                 ("DISCRIMINATOR", str(meta_data[int(data)][0][-5:])),
                 ("BOT", str(meta_data[int(data)][2]), PARSE_MODE_NONE),
                 ("CREATED_AT", str(creation_time), PARSE_MODE_NONE),
+                ("JOINED_AT", str(joined_time), PARSE_MODE_NONE),
+                ("GUILD_ICON", str(guild_icon), PARSE_MODE_NONE),
+                ("DISCORD_ICON", str(DiscordUtils.logo), PARSE_MODE_NONE),
+                ("MEMBER_ID", str(data), PARSE_MODE_NONE),
                 ("USER_AVATAR", str(meta_data[int(data)][3]), PARSE_MODE_NONE),
+                ("DISPLAY", str(meta_data[int(data)][6]), PARSE_MODE_NONE),
                 ("MESSAGE_COUNT", str(meta_data[int(data)][4]))
             ])
 
-        channel_creation_time = self.channel.created_at.astimezone(timezone).strftime("%d/%m/%y @ %T")
+        channel_creation_time = self.channel.created_at.astimezone(timezone).strftime("%b %d, %Y (%T)")
 
-        channel_topic = f'<span class="panel__channel-topic">{self.channel.topic}</span>' if self.channel.topic else ""
+        raw_channel_topic = self.channel.topic if self.channel.topic else ""
+
+        channel_topic_html = ""
+        if raw_channel_topic:
+            channel_topic_html = await fill_out(self.channel.guild, channel_topic, [
+                ("CHANNEL_TOPIC", raw_channel_topic)
+            ])
+
+        limit = "start"
+        if self.limit:
+            limit = f"latest {self.limit} messages"
+
+        subject = await fill_out(self.channel.guild, channel_subject, [
+            ("LIMIT", limit, PARSE_MODE_NONE),
+            ("CHANNEL_NAME", self.channel.name),
+            ("RAW_CHANNEL_TOPIC", str(raw_channel_topic))
+        ])
 
         sd = (
             '<div class="meta__support">'
@@ -102,10 +129,10 @@ class TranscriptDAO:
             ("MESSAGE_COUNT", str(len(self.messages))),
             ("MESSAGES", message_html, PARSE_MODE_NONE),
             ("META_DATA", meta_data_html, PARSE_MODE_NONE),
-            ("TIMEZONE", str(self.pytz_timezone)),
             ("DATE_TIME", str(time_now)),
+            ("SUBJECT", subject, PARSE_MODE_NONE),
             ("CHANNEL_CREATED_AT", str(channel_creation_time), PARSE_MODE_NONE),
-            ("CHANNEL_TOPIC", str(channel_topic), PARSE_MODE_NONE),
+            ("CHANNEL_TOPIC", str(channel_topic_html), PARSE_MODE_NONE),
             ("CHANNEL_ID", str(self.channel.id), PARSE_MODE_NONE),
             ("MESSAGE_PARTICIPANTS", str(len(meta_data)), PARSE_MODE_NONE),
             ("FANCY_TIME", _fancy_time, PARSE_MODE_NONE),
