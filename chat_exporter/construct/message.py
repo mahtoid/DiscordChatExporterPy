@@ -106,7 +106,7 @@ class MessageConstruct:
                 self.message.author.display_avatar if self.message.author.display_avatar
                 else DiscordUtils.default_avatar
             )
-            user_joined_at = self.message.author.joined_at
+            user_joined_at = self.message.author.joined_at if hasattr(self.message.author, "joined_at") else None
             user_display_name = (
                 f'<div class="meta__display-name">{self.message.author.display_name}</div>'
                 if self.message.author.display_name != self.message.author.name
