@@ -72,7 +72,10 @@ class TranscriptDAO:
         meta_data_html: str = ""
         for data in meta_data:
             creation_time = meta_data[int(data)][1].astimezone(timezone).strftime("%b %d, %Y")
-            joined_time = meta_data[int(data)][5].astimezone(timezone).strftime("%b %d, %Y")
+            joined_time = (
+                meta_data[int(data)][5].astimezone(timezone).strftime("%b %d, %Y")
+                if meta_data[int(data)][5] else "Unknown"
+            )
 
             meta_data_html += await fill_out(self.channel.guild, meta_data_temp, [
                 ("USER_ID", str(data), PARSE_MODE_NONE),
