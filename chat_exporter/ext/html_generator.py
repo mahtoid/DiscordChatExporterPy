@@ -49,8 +49,10 @@ def read_file(filename):
 # MESSAGES
 start_message = read_file(dir_path + "/html/message/start.html")
 bot_tag = read_file(dir_path + "/html/message/bot-tag.html")
+bot_tag_verified = read_file(dir_path + "/html/message/bot-tag-verified.html")
 message_content = read_file(dir_path + "/html/message/content.html")
 message_reference = read_file(dir_path + "/html/message/reference.html")
+message_interaction = read_file(dir_path + "/html/message/interaction.html")
 message_pin = read_file(dir_path + "/html/message/pin.html")
 message_thread = read_file(dir_path + "/html/message/thread.html")
 message_reference_unknown = read_file(dir_path + "/html/message/reference_unknown.html")
