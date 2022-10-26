@@ -196,7 +196,6 @@ class MessageConstruct:
             ("INTERACTION_ID", str(self.message.interaction.id), PARSE_MODE_NONE)
         ])
 
-
     async def build_sticker(self):
         if not self.message.stickers or not hasattr(self.message.stickers[0], "url"):
             return
