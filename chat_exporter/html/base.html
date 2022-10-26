@@ -314,6 +314,17 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             overflow: hidden;
             text-overflow: ellipsis;
         }
+        
+        .chatlog__interaction {
+            display: flex;
+            margin-bottom: 0.15rem;
+            align-items: center;
+            color: #b5b6b8;
+            font-size: 0.875rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
 
         .chatlog__reference-avatar {
             width: 16px;
@@ -321,8 +332,20 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             margin-right: 0.25rem;
             border-radius: 50%;
         }
-
+        
+        .chatlog__interaction-avatar {
+            width: 16px;
+            height: 16px;
+            margin-right: 0.25rem;
+            border-radius: 50%;
+        }
+        
         .chatlog__reference-author {
+            margin-right: 0.3rem;
+            font-weight: 600;
+        }
+        
+        .chatlog__interaction-author {
             margin-right: 0.3rem;
             font-weight: 600;
         }
@@ -332,7 +355,7 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             text-overflow: ellipsis;
         }
 
-        .chatlog__reference-content {
+        .chatlog__interaction-content {
             overflow: hidden;
             text-overflow: ellipsis;
             color: #b5b6b8;
@@ -359,6 +382,27 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             color: inherit;
         }
 
+        .chatlog__interaction-link {
+            cursor: pointer;
+        }
+
+        .chatlog__interaction-link * {
+            display: inline;
+            pointer-events: none;
+        }
+
+        .chatlog__interaction-link .hljs {
+            display: inline;
+        }
+
+        .chatlog__interaction-link:hover {
+            color: #ffffff;
+        }
+
+        .chatlog__interaction-link:hover *:not(.chatlog__markdown-spoiler) {
+            color: inherit;
+        }
+        
         .chatlog__reference-edited-timestamp {
             margin-left: 0.25rem;
             color: #a3a6aa;
@@ -664,6 +708,11 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             margin-top: 0;
         }
 
+        .chatlog__interaction .chatlog__bot-tag {
+            margin-right: 0.3rem;
+            margin-top: 0;
+        }
+
         .meta__details .chatlog__bot-tag {
             margin-left: 1ch;
         }
@@ -758,6 +807,12 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             vertical-align: bottom;
         }
 
+        .chatlog__interaction-icon {
+            width: 20px;
+            display: inline-block;
+            vertical-align: bottom;
+        }
+
         .chatlog__reference-link {
             color: #b5b6b8;
         }
@@ -773,6 +828,10 @@ If you have any issues or suggestions - open an issue on the Github Repository o
 
         .chatlog__reference-link:hover {
             color: #ffffff;
+        }
+
+        .chatlog__interaction-link:hover {
+            color: #b5b6b8;
         }
 
         .chatlog__reference-edited-timestamp {
