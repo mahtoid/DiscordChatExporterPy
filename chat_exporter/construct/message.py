@@ -192,7 +192,7 @@ class MessageConstruct:
             ("NAME_TAG", "%s#%s" % (user.name, user.discriminator), PARSE_MODE_NONE),
             ("NAME", str(html.escape(user.display_name))),
             ("USER_COLOUR", user_colour, PARSE_MODE_NONE),
-            ("CONTENT", self.message.interaction.name, PARSE_MODE_REFERENCE),
+            ("CONTENT", "/" + self.message.interaction.name, PARSE_MODE_REFERENCE),
             ("INTERACTION_ID", str(self.message.interaction.id), PARSE_MODE_NONE)
         ])
 
