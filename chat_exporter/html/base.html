@@ -11,7 +11,7 @@ If you have any issues or suggestions - open an issue on the Github Repository o
 
 <head>
     <title>{{SERVER_NAME}} - {{CHANNEL_NAME}}</title>
-    <meta charset="utf-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width" />
 
     <style>
@@ -35,7 +35,7 @@ If you have any issues or suggestions - open an issue on the Github Repository o
 
         @font-face {
           font-family: Ginto;
-          src: url(https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/Ginto-600.woff) format("woff")
+          src: url(https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/Ginto-600.woff) format("woff");
           font-weight: 600;
         }
 
@@ -330,6 +330,12 @@ If you have any issues or suggestions - open an issue on the Github Repository o
         .chatlog__reference-content {
             overflow: hidden;
             text-overflow: ellipsis;
+        }
+
+        .chatlog__reference-content {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: #b5b6b8;
         }
 
         .chatlog__reference-link {
