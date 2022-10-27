@@ -154,10 +154,18 @@ class MessageConstruct:
         is_bot = _gather_user_bot(message.author)
         user_colour = await self._gather_user_colour(message.author)
 
-        if not message.content:
+        if not message.content and not message.interaction:
             message.content = "Click to see attachment"
+        elif not message.content and message.interaction:
+            message.content = "Click to see command"
 
-        attachment_icon = DiscordUtils.reference_attachment_icon if message.embeds or message.attachments else ""
+
+        if not message.interaction and (message.embeds or message.attachments):
+            icon = DiscordUtils.reference_attachment_icon
+        elif message.interaction:
+            icon = DiscordUtils.interaction_command_icon
+        else:
+            icon = ""
 
         _, message_edited_at = self.set_time(message)
 
@@ -173,7 +181,7 @@ class MessageConstruct:
             ("USER_COLOUR", user_colour, PARSE_MODE_NONE),
             ("CONTENT", message.content, PARSE_MODE_REFERENCE),
             ("EDIT", message_edited_at, PARSE_MODE_NONE),
-            ("ATTACHMENT_ICON", attachment_icon, PARSE_MODE_NONE),
+            ("ICON", icon, PARSE_MODE_NONE),
             ("MESSAGE_ID", str(self.message.reference.message_id), PARSE_MODE_NONE)
         ])
 
@@ -193,7 +201,7 @@ class MessageConstruct:
             ("NAME", str(html.escape(user.display_name))),
             ("USER_COLOUR", user_colour, PARSE_MODE_NONE),
             ("FILLER", "used ", PARSE_MODE_NONE),
-            ("COMMAND", "/" + self.message.interaction.name, PARSE_MODE_REFERENCE),
+            ("COMMAND", "/" + self.message.interaction.name, PARSE_MODE_NONE),
             ("INTERACTION_ID", str(self.message.interaction.id), PARSE_MODE_NONE)
         ])
 
