@@ -29,12 +29,11 @@ from chat_exporter.ext.html_generator import (
 
 
 def _gather_user_bot(author: discord.Member):
-    if author.bot and author.public_flags and author.public_flags.verified_bot:
+    if author.bot and author.public_flags.verified_bot:
         return bot_tag_verified
     elif author.bot:
         return bot_tag
-    else:
-        return ""
+    return ""
 
 
 def _set_edit_at(message_edited_at):
@@ -159,13 +158,11 @@ class MessageConstruct:
         elif not message.content and message.interaction:
             message.content = "Click to see command"
 
-
+        icon = ""
         if not message.interaction and (message.embeds or message.attachments):
             icon = DiscordUtils.reference_attachment_icon
         elif message.interaction:
             icon = DiscordUtils.interaction_command_icon
-        else:
-            icon = ""
 
         _, message_edited_at = self.set_time(message)
 
@@ -272,15 +269,12 @@ class MessageConstruct:
             if channel_audit:
                 return
 
-            reference_symbol = ""
+            followup_symbol = ""
             is_bot = _gather_user_bot(self.message.author)
             avatar_url = self.message.author.display_avatar if self.message.author.display_avatar else DiscordUtils.default_avatar
 
-            if self.message.reference != "":
-                reference_symbol = "<div class='chatlog__reference-symbol'></div>"
-
-            if self.message.interaction != "":
-                reference_symbol = "<div class='chatlog__interaction-symbol'></div>"
+            if self.message.reference != "" or self.message.interaction:
+                followup_symbol = "<div class='chatlog__followup-symbol'></div>"
 
             time = self.message.created_at
             if not self.message.created_at.tzinfo:
@@ -289,7 +283,7 @@ class MessageConstruct:
             default_timestamp = time.astimezone(timezone(self.pytz_timezone)).strftime("%d-%m-%Y %H:%M")
 
             self.message_html += await fill_out(self.guild, start_message, [
-                ("REFERENCE_SYMBOL", reference_symbol, PARSE_MODE_NONE),
+                ("REFERENCE_SYMBOL", followup_symbol, PARSE_MODE_NONE),
                 ("REFERENCE", self.message.reference if self.message.reference else self.message.interaction, PARSE_MODE_NONE),
                 ("AVATAR_URL", str(avatar_url), PARSE_MODE_NONE),
                 ("NAME_TAG", "%s#%s" % (self.message.author.name, self.message.author.discriminator), PARSE_MODE_NONE),
