@@ -153,8 +153,7 @@ class MessageConstruct:
         is_bot = _gather_user_bot(message.author)
         user_colour = await self._gather_user_colour(message.author)
 
-        if (not message.content or message.content == message.attachments[0].url
-            or message.content == message.attachments[0].proxy_url) and not message.interaction:
+        if not message.content and not message.interaction:
             message.content = "Click to see attachment"
         elif not message.content and message.interaction:
             message.content = "Click to see command"
