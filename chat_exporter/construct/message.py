@@ -51,13 +51,13 @@ class MessageConstruct:
     time_format: str = ""
 
     def __init__(
-            self,
-            message: discord.Message,
-            previous_message: Optional[discord.Message],
-            pytz_timezone,
-            military_time: bool,
-            guild: discord.Guild,
-            meta_data: dict
+        self,
+        message: discord.Message,
+        previous_message: Optional[discord.Message],
+        pytz_timezone,
+        military_time: bool,
+        guild: discord.Guild,
+        meta_data: dict
     ):
         self.message = message
         self.previous_message = previous_message
@@ -73,7 +73,7 @@ class MessageConstruct:
         self.meta_data = meta_data
 
     async def construct_message(
-            self,
+        self,
     ) -> (str, dict):
         if "pins_add" in self.message.type:
             await self.build_pin()
@@ -256,9 +256,9 @@ class MessageConstruct:
 
     def _generate_message_divider_check(self):
         return bool(
-                self.previous_message is None or self.message.reference != "" or self.message.interaction != "" or
-                self.previous_message.author.id != self.message.author.id or self.message.webhook_id is not None or
-                self.message.created_at > (self.previous_message.created_at + timedelta(minutes=4))
+            self.previous_message is None or self.message.reference != "" or self.message.interaction != "" or
+            self.previous_message.author.id != self.message.author.id or self.message.webhook_id is not None or
+            self.message.created_at > (self.previous_message.created_at + timedelta(minutes=4))
         )
 
     async def generate_message_divider(self, channel_audit=False):
@@ -374,10 +374,10 @@ class MessageConstruct:
 
 
 async def gather_messages(
-        messages: List[discord.Message],
-        guild: discord.Guild,
-        pytz_timezone,
-        military_time,
+    messages: List[discord.Message],
+    guild: discord.Guild,
+    pytz_timezone,
+    military_time,
 ) -> (str, dict):
     message_html: str = ""
     meta_data: dict = {}
@@ -385,12 +385,12 @@ async def gather_messages(
 
     for message in messages:
         content_html, meta_data = await MessageConstruct(
-                message,
-                previous_message,
-                pytz_timezone,
-                military_time,
-                guild,
-                meta_data
+            message,
+            previous_message,
+            pytz_timezone,
+            military_time,
+            guild,
+            meta_data
         ).construct_message()
         message_html += content_html
         previous_message = message
