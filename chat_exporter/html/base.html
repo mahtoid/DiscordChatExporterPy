@@ -314,11 +314,14 @@ If you have any issues or suggestions - open an issue on the Github Repository o
         }
 
         .chatlog__followup-author {
+            user-select: none;
+            cursor: pointer;
             margin-right: 0.3rem;
             font-weight: 600;
         }
 
         .chatlog__followup-content {
+            user-select: none;
             overflow: hidden;
             text-overflow: ellipsis;
         }
@@ -657,6 +660,11 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             line-height: 15px;
         }
 
+        .chatlog__bot-tag-verified {
+            width: 16px;
+            margin-left: -3px;
+        }
+
         .chatlog__followup .chatlog__bot-tag {
             margin-right: 0.3rem;
             margin-top: 0;
@@ -748,9 +756,11 @@ If you have any issues or suggestions - open an issue on the Github Repository o
         }
 
         .chatlog__interaction-icon {
-            width: 20px;
+            width: 15px;
             display: inline-block;
             vertical-align: bottom;
+            margin-left: 3px;
+            margin-bottom: 2px;
         }
 
         .chatlog__reference-link {
@@ -762,7 +772,7 @@ If you have any issues or suggestions - open an issue on the Github Repository o
         }
 
         .chatlog__interaction-link {
-            color: #00aff4;
+            color: #1680ab;
             cursor: pointer;
         }
 
@@ -776,7 +786,6 @@ If you have any issues or suggestions - open an issue on the Github Repository o
         }
 
         .chatlog__interaction-link:hover {
-            color: #00aff4;
             text-decoration: underline;
         }
 
@@ -1477,17 +1486,22 @@ If you have any issues or suggestions - open an issue on the Github Repository o
     const summaryPopout = document.getElementById('summary-popout')
 
     window.onload = function() {
-        var author_names = document.getElementsByClassName('chatlog__author-name');
-        for(var i = 0; i < author_names.length; i++) {
-            var author_name = author_names[i];
-            author_name.onclick = function() {
-                dialogMessageID = this.getAttribute("data-user-id");
+        var author_name = document.getElementsByClassName('chatlog__author-name');
+        var followup_author =document.getElementsByClassName('chatlog__followup-author');
+        var followup_avatar = document.getElementsByClassName("chatlog__followup-avatar");
+        var avatar = document.getElementsByClassName("chatlog__avatar");
+        const element_select = [...author_name, ...followup_author, ...followup_avatar, ...avatar]
+
+        for(var i = 0; i < element_select.length; i++) {
+            var element = element_select[i];
+            element.onclick = function() {
+                authorID = this.getAttribute("data-user-id");
 
                 if (metaPopout) {
                     metaPopout.classList.remove('mounted');
                 }
 
-                metaPopout = document.getElementById('meta-popout-' + dialogMessageID);
+                metaPopout = document.getElementById('meta-popout-' + authorID);
 
                 const subtractX = document.querySelector('.main').scrollLeft
                 const subtractY = document.querySelector('.main').scrollTop

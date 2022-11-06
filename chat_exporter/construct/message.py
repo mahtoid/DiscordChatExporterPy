@@ -179,7 +179,8 @@ class MessageConstruct:
             ("CONTENT", message.content, PARSE_MODE_REFERENCE),
             ("EDIT", message_edited_at, PARSE_MODE_NONE),
             ("ICON", icon, PARSE_MODE_NONE),
-            ("MESSAGE_ID", str(self.message.reference.message_id), PARSE_MODE_NONE)
+            ("USER_ID", str(message.author.id), PARSE_MODE_NONE),
+            ("MESSAGE_ID", str(self.message.reference.message_id), PARSE_MODE_NONE),
         ])
 
     async def build_interaction(self):
@@ -199,7 +200,8 @@ class MessageConstruct:
             ("USER_COLOUR", user_colour, PARSE_MODE_NONE),
             ("FILLER", "used ", PARSE_MODE_NONE),
             ("COMMAND", "/" + self.message.interaction.name, PARSE_MODE_NONE),
-            ("INTERACTION_ID", str(self.message.interaction.id), PARSE_MODE_NONE)
+            ("USER_ID", str(user.id), PARSE_MODE_NONE),
+            ("INTERACTION_ID", str(self.message.interaction.id), PARSE_MODE_NONE),
         ])
 
     async def build_sticker(self):
