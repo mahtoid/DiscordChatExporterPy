@@ -127,6 +127,7 @@ class TranscriptDAO:
 
         self.html = await fill_out(self.channel.guild, total, [
             ("SERVER_NAME", f"{guild_name}"),
+            ("GUILD_ID", str(self.channel.guild.id), PARSE_MODE_NONE),
             ("SERVER_AVATAR_URL", str(guild_icon), PARSE_MODE_NONE),
             ("CHANNEL_NAME", f"{self.channel.name}"),
             ("MESSAGE_COUNT", str(len(self.messages))),
