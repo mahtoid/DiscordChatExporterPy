@@ -1,3 +1,4 @@
+import datetime
 import io
 from typing import List, Optional
 
@@ -21,6 +22,8 @@ async def quick_export(
             pytz_timezone="UTC",
             military_time=True,
             fancy_times=True,
+            before=None,
+            after=None,
             support_dev=True,
             bot=bot,
             ).export()
@@ -46,6 +49,8 @@ async def export(
     bot: Optional[discord.Client] = None,
     military_time: Optional[bool] = True,
     fancy_times: Optional[bool] = True,
+    before: Optional[datetime.datetime] = None,
+    after: Optional[datetime.datetime] = None,
     support_dev: Optional[bool] = True,
 ):
     if guild:
@@ -59,6 +64,8 @@ async def export(
             pytz_timezone=tz_info,
             military_time=military_time,
             fancy_times=fancy_times,
+            before=before,
+            after=after,
             support_dev=support_dev,
             bot=bot,
         ).export()
@@ -86,6 +93,8 @@ async def raw_export(
             pytz_timezone=tz_info,
             military_time=military_time,
             fancy_times=fancy_times,
+            before=None,
+            after=None,
             support_dev=support_dev,
             bot=bot,
         ).export()
