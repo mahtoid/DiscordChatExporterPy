@@ -75,9 +75,9 @@ class MessageConstruct:
     async def construct_message(
         self,
     ) -> (str, dict):
-        if "pins_add" in self.message.type:
+        if discord.MessageType.pins_add == self.message.type:
             await self.build_pin()
-        elif "thread_created" in self.message.type:
+        elif discord.MessageType.thread_created == self.message.type:
             await self.build_thread()
         else:
             await self.build_message()
