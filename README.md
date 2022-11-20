@@ -108,7 +108,7 @@ import io
 ...
 
 @bot.command()
-async def save(ctx: commands.Context, limit: int, tz_info: str, military_time: bool):
+async def save(ctx: commands.Context, limit: int = 100, tz_info: str = "UTC", military_time: bool = True):
     transcript = await chat_exporter.export(
         ctx.channel,
         limit=limit,
