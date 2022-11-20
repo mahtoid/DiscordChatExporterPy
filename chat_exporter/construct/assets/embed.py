@@ -19,9 +19,11 @@ from chat_exporter.ext.html_generator import (
     PARSE_MODE_SPECIAL_EMBED,
 )
 
+modules_which_use_none = ["nextcord", "disnake"]
+
 
 def _gather_checker():
-    if hasattr(discord.Embed, "Empty") and discord.module != "nextcord":
+    if discord.module not in modules_which_use_none and hasattr(discord.Embed, "Empty"):
         return discord.Embed.Empty
     return None
 
