@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chat_exporter"
+description = "A simple Discord chat exporter for Python Discord bots."
+version = "2.5.0"
+readme = "README.md"
+authors = [
+    { name="mahtoid", email="info@mahto.id" }
+]
+requires-python = ">=3.6"
+license = { text = "GPL-3.0-only" }
+classifiers = [
+    "Operating System :: OS Independent",
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Internet",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Utilities",
+    "Typing :: Typed",
+]
+dependencies = ["aiohttp", "pytz", "grapheme", "emoji"]
+keywords = ["chat exporter", "discord chat exporter", "discord", "discordpy", "disnake", "pycord", "nextcord"]
+
+[project.urls]
+Homepage = "https://github.com/mahtoid/DiscordChatExporterPy"
+Discord = "https://discord.gg/mq3hYaJSfa"
+Donate = "https://ko-fi.com/mahtoid"

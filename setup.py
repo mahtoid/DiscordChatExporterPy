@@ -6,7 +6,7 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name="chat_exporter",
-    version="2.4.1",
+    version="2.5.0",
     author="mahtoid",
     author_email="info@mahto.id",
     description="A simple Discord chat exporter for Python Discord bots.",
