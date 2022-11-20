@@ -11,7 +11,7 @@ If you have any issues or suggestions - open an issue on the Github Repository o
 
 <head>
     <title>{{SERVER_NAME}} - {{CHANNEL_NAME}}</title>
-    <meta charset="utf-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width" />
 
     <style>
@@ -35,7 +35,7 @@ If you have any issues or suggestions - open an issue on the Github Repository o
 
         @font-face {
           font-family: Ginto;
-          src: url(https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/Ginto-600.woff) format("woff")
+          src: url(https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/Ginto-600.woff) format("woff");
           font-weight: 600;
         }
 
@@ -247,7 +247,7 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .chatlog__reference-symbol {
+        .chatlog__followup-symbol {
             grid-column: 1;
             border-style: solid;
             border-width: 2px 0 0 2px;
@@ -295,7 +295,7 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             min-width: 0;
         }
 
-        .chatlog__reference {
+        .chatlog__followup {
             display: flex;
             margin-bottom: 0.15rem;
             align-items: center;
@@ -306,19 +306,22 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             text-overflow: ellipsis;
         }
 
-        .chatlog__reference-avatar {
+        .chatlog__followup-avatar {
             width: 16px;
             height: 16px;
             margin-right: 0.25rem;
             border-radius: 50%;
         }
 
-        .chatlog__reference-author {
+        .chatlog__followup-author {
+            user-select: none;
+            cursor: pointer;
             margin-right: 0.3rem;
             font-weight: 600;
         }
 
-        .chatlog__reference-content {
+        .chatlog__followup-content {
+            user-select: none;
             overflow: hidden;
             text-overflow: ellipsis;
         }
@@ -344,6 +347,19 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             color: inherit;
         }
 
+        .chatlog__interaction-link * {
+            display: inline;
+            pointer-events: none;
+        }
+
+        .chatlog__interaction-link .hljs {
+            display: inline;
+        }
+
+        .chatlog__interaction-link:hover *:not(.chatlog__markdown-spoiler) {
+            color: inherit;
+        }
+        
         .chatlog__reference-edited-timestamp {
             margin-left: 0.25rem;
             color: #a3a6aa;
@@ -644,7 +660,12 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             line-height: 15px;
         }
 
-        .chatlog__reference .chatlog__bot-tag {
+        .chatlog__bot-tag-verified {
+            width: 16px;
+            margin-left: -3px;
+        }
+
+        .chatlog__followup .chatlog__bot-tag {
             margin-right: 0.3rem;
             margin-top: 0;
         }
@@ -719,7 +740,7 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             background-color: rgba(114, 137, 218, 0.2);
         }
 
-        .chatlog__reference-symbol {
+        .chatlog__followup-symbol {
             height: 10px;
             margin: 6px 4px 4px 36px;
             border-left: 2px solid #4f545c;
@@ -734,8 +755,25 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             vertical-align: bottom;
         }
 
+        .chatlog__interaction-icon {
+            width: 15px;
+            display: inline-block;
+            vertical-align: bottom;
+            margin-left: 3px;
+            margin-bottom: 2px;
+        }
+
         .chatlog__reference-link {
             color: #b5b6b8;
+        }
+
+        .chatlog__interaction-filler {
+            color: #b5b6b8;
+        }
+
+        .chatlog__interaction-link {
+            color: #1680ab;
+            cursor: pointer;
         }
 
         .chatlog__pinned-link {
@@ -745,6 +783,10 @@ If you have any issues or suggestions - open an issue on the Github Repository o
 
         .chatlog__reference-link:hover {
             color: #ffffff;
+        }
+
+        .chatlog__interaction-link:hover {
+            text-decoration: underline;
         }
 
         .chatlog__reference-edited-timestamp {
@@ -1323,6 +1365,10 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             <div class="meta__user">{{SERVER_NAME}}</div>
         </div>
         <div class="meta__field">
+            <div class="meta__title">Guild ID</div>
+            <div class="meta__value">{{GUILD_ID}}</div>
+        </div>
+        <div class="meta__field">
             <div class="meta__title">Channel ID</div>
             <div class="meta__value">{{CHANNEL_ID}}</div>
         </div>
@@ -1444,17 +1490,22 @@ If you have any issues or suggestions - open an issue on the Github Repository o
     const summaryPopout = document.getElementById('summary-popout')
 
     window.onload = function() {
-        var author_names = document.getElementsByClassName('chatlog__author-name');
-        for(var i = 0; i < author_names.length; i++) {
-            var author_name = author_names[i];
-            author_name.onclick = function() {
-                dialogMessageID = this.getAttribute("data-user-id");
+        var author_name = document.getElementsByClassName('chatlog__author-name');
+        var followup_author =document.getElementsByClassName('chatlog__followup-author');
+        var followup_avatar = document.getElementsByClassName("chatlog__followup-avatar");
+        var avatar = document.getElementsByClassName("chatlog__avatar");
+        const element_select = [...author_name, ...followup_author, ...followup_avatar, ...avatar]
+
+        for(var i = 0; i < element_select.length; i++) {
+            var element = element_select[i];
+            element.onclick = function() {
+                authorID = this.getAttribute("data-user-id");
 
                 if (metaPopout) {
                     metaPopout.classList.remove('mounted');
                 }
 
-                metaPopout = document.getElementById('meta-popout-' + dialogMessageID);
+                metaPopout = document.getElementById('meta-popout-' + authorID);
 
                 const subtractX = document.querySelector('.main').scrollLeft
                 const subtractY = document.querySelector('.main').scrollTop

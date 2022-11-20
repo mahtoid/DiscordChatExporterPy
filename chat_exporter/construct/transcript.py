@@ -30,6 +30,8 @@ class TranscriptDAO:
         pytz_timezone,
         military_time: bool,
         fancy_times: bool,
+        before: Optional[datetime.datetime],
+        after: Optional[datetime.datetime],
         support_dev: bool,
         bot: Optional[discord.Client],
     ):
@@ -38,6 +40,8 @@ class TranscriptDAO:
         self.limit = int(limit) if limit else None
         self.military_time = military_time
         self.fancy_times = fancy_times
+        self.before = before
+        self.after = after
         self.support_dev = support_dev
         self.pytz_timezone = pytz_timezone
 
@@ -127,6 +131,7 @@ class TranscriptDAO:
 
         self.html = await fill_out(self.channel.guild, total, [
             ("SERVER_NAME", f"{guild_name}"),
+            ("GUILD_ID", str(self.channel.guild.id), PARSE_MODE_NONE),
             ("SERVER_AVATAR_URL", str(guild_icon), PARSE_MODE_NONE),
             ("CHANNEL_NAME", f"{self.channel.name}"),
             ("MESSAGE_COUNT", str(len(self.messages))),
@@ -146,8 +151,14 @@ class TranscriptDAO:
 class Transcript(TranscriptDAO):
     async def export(self):
         if not self.messages:
-            self.messages = [message async for message in self.channel.history(limit=self.limit)]
-        self.messages.reverse()
+            self.messages = [message async for message in self.channel.history(
+                limit=self.limit,
+                before=self.before,
+                after=self.after,
+            )]
+
+        if not self.after:
+            self.messages.reverse()
 
         try:
             return await super().build_transcript()
