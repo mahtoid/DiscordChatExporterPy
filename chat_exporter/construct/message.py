@@ -1,6 +1,9 @@
 import html
+import io
+import traceback
 from typing import List, Optional, Union
 
+import aiohttp
 from pytz import timezone
 from datetime import timedelta
 
@@ -225,13 +228,21 @@ class MessageConstruct:
         for e in self.message.embeds:
             self.embeds += await Embed(e, self.guild).flow()
 
-        if channel:
-            try:
-                msg = await channel.send(files=self.message.attachments)
-                attachments = msg.attachments
-            except Exception as e:
-                attachments = self.message.attachments
-        for a in attachments:
+        for a in self.message.attachments:
+            if channel:
+                try:
+                    async with aiohttp.ClientSession() as session:
+                        async with session.get(a.url) as res:
+                            if res.status != 200:
+                                res.raise_for_status()
+                            data = io.BytesIO(await res.read())
+                            data.seek(0)
+                            attach = discord.File(data, a.filename)
+                            msg: discord.Message = await channel.send(file=attach)
+                            a = msg.attachments[0]
+                except Exception as e:
+                    traceback.print_exc()
+                    print(e)
             self.attachments += await Attachment(a, self.guild).flow()
 
         for c in self.message.components:
