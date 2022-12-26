@@ -1,3 +1,5 @@
+import html
+
 from chat_exporter.ext.discord_import import discord
 
 from chat_exporter.ext.html_generator import (
@@ -67,7 +69,7 @@ class Embed:
         )
 
     async def build_title(self):
-        self.title = self.embed.title if self.embed.title != self.check_against else ""
+        self.title = html.escape(self.embed.title) if self.embed.title != self.check_against else ""
 
         if self.title:
             self.title = await fill_out(self.guild, embed_title, [
@@ -75,7 +77,7 @@ class Embed:
             ])
 
     async def build_description(self):
-        self.description = self.embed.description if self.embed.description != self.check_against else ""
+        self.description = html.escape(self.embed.description) if self.embed.description != self.check_against else ""
 
         if self.description:
             self.description = await fill_out(self.guild, embed_description, [
@@ -90,6 +92,9 @@ class Embed:
             return
 
         for field in self.embed.fields:
+            field.name = html.escape(field.name)
+            field.value = html.escape(field.value)
+
             if field.inline:
                 self.fields += await fill_out(self.guild, embed_field_inline, [
                     ("FIELD_NAME", field.name, PARSE_MODE_SPECIAL_EMBED),
@@ -101,7 +106,7 @@ class Embed:
                     ("FIELD_VALUE", field.value, PARSE_MODE_EMBED)])
 
     async def build_author(self):
-        self.author = self.embed.author.name if self.embed.author.name != self.check_against else ""
+        self.author = html.escape(self.embed.author.name) if self.embed.author.name != self.check_against else ""
 
         self.author = f'<a class="chatlog__embed-author-name-link" href="{self.embed.author.url}">{self.author}</a>' \
             if self.embed.author.url != self.check_against \
@@ -128,7 +133,7 @@ class Embed:
             if self.embed.thumbnail.url != self.check_against else ""
 
     async def build_footer(self):
-        self.footer = self.embed.footer.text if self.embed.footer.text != self.check_against else ""
+        self.footer = html.escape(self.embed.footer.text) if self.embed.footer.text != self.check_against else ""
         footer_icon = self.embed.footer.icon_url if self.embed.footer.icon_url != self.check_against else None
 
         if not self.footer:
