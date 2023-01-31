@@ -98,7 +98,9 @@ class TranscriptDAO:
 
         channel_creation_time = self.channel.created_at.astimezone(timezone).strftime("%b %d, %Y (%T)")
 
-        raw_channel_topic = self.channel.topic if self.channel.topic else ""
+        raw_channel_topic = (
+            self.channel.topic if isinstance(self.channel, discord.TextChannel) and self.channel.topic else ""
+        )
 
         channel_topic_html = ""
         if raw_channel_topic:
