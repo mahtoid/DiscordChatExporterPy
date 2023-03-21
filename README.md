@@ -13,7 +13,7 @@
   <p>
     Export Discord chats with your discord.py (or fork) bots!
     <br />
-    <a href="https://discord.gg/mq3hYaJSfa">Join Discord</a>
+    <a href="https://discord.gg/2uhHBQDwcc">Join Discord</a>
     ·
     <a href="https://github.com/mahtoid/DiscordChatExporterPy/issues/new?assignees=&labels=bug&template=bug-report.yml">Report Bug</a>
     ·
@@ -66,6 +66,7 @@ from discord.ext import commands
 
 intents = discord.Intents.default()
 intents.members = True
+intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
