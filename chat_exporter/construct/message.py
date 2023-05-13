@@ -57,13 +57,15 @@ class MessageConstruct:
         pytz_timezone,
         military_time: bool,
         guild: discord.Guild,
-        meta_data: dict
+        meta_data: dict,
+        all_messages: [discord.Message]
     ):
         self.message = message
         self.previous_message = previous_message
         self.pytz_timezone = pytz_timezone
         self.military_time = military_time
         self.guild = guild
+        self.all_messages = all_messages
 
         self.time_format = "%A, %e %B %Y %I:%M %p"
         if self.military_time:
@@ -142,13 +144,18 @@ class MessageConstruct:
             self.message.reference = ""
             return
 
-        try:
-            message: discord.Message = await self.message.channel.fetch_message(self.message.reference.message_id)
-        except (discord.NotFound, discord.HTTPException) as e:
-            self.message.reference = ""
-            if isinstance(e, discord.NotFound):
-                self.message.reference = message_reference_unknown
-            return
+        message: discord.Message = next((
+            message for message in self.all_messages if message.id == self.message.reference.message_id
+        ), None)
+
+        if not message:
+            try:
+                message: discord.Message = await self.message.channel.fetch_message(self.message.reference.message_id)
+            except (discord.NotFound, discord.HTTPException) as e:
+                self.message.reference = ""
+                if isinstance(e, discord.NotFound):
+                    self.message.reference = message_reference_unknown
+                return
 
         is_bot = _gather_user_bot(message.author)
         user_colour = await self._gather_user_colour(message.author)
@@ -392,7 +399,8 @@ async def gather_messages(
             pytz_timezone,
             military_time,
             guild,
-            meta_data
+            meta_data,
+            messages
         ).construct_message()
         message_html += content_html
         previous_message = message
