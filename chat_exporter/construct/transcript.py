@@ -105,7 +105,7 @@ class TranscriptDAO:
         channel_topic_html = ""
         if raw_channel_topic:
             channel_topic_html = await fill_out(self.channel.guild, channel_topic, [
-                ("CHANNEL_TOPIC", raw_channel_topic)
+                ("CHANNEL_TOPIC", html.escape(raw_channel_topic))
             ])
 
         limit = "start"
