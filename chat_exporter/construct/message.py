@@ -58,14 +58,14 @@ class MessageConstruct:
         military_time: bool,
         guild: discord.Guild,
         meta_data: dict,
-        all_messages: [discord.Message]
+        message_dict: dict
     ):
         self.message = message
         self.previous_message = previous_message
         self.pytz_timezone = pytz_timezone
         self.military_time = military_time
         self.guild = guild
-        self.all_messages = all_messages
+        self.message_dict = message_dict
 
         self.time_format = "%A, %e %B %Y %I:%M %p"
         if self.military_time:
@@ -144,9 +144,7 @@ class MessageConstruct:
             self.message.reference = ""
             return
 
-        message: discord.Message = next((
-            message for message in self.all_messages if message.id == self.message.reference.message_id
-        ), None)
+        message: discord.Message = self.message_dict.get(self.message.reference.message_id)
 
         if not message:
             try:
@@ -392,6 +390,8 @@ async def gather_messages(
     meta_data: dict = {}
     previous_message: Optional[discord.Message] = None
 
+    message_dict = {message.id: message for message in messages}
+
     for message in messages:
         content_html, meta_data = await MessageConstruct(
             message,
@@ -400,7 +400,7 @@ async def gather_messages(
             military_time,
             guild,
             meta_data,
-            messages
+            message_dict,
         ).construct_message()
         message_html += content_html
         previous_message = message

@@ -37,10 +37,9 @@ class ParseMarkdown:
         return self.content
 
     async def message_reference_flow(self):
-        self.https_http_links()
+        self.strip_preserve()
         self.parse_normal_markdown()
         self.parse_code_block_markdown(reference=True)
-        await self.parse_emoji()
         self.parse_br()
 
         return self.content
@@ -70,6 +69,18 @@ class ParseMarkdown:
                 self.content = self.content.replace(self.content[match.start():match.end()],
                                                     r % emoji_id)
                 match = re.search(p, self.content)
+
+    def strip_preserve(self):
+        p = r'<span class="chatlog__markdown-preserve">(.*?)</span>'
+        r = '%s'
+
+        pattern = re.compile(p)
+        match = re.search(pattern, self.content)
+        while match is not None:
+            affected_text = match.group(1)
+            self.content = self.content.replace(self.content[match.start():match.end()],
+                                                r % affected_text)
+            match = re.search(pattern, self.content)
 
     def parse_normal_markdown(self):
         holder = [r"__(.*?)__", '<span style="text-decoration: underline">%s</span>'], \
