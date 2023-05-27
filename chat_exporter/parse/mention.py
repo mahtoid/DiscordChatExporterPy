@@ -141,7 +141,10 @@ class ParseMention:
 
     async def time_mention(self):
         holder = self.REGEX_TIME_HOLDER
-        timezone = pytz.timezone(self.guild.timezone)
+        timezone = pytz.timezone("UTC")
+
+        if hasattr(self.guild, "timezone"):
+            timezone = pytz.timezone(self.guild.timezone)
 
         for p in holder:
             regex, strf = p

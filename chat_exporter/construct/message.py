@@ -37,7 +37,7 @@ def _gather_user_bot(author: discord.Member):
 
 
 def _set_edit_at(message_edited_at):
-    return f'<span class="chatlog__reference-edited-timestamp" title="{message_edited_at}">(edited)</span>'
+    return f'<span class="chatlog__reference-edited-timestamp" data-timestamp="{message_edited_at}">(edited)</span>'
 
 
 class MessageConstruct:
@@ -400,7 +400,7 @@ async def gather_messages(
             military_time,
             guild,
             meta_data,
-            message_dict
+            message_dict,
         ).construct_message()
         message_html += content_html
         previous_message = message
