@@ -25,7 +25,7 @@ from chat_exporter.ext.html_generator import (
     end_message,
     PARSE_MODE_NONE,
     PARSE_MODE_MARKDOWN,
-    PARSE_MODE_REFERENCE, message_thread_remove,
+    PARSE_MODE_REFERENCE, message_thread_remove, message_thread_add,
 )
 
 
@@ -84,6 +84,8 @@ class MessageConstruct:
             await self.build_thread()
         elif discord.MessageType.recipient_remove == self.message.type:
             await self.build_thread_remove()
+        elif discord.MessageType.recipient_add == self.message.type:
+            await self.build_thread_add()
         else:
             await self.build_message()
         return self.message_html, self.meta_data
@@ -108,6 +110,10 @@ class MessageConstruct:
     async def build_thread_remove(self):
         await self.generate_message_divider(channel_audit=True)
         await self.build_remove()
+
+    async def build_thread_add(self):
+        await self.generate_message_divider(channel_audit=True)
+        await self.build_add()
 
     async def build_meta_data(self):
         user_id = self.message.author.id
@@ -358,6 +364,22 @@ class MessageConstruct:
             ("MESSAGE_ID", str(self.message.id), PARSE_MODE_NONE),
         ])
 
+    async def build_add(self):
+        removed_member: discord.Member = self.message.mentions[0]
+        self.message_html += await fill_out(self.guild, message_thread_add, [
+            ("THREAD_URL", DiscordUtils.thread_add_recipient,
+             PARSE_MODE_NONE),
+            ("USER_COLOUR", await self._gather_user_colour(self.message.author)),
+            ("NAME", str(html.escape(self.message.author.display_name))),
+            ("NAME_TAG", await discriminator(self.message.author.name, self.message.author.discriminator),
+             PARSE_MODE_NONE),
+            ("RECIPIENT_USER_COLOUR", await self._gather_user_colour(removed_member)),
+            ("RECIPIENT_NAME", str(html.escape(removed_member.display_name))),
+            ("RECIPIENT_NAME_TAG", await discriminator(removed_member.name, removed_member.discriminator),
+             PARSE_MODE_NONE),
+            ("MESSAGE_ID", str(self.message.id), PARSE_MODE_NONE),
+        ])
+
     async def _gather_member(self, author: discord.Member):
         member = self.guild.get_member(author.id)
 
@@ -417,8 +439,14 @@ async def gather_messages(
 
     message_dict = {message.id: message for message in messages}
 
-    if "thread" in str(messages[0].channel.type):
-        messages[0].content = messages[0].channel.name
+    if "thread" in str(messages[0].channel.type) and messages[0].reference:
+        channel = guild.get_channel(messages[0].reference.channel_id)
+
+        if not channel:
+            channel = await guild.fetch_channel(messages[0].reference.channel_id)
+
+        message = await channel.fetch_message(messages[0].reference.message_id)
+        messages[0] = message
         messages[0].reference = None
 
     for message in messages:
