@@ -25,7 +25,9 @@ from chat_exporter.ext.html_generator import (
     end_message,
     PARSE_MODE_NONE,
     PARSE_MODE_MARKDOWN,
-    PARSE_MODE_REFERENCE, message_thread_remove, message_thread_add,
+    PARSE_MODE_REFERENCE,
+    message_thread_remove,
+    message_thread_add,
 )
 
 
