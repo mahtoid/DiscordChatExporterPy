@@ -106,16 +106,19 @@ class Embed:
                     ("FIELD_VALUE", field.value, PARSE_MODE_EMBED)])
 
     async def build_author(self):
-        self.author = html.escape(self.embed.author.name) if self.embed.author.name != self.check_against else ""
+        self.author = html.escape(self.embed.author.name) if (
+                self.embed.author and self.embed.author.name != self.check_against
+        ) else ""
 
         self.author = f'<a class="chatlog__embed-author-name-link" href="{self.embed.author.url}">{self.author}</a>' \
-            if self.embed.author.url != self.check_against \
-            else self.author
+            if (
+                self.embed.author and self.embed.author.url != self.check_against
+            ) else self.author
 
         author_icon = await fill_out(self.guild, embed_author_icon, [
             ("AUTHOR", self.author, PARSE_MODE_NONE),
             ("AUTHOR_ICON", self.embed.author.icon_url, PARSE_MODE_NONE)
-        ]) if self.embed.author.icon_url != self.check_against else ""
+        ]) if self.embed.author and self.embed.author.icon_url != self.check_against else ""
 
         if author_icon == "" and self.author != "":
             self.author = await fill_out(self.guild, embed_author, [("AUTHOR", self.author, PARSE_MODE_NONE)])
@@ -125,16 +128,21 @@ class Embed:
     async def build_image(self):
         self.image = await fill_out(self.guild, embed_image, [
             ("EMBED_IMAGE", str(self.embed.image.proxy_url), PARSE_MODE_NONE)
-        ]) if self.embed.image.url != self.check_against else ""
+        ]) if self.embed.image and self.embed.image.url != self.check_against else ""
 
     async def build_thumbnail(self):
         self.thumbnail = await fill_out(self.guild, embed_thumbnail, [
             ("EMBED_THUMBNAIL", str(self.embed.thumbnail.url), PARSE_MODE_NONE)]) \
-            if self.embed.thumbnail.url != self.check_against else ""
+            if self.embed.thumbnail and self.embed.thumbnail.url != self.check_against else ""
 
     async def build_footer(self):
-        self.footer = html.escape(self.embed.footer.text) if self.embed.footer.text != self.check_against else ""
-        footer_icon = self.embed.footer.icon_url if self.embed.footer.icon_url != self.check_against else None
+        self.footer = html.escape(self.embed.footer.text) if (
+                self.embed.footer and self.embed.footer.text != self.check_against
+        ) else ""
+
+        footer_icon = self.embed.footer.icon_url if (
+                self.embed.footer and self.embed.footer.icon_url != self.check_against
+        ) else None
 
         if not self.footer:
             return
