@@ -37,7 +37,7 @@ import aiohttp
 from chat_exporter.ext.cache import cache
 
 
-cdn_fmt = "https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/72x72/{codepoint}.png"
+cdn_fmt = "https://cdn.jsdelivr.net/gh/jdecked/twemoji@latest/assets/72x72/{codepoint}.png"
 
 
 @cache()

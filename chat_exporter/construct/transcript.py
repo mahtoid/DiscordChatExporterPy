@@ -2,6 +2,7 @@ import datetime
 import html
 import traceback
 
+import re
 from typing import List, Optional
 
 import pytz
@@ -81,10 +82,14 @@ class TranscriptDAO:
                 if meta_data[int(data)][5] else "Unknown"
             )
 
+            pattern = r'^#\d{4}'
+            discrim = str(meta_data[int(data)][0][-5:])
+            user = str(meta_data[int(data)][0])
+
             meta_data_html += await fill_out(self.channel.guild, meta_data_temp, [
                 ("USER_ID", str(data), PARSE_MODE_NONE),
-                ("USERNAME", str(meta_data[int(data)][0][:-5]), PARSE_MODE_NONE),
-                ("DISCRIMINATOR", str(meta_data[int(data)][0][-5:])),
+                ("USERNAME", user[:-5] if re.match(pattern, discrim) else user, PARSE_MODE_NONE),
+                ("DISCRIMINATOR", discrim if re.match(pattern, discrim) else ""),
                 ("BOT", str(meta_data[int(data)][2]), PARSE_MODE_NONE),
                 ("CREATED_AT", str(creation_time), PARSE_MODE_NONE),
                 ("JOINED_AT", str(joined_time), PARSE_MODE_NONE),
@@ -105,7 +110,7 @@ class TranscriptDAO:
         channel_topic_html = ""
         if raw_channel_topic:
             channel_topic_html = await fill_out(self.channel.guild, channel_topic, [
-                ("CHANNEL_TOPIC", raw_channel_topic)
+                ("CHANNEL_TOPIC", html.escape(raw_channel_topic))
             ])
 
         limit = "start"
