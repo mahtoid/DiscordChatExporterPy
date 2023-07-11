@@ -196,7 +196,7 @@ class MessageConstruct:
             ("NAME_TAG", await discriminator(message.author.name, message.author.discriminator), PARSE_MODE_NONE),
             ("NAME", str(html.escape(message.author.display_name))),
             ("USER_COLOUR", user_colour, PARSE_MODE_NONE),
-            ("CONTENT", message.content, PARSE_MODE_REFERENCE),
+            ("CONTENT", message.content.replace("\n", "").replace("<br>", ""), PARSE_MODE_REFERENCE),
             ("EDIT", message_edited_at, PARSE_MODE_NONE),
             ("ICON", icon, PARSE_MODE_NONE),
             ("USER_ID", str(message.author.id), PARSE_MODE_NONE),

@@ -71,7 +71,7 @@ class ParseMarkdown:
                 match = re.search(p, self.content)
 
     def strip_preserve(self):
-        p = r'<span class="chatlog__markdown-preserve">(.*?)</span>'
+        p = r'<span class="chatlog__markdown-preserve">(.*)</span>'
         r = '%s'
 
         pattern = re.compile(p)
@@ -124,15 +124,15 @@ class ParseMarkdown:
             self.content = html
 
     def parse_normal_markdown(self):
-        self.order_list_markdown_to_html()
+        # self.order_list_markdown_to_html()
         holder = (
             [r"__(.*?)__", '<span style="text-decoration: underline">%s</span>'],
             [r"\*\*(.*?)\*\*", '<strong>%s</strong>'],
             [r"\*(.*?)\*", '<em>%s</em>'],
             [r"~~(.*?)~~", '<span style="text-decoration: line-through">%s</span>'],
-            [r"###\s(.*?)\n", '<h3>%s</h1>'],
-            [r"##\s(.*?)\n", '<h2>%s</h1>'],
-            [r"#\s(.*?)\n", '<h1>%s</h1>'],
+            # [r"###\s(.*?)\n", '<h3>%s</h1>'],
+            # [r"##\s(.*?)\n", '<h2>%s</h1>'],
+            # [r"#\s(.*?)\n", '<h1>%s</h1>'],
             [r"\|\|(.*?)\|\|", '<span class="spoiler spoiler--hidden" onclick="showSpoiler(event, this)"> <span '
                                'class="spoiler-text">%s</span></span>'],
         )
@@ -309,7 +309,7 @@ class ParseMarkdown:
         return html
 
     def return_to_markdown(self, content):
-        content = self.order_list_html_to_markdown(content)
+        # content = self.order_list_html_to_markdown(content)
         holders = (
             [r"<strong>(.*?)</strong>", '**%s**'],
             [r"<em>([^<>]+)</em>", '*%s*'],
