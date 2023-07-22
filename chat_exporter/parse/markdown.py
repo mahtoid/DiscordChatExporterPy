@@ -37,10 +37,9 @@ class ParseMarkdown:
         return self.content
 
     async def message_reference_flow(self):
-        self.https_http_links()
+        self.strip_preserve()
         self.parse_normal_markdown()
         self.parse_code_block_markdown(reference=True)
-        await self.parse_emoji()
         self.parse_br()
 
         return self.content
@@ -71,13 +70,72 @@ class ParseMarkdown:
                                                     r % emoji_id)
                 match = re.search(p, self.content)
 
+    def strip_preserve(self):
+        p = r'<span class="chatlog__markdown-preserve">(.*)</span>'
+        r = '%s'
+
+        pattern = re.compile(p)
+        match = re.search(pattern, self.content)
+        while match is not None:
+            affected_text = match.group(1)
+            self.content = self.content.replace(self.content[match.start():match.end()],
+                                                r % affected_text)
+            match = re.search(pattern, self.content)
+
+    def order_list_markdown_to_html(self):
+        lines = self.content.split('\n')
+        html = ''
+        indent_stack = [0]
+        started = True
+
+        for line in lines:
+            match = re.match(r'^(\s*)([-*])\s+(.+)$', line)
+            if match:
+                indent, bullet, content = match.groups()
+                indent = len(indent)
+
+                if started:
+                    html += '<ul class="markup">\n'
+                    started = False
+                if indent % 2 == 0:
+                    while indent < indent_stack[-1]:
+                        html += '</ul>\n'
+                        indent_stack.pop()
+                    if indent > indent_stack[-1]:
+                        html += '<ul class="markup">\n'
+                        indent_stack.append(indent)
+                else:
+                    while indent + 1 < indent_stack[-1]:
+                        html += '</ul>\n'
+                        indent_stack.pop()
+                    if indent + 1 > indent_stack[-1]:
+                        html += '<ul class="markup">\n'
+                        indent_stack.append(indent + 1)
+
+                html += f'<li class="markup">{content.strip()}</li>\n'
+            else:
+                html += line
+
+        while len(indent_stack) > 1:
+            html += '</ul>\n'
+            indent_stack.pop()
+
+        if not started:
+            self.content = html
+
     def parse_normal_markdown(self):
-        holder = [r"__(.*?)__", '<span style="text-decoration: underline">%s</span>'], \
-                 [r"\*\*(.*?)\*\*", '<strong>%s</strong>'], \
-                 [r"\*(.*?)\*", '<em>%s</em>'], \
-                 [r"~~(.*?)~~", '<span style="text-decoration: line-through">%s</span>'], \
-                 [r"\|\|(.*?)\|\|", '<span class="spoiler spoiler--hidden" onclick="showSpoiler(event, this)"> <span '
-                                    'class="spoiler-text">%s</span></span>']
+        # self.order_list_markdown_to_html()
+        holder = (
+            [r"__(.*?)__", '<span style="text-decoration: underline">%s</span>'],
+            [r"\*\*(.*?)\*\*", '<strong>%s</strong>'],
+            [r"\*(.*?)\*", '<em>%s</em>'],
+            [r"~~(.*?)~~", '<span style="text-decoration: line-through">%s</span>'],
+            # [r"###\s(.*?)\n", '<h3>%s</h1>'],
+            # [r"##\s(.*?)\n", '<h2>%s</h1>'],
+            # [r"#\s(.*?)\n", '<h1>%s</h1>'],
+            [r"\|\|(.*?)\|\|", '<span class="spoiler spoiler--hidden" onclick="showSpoiler(event, this)"> <span '
+                               'class="spoiler-text">%s</span></span>'],
+        )
 
         for x in holder:
             p, r = x
@@ -86,8 +144,7 @@ class ParseMarkdown:
             match = re.search(pattern, self.content)
             while match is not None:
                 affected_text = match.group(1)
-                self.content = self.content.replace(self.content[match.start():match.end()],
-                                                    r % affected_text)
+                self.content = self.content.replace(self.content[match.start():match.end()], r % affected_text)
                 match = re.search(pattern, self.content)
 
         # > quote
@@ -225,10 +282,40 @@ class ParseMarkdown:
         self.content = new_content
 
     @staticmethod
-    def return_to_markdown(content):
+    def order_list_html_to_markdown(content):
+        lines = content.split('<br>')
+        html = ''
+        ul_level = -1
+
+        for line in lines:
+            if '<ul class="markup">' in line:
+                ul_level += 1
+                line = line.replace('<ul class="markup">', '')
+                if line != "":
+                    html += line + "\n"
+            elif "</ul>" in line:
+                ul_level -= 1
+            elif '<li class="markup">' in line:
+                match = re.match(r'<li class="markup">(.+?)</li>', line)
+                if match:
+                    matched_content = match.group(1)
+                    spaces = ul_level * 2
+                    html += " " * spaces + "-" + matched_content + "\n"
+                else:
+                    html += line
+            else:
+                html += line
+
+        return html
+
+    def return_to_markdown(self, content):
+        # content = self.order_list_html_to_markdown(content)
         holders = (
             [r"<strong>(.*?)</strong>", '**%s**'],
             [r"<em>([^<>]+)</em>", '*%s*'],
+            [r"<h1>([^<>]+)</h1>", '# %s'],
+            [r"<h2>([^<>]+)</h2>", '## %s'],
+            [r"<h3>([^<>]+)</h3>", '### %s'],
             [r'<span style="text-decoration: underline">([^<>]+)</span>', '__%s__'],
             [r'<span style="text-decoration: line-through">([^<>]+)</span>', '~~%s~~'],
             [r'<div class="quote">(.*?)</div>', '> %s'],

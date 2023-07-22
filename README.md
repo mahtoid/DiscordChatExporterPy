@@ -13,7 +13,7 @@
   <p>
     Export Discord chats with your discord.py (or fork) bots!
     <br />
-    <a href="https://discord.gg/2uhHBQDwcc">Join Discord</a>
+    <a href="https://discord.mahto.id/">Join Discord</a>
     ·
     <a href="https://github.com/mahtoid/DiscordChatExporterPy/issues/new?assignees=&labels=bug&template=bug-report.yml">Report Bug</a>
     ·
@@ -95,8 +95,11 @@ This would be the main function to use within chat-exporter.
 **Optional Argument(s):**<br/>
 `limit`: Integer value to set the limit (amount of messages) the chat exporter gathers when grabbing the history (default=unlimited).<br/>
 `tz_info`: String value of a [TZ Database name](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List) to set a custom timezone for the exported messages (default=UTC)<br/>
+`guild`: `discord.Guild` object which can be passed in to solve bugs for certain forks<br/>
 `military_time`: Boolean value to set a 24h format for times within your exported chat (default=False | 12h format)<br/>
 `fancy_times`: Boolean value which toggles the 'fancy times' (Today|Yesterday|Day)<br/>
+`before`: `datetime.datetime` object which allows to gather messages from before a certain date
+`after`: `datetime.datetime` object which allows to gather messages from after a certain date
 `bot`: `commands.Bot` object to gather members who are no longer in your guild.
 
 **Return Argument:**<br/>
