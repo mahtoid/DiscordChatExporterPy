@@ -1,6 +1,9 @@
 import html
+import io
+import traceback
 from typing import List, Optional, Union
 
+import aiohttp
 from pytz import timezone
 from datetime import timedelta
 
@@ -78,7 +81,7 @@ class MessageConstruct:
         self.meta_data = meta_data
 
     async def construct_message(
-        self,
+        self, channel
     ) -> (str, dict):
         if discord.MessageType.pins_add == self.message.type:
             await self.build_pin()
@@ -89,15 +92,15 @@ class MessageConstruct:
         elif discord.MessageType.recipient_add == self.message.type:
             await self.build_thread_add()
         else:
-            await self.build_message()
+            await self.build_message(channel)
         return self.message_html, self.meta_data
 
-    async def build_message(self):
+    async def build_message(self, channel):
         await self.build_content()
         await self.build_reference()
         await self.build_interaction()
         await self.build_sticker()
-        await self.build_assets()
+        await self.build_assets(channel)
         await self.build_message_template()
         await self.build_meta_data()
 
@@ -241,11 +244,25 @@ class MessageConstruct:
             ("ATTACH_URL_THUMB", str(sticker_image_url), PARSE_MODE_NONE)
         ])
 
-    async def build_assets(self):
+    async def build_assets(self, channel: Optional[discord.TextChannel]):
         for e in self.message.embeds:
             self.embeds += await Embed(e, self.guild).flow()
 
         for a in self.message.attachments:
+            if channel:
+                try:
+                    async with aiohttp.ClientSession() as session:
+                        async with session.get(a.url) as res:
+                            if res.status != 200:
+                                res.raise_for_status()
+                            data = io.BytesIO(await res.read())
+                            data.seek(0)
+                            attach = discord.File(data, a.filename)
+                            msg: discord.Message = await channel.send(file=attach)
+                            a = msg.attachments[0]
+                except Exception as e:
+                    traceback.print_exc()
+                    print(e)
             self.attachments += await Attachment(a, self.guild).flow()
 
         for c in self.message.components:
@@ -434,6 +451,7 @@ async def gather_messages(
     guild: discord.Guild,
     pytz_timezone,
     military_time,
+    channel: discord.TextChannel
 ) -> (str, dict):
     message_html: str = ""
     meta_data: dict = {}
@@ -460,7 +478,8 @@ async def gather_messages(
             guild,
             meta_data,
             message_dict,
-        ).construct_message()
+            ).construct_message(channel)
+
         message_html += content_html
         previous_message = message
 
