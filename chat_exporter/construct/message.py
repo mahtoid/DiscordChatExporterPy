@@ -260,9 +260,15 @@ class MessageConstruct:
                             attach = discord.File(data, a.filename)
                             msg: discord.Message = await channel.send(file=attach)
                             a = msg.attachments[0]
+                except discord.errors.Forbidden as e:
+                    # permission error
+                    raise e
+                except discord.errors.HTTPException as e:
+                    # general http error
+                    raise e
                 except Exception as e:
-                    traceback.print_exc()
-                    print(e)
+                    # deal with all other errors
+                    pass
             self.attachments += await Attachment(a, self.guild).flow()
 
         for c in self.message.components:
