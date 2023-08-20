@@ -94,13 +94,14 @@ This would be the main function to use within chat-exporter.
 
 **Optional Argument(s):**<br/>
 `limit`: Integer value to set the limit (amount of messages) the chat exporter gathers when grabbing the history (default=unlimited).<br/>
-`tz_info`: String value of a [TZ Database name](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List) to set a custom timezone for the exported messages (default=UTC)<br/>
-`guild`: `discord.Guild` object which can be passed in to solve bugs for certain forks<br/>
-`military_time`: Boolean value to set a 24h format for times within your exported chat (default=False | 12h format)<br/>
-`fancy_times`: Boolean value which toggles the 'fancy times' (Today|Yesterday|Day)<br/>
-`before`: `datetime.datetime` object which allows to gather messages from before a certain date
-`after`: `datetime.datetime` object which allows to gather messages from after a certain date
-`bot`: `commands.Bot` object to gather members who are no longer in your guild.
+`tz_info`: String value of a [TZ Database name](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List) to set a custom timezone for the exported messages (default=UTC).<br/>
+`guild`: `discord.Guild` object which can be passed in to solve bugs for certain forks.<br/>
+`military_time`: Boolean value to set a 24h format for times within your exported chat (default=False | 12h format).<br/>
+`fancy_times`: Boolean value which toggles the 'fancy times' (Today|Yesterday|Day).<br/>
+`before`: `datetime.datetime` object which allows to gather messages from before a certain date.<br/>
+`after`: `datetime.datetime` object which allows to gather messages from after a certain date.<br/>
+`bot`: `commands.Bot` object to gather members who are no longer in your guild.<br/>
+`asset_channel`: `discord.TextChannel` object to export assets to in order to make them available after the `channel` got deleted.<br/>
 
 **Return Argument:**<br/>
 `transcript`: The HTML build-up for you to construct the HTML File with Discord.
@@ -149,6 +150,7 @@ This would be for people who want to filter what content to export.
 `military_time`: Boolean value to set a 24h format for times within your exported chat (default=False | 12h format)<br/>
 `fancy_times`: Boolean value which toggles the 'fancy times' (Today|Yesterday|Day)<br/>
 `bot`: `commands.Bot` object to gather members who are no longer in your guild.
+`asset_channel`: `discord.TextChannel` object to export assets to in order to make them available after the `channel` got deleted.<br/>
 
 **Return Argument:**<br/>
 `transcript`: The HTML build-up for you to construct the HTML File with Discord.
