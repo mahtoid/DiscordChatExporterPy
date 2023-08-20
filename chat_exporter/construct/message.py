@@ -64,7 +64,8 @@ class MessageConstruct:
         military_time: bool,
         guild: discord.Guild,
         meta_data: dict,
-        message_dict: dict
+        message_dict: dict,
+        asset_channel: Optional[discord.TextChannel]
     ):
         self.message = message
         self.previous_message = previous_message
@@ -72,7 +73,7 @@ class MessageConstruct:
         self.military_time = military_time
         self.guild = guild
         self.message_dict = message_dict
-
+        self.asset_channel = asset_channel
         self.time_format = "%A, %e %B %Y %I:%M %p"
         if self.military_time:
             self.time_format = "%A, %e %B %Y %H:%M"
@@ -81,7 +82,7 @@ class MessageConstruct:
         self.meta_data = meta_data
 
     async def construct_message(
-        self, channel
+        self,
     ) -> (str, dict):
         if discord.MessageType.pins_add == self.message.type:
             await self.build_pin()
@@ -92,15 +93,15 @@ class MessageConstruct:
         elif discord.MessageType.recipient_add == self.message.type:
             await self.build_thread_add()
         else:
-            await self.build_message(channel)
+            await self.build_message()
         return self.message_html, self.meta_data
 
-    async def build_message(self, channel):
+    async def build_message(self):
         await self.build_content()
         await self.build_reference()
         await self.build_interaction()
         await self.build_sticker()
-        await self.build_assets(channel)
+        await self.build_assets()
         await self.build_message_template()
         await self.build_meta_data()
 
@@ -244,12 +245,12 @@ class MessageConstruct:
             ("ATTACH_URL_THUMB", str(sticker_image_url), PARSE_MODE_NONE)
         ])
 
-    async def build_assets(self, channel: Optional[discord.TextChannel]):
+    async def build_assets(self):
         for e in self.message.embeds:
             self.embeds += await Embed(e, self.guild).flow()
 
         for a in self.message.attachments:
-            if channel:
+            if self.asset_channel and isinstance(self.asset_channel, discord.TextChannel):
                 try:
                     async with aiohttp.ClientSession() as session:
                         async with session.get(a.url) as res:
@@ -258,17 +259,11 @@ class MessageConstruct:
                             data = io.BytesIO(await res.read())
                             data.seek(0)
                             attach = discord.File(data, a.filename)
-                            msg: discord.Message = await channel.send(file=attach)
+                            msg: discord.Message = await self.asset_channel.send(file=attach)
                             a = msg.attachments[0]
-                except discord.errors.Forbidden as e:
-                    # permission error
-                    raise e
                 except discord.errors.HTTPException as e:
-                    # general http error
+                    # discords http errors, including missing permissions
                     raise e
-                except Exception as e:
-                    # deal with all other errors
-                    pass
             self.attachments += await Attachment(a, self.guild).flow()
 
         for c in self.message.components:
@@ -457,7 +452,7 @@ async def gather_messages(
     guild: discord.Guild,
     pytz_timezone,
     military_time,
-    channel: discord.TextChannel
+    asset_channel: discord.TextChannel
 ) -> (str, dict):
     message_html: str = ""
     meta_data: dict = {}
@@ -484,7 +479,7 @@ async def gather_messages(
             guild,
             meta_data,
             message_dict,
-            ).construct_message(channel)
+            ).construct_message(asset_channel)
 
         message_html += content_html
         previous_message = message
