@@ -479,7 +479,7 @@ async def gather_messages(
             guild,
             meta_data,
             message_dict,
-            ).construct_message(asset_channel)
+            ).construct_message()
 
         message_html += content_html
         previous_message = message
