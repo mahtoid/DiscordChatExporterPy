@@ -479,6 +479,7 @@ async def gather_messages(
             guild,
             meta_data,
             message_dict,
+            asset_channel,
             ).construct_message()
 
         message_html += content_html
