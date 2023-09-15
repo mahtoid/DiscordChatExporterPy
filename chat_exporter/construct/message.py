@@ -12,6 +12,7 @@ from chat_exporter.ext.discord_import import discord
 from chat_exporter.construct.assets import Attachment, Component, Embed, Reaction
 from chat_exporter.ext.discord_utils import DiscordUtils
 from chat_exporter.ext.discriminator import discriminator
+from chat_exporter.ext.cache import cache
 from chat_exporter.ext.html_generator import (
     fill_out,
     bot_tag,
@@ -400,6 +401,7 @@ class MessageConstruct:
             ("MESSAGE_ID", str(self.message.id), PARSE_MODE_NONE),
         ])
 
+    @cache()
     async def _gather_member(self, author: discord.Member):
         member = self.guild.get_member(author.id)
 
