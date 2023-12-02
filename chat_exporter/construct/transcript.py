@@ -7,6 +7,7 @@ from typing import List, Optional
 
 import pytz
 
+from chat_exporter import AssetHandler
 from chat_exporter.ext.discord_import import discord
 
 from chat_exporter.construct.message import gather_messages
@@ -35,7 +36,7 @@ class TranscriptDAO:
         after: Optional[datetime.datetime],
         support_dev: bool,
         bot: Optional[discord.Client],
-        asset_channel: Optional[discord.TextChannel]
+        asset_handler: Optional[AssetHandler],
     ):
         self.channel = channel
         self.messages = messages
@@ -46,7 +47,7 @@ class TranscriptDAO:
         self.after = after
         self.support_dev = support_dev
         self.pytz_timezone = pytz_timezone
-        self.asset_channel = asset_channel
+        self.asset_handler = asset_handler
 
         # This is to pass timezone in to mention.py without rewriting
         setattr(discord.Guild, "timezone", self.pytz_timezone)
@@ -60,7 +61,7 @@ class TranscriptDAO:
             self.channel.guild,
             self.pytz_timezone,
             self.military_time,
-            self.asset_channel
+            self.asset_handler
         )
         await self.export_transcript(message_html, meta_data)
         clear_cache()

@@ -7,6 +7,7 @@ import aiohttp
 from pytz import timezone
 from datetime import timedelta
 
+from chat_exporter import AssetHandler
 from chat_exporter.ext.discord_import import discord
 
 from chat_exporter.construct.assets import Attachment, Component, Embed, Reaction
@@ -66,7 +67,7 @@ class MessageConstruct:
         guild: discord.Guild,
         meta_data: dict,
         message_dict: dict,
-        asset_channel: Optional[discord.TextChannel]
+        asset_handler: Optional[AssetHandler]
     ):
         self.message = message
         self.previous_message = previous_message
@@ -74,7 +75,7 @@ class MessageConstruct:
         self.military_time = military_time
         self.guild = guild
         self.message_dict = message_dict
-        self.asset_channel = asset_channel
+        self.asset_handler = asset_handler
         self.time_format = "%A, %e %B %Y %I:%M %p"
         if self.military_time:
             self.time_format = "%A, %e %B %Y %H:%M"
@@ -251,20 +252,8 @@ class MessageConstruct:
             self.embeds += await Embed(e, self.guild).flow()
 
         for a in self.message.attachments:
-            if self.asset_channel and isinstance(self.asset_channel, discord.TextChannel):
-                try:
-                    async with aiohttp.ClientSession() as session:
-                        async with session.get(a.url) as res:
-                            if res.status != 200:
-                                res.raise_for_status()
-                            data = io.BytesIO(await res.read())
-                            data.seek(0)
-                            attach = discord.File(data, a.filename)
-                            msg: discord.Message = await self.asset_channel.send(file=attach)
-                            a = msg.attachments[0]
-                except discord.errors.HTTPException as e:
-                    # discords http errors, including missing permissions
-                    raise e
+            if self.asset_handler and isinstance(self.asset_handler, AssetHandler):
+                a = await self.asset_handler.process_asset(a)
             self.attachments += await Attachment(a, self.guild).flow()
 
         for c in self.message.components:
@@ -454,7 +443,7 @@ async def gather_messages(
     guild: discord.Guild,
     pytz_timezone,
     military_time,
-    asset_channel: discord.TextChannel
+    asset_handler: Optional[AssetHandler],
 ) -> (str, dict):
     message_html: str = ""
     meta_data: dict = {}
@@ -481,7 +470,7 @@ async def gather_messages(
             guild,
             meta_data,
             message_dict,
-            asset_channel,
+            asset_handler,
             ).construct_message()
 
         message_html += content_html
