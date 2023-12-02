@@ -33,7 +33,7 @@ class LocalFileHostHandler(AssetHandler):
 		:param asset: discord.Attachment
 		:return: str
 		"""
-		file_name = f"{datetime.datetime.utcnow()}_{asset.filename}"
+		file_name = f"{int(datetime.datetime.utcnow().timestamp())}_{asset.filename}".replace(' ', '%20')
 		asset_path = self.base_path / file_name
 		await asset.save(asset_path)
 		file_url = f"{self.url_base}/{file_name}"
