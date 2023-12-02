@@ -7,7 +7,7 @@ import aiohttp
 from pytz import timezone
 from datetime import timedelta
 
-from chat_exporter import AssetHandler
+from chat_exporter.construct.asset_handler import AssetHandler
 from chat_exporter.ext.discord_import import discord
 
 from chat_exporter.construct.assets import Attachment, Component, Embed, Reaction

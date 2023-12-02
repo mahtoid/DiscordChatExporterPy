@@ -7,7 +7,7 @@ from typing import List, Optional
 
 import pytz
 
-from chat_exporter import AssetHandler
+from chat_exporter.construct.asset_handler import AssetHandler
 from chat_exporter.ext.discord_import import discord
 
 from chat_exporter.construct.message import gather_messages

@@ -4,7 +4,7 @@ from typing import List, Optional
 
 from chat_exporter.construct.transcript import Transcript
 from chat_exporter.ext.discord_import import discord
-from chat_exporter import AssetHandler
+from chat_exporter.construct.asset_handler import AssetHandler
 
 
 async def quick_export(
