@@ -101,7 +101,7 @@ This would be the main function to use within chat-exporter.
 `before`: `datetime.datetime` object which allows to gather messages from before a certain date.<br/>
 `after`: `datetime.datetime` object which allows to gather messages from after a certain date.<br/>
 `bot`: `commands.Bot` object to gather members who are no longer in your guild.<br/>
-`asset_channel`: `discord.TextChannel` object to export assets to in order to make them available after the `channel` got deleted.<br/>
+`asset_handler`: `chat_exporter.construct.asset_handler.AssetHandler` object to export assets to in order to make them available after the `channel` got deleted.<br/>
 
 **Return Argument:**<br/>
 `transcript`: The HTML build-up for you to construct the HTML File with Discord.
@@ -150,7 +150,7 @@ This would be for people who want to filter what content to export.
 `military_time`: Boolean value to set a 24h format for times within your exported chat (default=False | 12h format)<br/>
 `fancy_times`: Boolean value which toggles the 'fancy times' (Today|Yesterday|Day)<br/>
 `bot`: `commands.Bot` object to gather members who are no longer in your guild.
-`asset_channel`: `discord.TextChannel` object to export assets to in order to make them available after the `channel` got deleted.<br/>
+`asset_handler`: `chat_exporter.construct.asset_handler.AssetHandler` object to export assets to in order to make them available after the `channel` got deleted.<br/>
 
 **Return Argument:**<br/>
 `transcript`: The HTML build-up for you to construct the HTML File with Discord.
@@ -184,6 +184,27 @@ async def purge(ctx: commands.Context, tz_info: str, military_time: bool):
     await ctx.send(file=transcript_file)
 ```
 </details>
+
+<details><summary><b>Asset handler</b></summary>
+In order to prevent the transcripts from being broken either when a channel is deleted or by the newly introduced 
+restrictions to media links in discord, chat-exporter now supports an asset handler. `chat_exporter.construct.
+asset_handler.AssetHandler` servers as a template for you to implement your own asset handler. As example we provide 
+to basic versions of an asset handler, one that stores the assets locally and one that uploads them to a discord. Of 
+course the second one is also broken, but it should give a good idea on how to implement such an `AssetHandler`.
+If you dont specify an asset handler, chat-exporter will use the normal (proxy) urls for the assets.
+
+
+**Example:**
+```python
+import io
+
+...
+
+from chat_exporter.construct.asset_handler import LocalFileHostHandler
+file_handler = LocalFileHostHandler(base_path="/usr/share/assets",
+                                    url_base="https://example.com/assets")
+transcript = await chat_exporter.export(channel, guild=channel.guild, asset_handler=file_handler)
+```
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
