@@ -19,8 +19,8 @@ def pass_bot(_bot):
 class ParseMention:
     REGEX_ROLES = r"&lt;@&amp;([0-9]+)&gt;"
     REGEX_ROLES_2 = r"<@&([0-9]+)>"
-    REGEX_EVERYONE = r"@(everyone)[$\s\t]"
-    REGEX_HERE = r"@(here)[$\s\t]"
+    REGEX_EVERYONE = r"@(everyone)(?:[$\s\t\n\f\r\0]|$)"
+    REGEX_HERE = r"@(here)(?:[$\s\t\n\f\r\0]|$)"
     REGEX_MEMBERS = r"&lt;@!?([0-9]+)&gt;"
     REGEX_MEMBERS_2 = r"<@!?([0-9]+)>"
     REGEX_CHANNELS = r"&lt;#([0-9]+)&gt;"
@@ -97,6 +97,16 @@ class ParseMention:
                 match = re.search(regex, self.content)
 
     async def role_mention(self):
+        holder = self.REGEX_EVERYONE, self.REGEX_HERE
+        for regex in holder:
+            match = re.search(regex, self.content)
+            while match is not None:
+                role_name = match.group(1)
+                replacement = '<span class="mention" title="%s">@%s</span>' % (str(role_name), str(role_name))
+
+                self.content = self.content.replace(self.content[match.start():match.end()],
+                                                    replacement)
+                match = re.search(regex, self.content)
         holder = self.REGEX_ROLES, self.REGEX_ROLES_2
         for regex in holder:
             match = re.search(regex, self.content)
@@ -113,17 +123,6 @@ class ParseMention:
                         colour = "#%02x%02x%02x" % (role.color.r, role.color.g, role.color.b)
                     replacement = '<span style="color: %s;">@%s</span>' % (colour, role.name)
                 self.content = self.content.replace(self.content[match.start():match.end()], replacement)
-
-                match = re.search(regex, self.content)
-        holder = self.REGEX_EVERYONE, self.REGEX_HERE
-        for regex in holder:
-            match = re.search(regex, self.content)
-            while match is not None:
-                role_name = match.group(1)
-                replacement = '<span class="mention" title="%s">&lt;@%s></span>' % (str(role_name), str(role_name))
-                self.content = self.content.replace(self.content[match.start():match.end()],
-                                                    replacement)
-
                 match = re.search(regex, self.content)
 
     async def slash_command_mention(self):
