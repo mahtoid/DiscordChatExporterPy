@@ -133,6 +133,9 @@ class ParseMarkdown:
             # [r"###\s(.*?)\n", '<h3>%s</h1>'],
             # [r"##\s(.*?)\n", '<h2>%s</h1>'],
             # [r"#\s(.*?)\n", '<h1>%s</h1>'],
+            [r"^###\s(.*?)\n", '<h3>%s</h1>'],
+            [r"^##\s(.*?)\n", '<h2>%s</h1>'],
+            [r"^#\s(.*?)\n", '<h1>%s</h1>'],
             [r"\|\|(.*?)\|\|", '<span class="spoiler spoiler--hidden" onclick="showSpoiler(event, this)"> <span '
                                'class="spoiler-text">%s</span></span>'],
         )
@@ -140,7 +143,7 @@ class ParseMarkdown:
         for x in holder:
             p, r = x
 
-            pattern = re.compile(p)
+            pattern = re.compile(p, re.M)
             match = re.search(pattern, self.content)
             while match is not None:
                 affected_text = match.group(1)
