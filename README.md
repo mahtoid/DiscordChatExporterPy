@@ -192,6 +192,8 @@ asset_handler.AssetHandler` servers as a template for you to implement your own 
 to basic versions of an asset handler, one that stores the assets locally and one that uploads them to a discord. Of 
 course the second one is also broken, but it should give a good idea on how to implement such an `AssetHandler`.
 If you dont specify an asset handler, chat-exporter will use the normal (proxy) urls for the assets.
+The important part of your implementation is, that you have to overwrite the url and proxy_url attribute of the 
+Attachment in your implementation of `AssetHandler`. The url attribute should be the url where the asset is available.
 
 
 **Example:**
