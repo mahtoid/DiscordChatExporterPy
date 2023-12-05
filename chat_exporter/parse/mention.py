@@ -19,6 +19,8 @@ def pass_bot(_bot):
 class ParseMention:
     REGEX_ROLES = r"&lt;@&amp;([0-9]+)&gt;"
     REGEX_ROLES_2 = r"<@&([0-9]+)>"
+    REGEX_EVERYONE = r"&lt;@(everyone)&gt;"
+    REGEX_HERE = r"&lt;@(here)&gt;"
     REGEX_MEMBERS = r"&lt;@!?([0-9]+)&gt;"
     REGEX_MEMBERS_2 = r"<@!?([0-9]+)>"
     REGEX_CHANNELS = r"&lt;#([0-9]+)&gt;"
@@ -26,14 +28,14 @@ class ParseMention:
     REGEX_EMOJIS = r"&lt;a?(:[^\n:]+:)[0-9]+&gt;"
     REGEX_EMOJIS_2 = r"<a?(:[^\n:]+:)[0-9]+>"
     REGEX_TIME_HOLDER = (
-        [r"&lt;t:([0-9]+):t&gt;", "%H:%M"],
-        [r"&lt;t:([0-9]+):T&gt;", "%T"],
-        [r"&lt;t:([0-9]+):d&gt;", "%d/%m/%Y"],
-        [r"&lt;t:([0-9]+):D&gt;", "%e %B %Y"],
-        [r"&lt;t:([0-9]+):f&gt;", "%e %B %Y %H:%M"],
-        [r"&lt;t:([0-9]+):F&gt;", "%A, %e %B %Y %H:%M"],
-        [r"&lt;t:([0-9]+):R&gt;", "%e %B %Y %H:%M"],
-        [r"&lt;t:([0-9]+)&gt;", "%e %B %Y %H:%M"]
+        [r"(?:&lt;)?<?t:([0-9]{10}):t(&gt;)?>?", "%H:%M"],
+        [r"(?:&lt;)?<?t:([0-9]{10}):T(&gt;)?>?", "%T"],
+        [r"(?:&lt;)?<?t:([0-9]{10}):d(&gt;)?>?", "%d/%m/%Y"],
+        [r"(?:&lt;)?<?t:([0-9]{10}):D(&gt;)?>?", "%e %B %Y"],
+        [r"(?:&lt;)?<?t:([0-9]{10}):f(&gt;)?>?", "%e %B %Y %H:%M"],
+        [r"(?:&lt;)?<?t:([0-9]{10}):F(&gt;)?>?", "%A, %e %B %Y %H:%M"],
+        [r"(?:&lt;)?<?t:([0-9]{10}):R(&gt;)?>?", "%e %B %Y %H:%M"],
+        [r"(?:&lt;)?<?t:([0-9]{10})(&gt;)?>?", "%e %B %Y %H:%M"]
     )
     REGEX_SLASH_COMMAND = r"<\/([A-Za-z0-9_]+ ?[A-Za-z0-9_]*):[0-9]+>"
 
@@ -60,7 +62,7 @@ class ParseMention:
         for match in re.finditer("(%s|%s|%s|%s|%s|%s|%s|%s)"
                                  % (self.REGEX_ROLES, self.REGEX_MEMBERS, self.REGEX_CHANNELS, self.REGEX_EMOJIS,
                                     self.REGEX_ROLES_2, self.REGEX_MEMBERS_2, self.REGEX_CHANNELS_2,
-                                    self.REGEX_EMOJIS_2), self.content):
+                                    self.REGEX_EMOJIS_2, self.REGEX_EVERYONE, self.REGEX_HERE), self.content):
             pre_content = self.content[:match.start()]
             post_content = self.content[match.end():]
             match_content = self.content[match.start():match.end()]
@@ -111,6 +113,17 @@ class ParseMention:
                         colour = "#%02x%02x%02x" % (role.color.r, role.color.g, role.color.b)
                     replacement = '<span style="color: %s;">@%s</span>' \
                                   % (colour, role.name)
+                self.content = self.content.replace(self.content[match.start():match.end()], replacement)
+
+                match = re.search(regex, self.content)
+        holder = self.REGEX_EVERYONE, self.REGEX_HERE
+        for regex in holder:
+            match = re.search(regex, self.content)
+            while match is not None:
+                role_name = match.group(1)
+                colour = "#dee0fc"
+                replacement = '<span style="color: %s;">@%s</span>' \
+                              % (colour, role_name)
                 self.content = self.content.replace(self.content[match.start():match.end()], replacement)
 
                 match = re.search(regex, self.content)
