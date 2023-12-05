@@ -19,8 +19,8 @@ def pass_bot(_bot):
 class ParseMention:
     REGEX_ROLES = r"&lt;@&amp;([0-9]+)&gt;"
     REGEX_ROLES_2 = r"<@&([0-9]+)>"
-    REGEX_EVERYONE = r"&lt;@(everyone)&gt;"
-    REGEX_HERE = r"&lt;@(here)&gt;"
+    REGEX_EVERYONE = r"@(everyone)[$\s\t]"
+    REGEX_HERE = r"@(here)[$\s\t]"
     REGEX_MEMBERS = r"&lt;@!?([0-9]+)&gt;"
     REGEX_MEMBERS_2 = r"<@!?([0-9]+)>"
     REGEX_CHANNELS = r"&lt;#([0-9]+)&gt;"
@@ -37,7 +37,7 @@ class ParseMention:
         [r"(?:&lt;)?<?t:([0-9]{10}):R(&gt;)?>?", "%e %B %Y %H:%M"],
         [r"(?:&lt;)?<?t:([0-9]{10})(&gt;)?>?", "%e %B %Y %H:%M"]
     )
-    REGEX_SLASH_COMMAND = r"<\/([A-Za-z0-9_]+ ?[A-Za-z0-9_]*):[0-9]+>"
+    REGEX_SLASH_COMMAND = r"<\/([\w]+ ?[\w]*):[0-9]+>"
 
     ESCAPE_LT = "______lt______"
     ESCAPE_GT = "______gt______"
@@ -111,8 +111,7 @@ class ParseMention:
                         colour = "#dee0fc"
                     else:
                         colour = "#%02x%02x%02x" % (role.color.r, role.color.g, role.color.b)
-                    replacement = '<span style="color: %s;">@%s</span>' \
-                                  % (colour, role.name)
+                    replacement = '<span style="color: %s;">@%s</span>' % (colour, role.name)
                 self.content = self.content.replace(self.content[match.start():match.end()], replacement)
 
                 match = re.search(regex, self.content)
@@ -121,10 +120,9 @@ class ParseMention:
             match = re.search(regex, self.content)
             while match is not None:
                 role_name = match.group(1)
-                colour = "#dee0fc"
-                replacement = '<span style="color: %s;">@%s</span>' \
-                              % (colour, role_name)
-                self.content = self.content.replace(self.content[match.start():match.end()], replacement)
+                replacement = '<span class="mention" title="%s">&lt;@%s></span>' % (str(role_name), str(role_name))
+                self.content = self.content.replace(self.content[match.start():match.end()],
+                                                    replacement)
 
                 match = re.search(regex, self.content)
 
