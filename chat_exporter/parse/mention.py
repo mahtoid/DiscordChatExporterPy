@@ -62,7 +62,7 @@ class ParseMention:
         for match in re.finditer("(%s|%s|%s|%s|%s|%s|%s|%s)"
                                  % (self.REGEX_ROLES, self.REGEX_MEMBERS, self.REGEX_CHANNELS, self.REGEX_EMOJIS,
                                     self.REGEX_ROLES_2, self.REGEX_MEMBERS_2, self.REGEX_CHANNELS_2,
-                                    self.REGEX_EMOJIS_2, self.REGEX_EVERYONE, self.REGEX_HERE), self.content):
+                                    self.REGEX_EMOJIS_2), self.content):
             pre_content = self.content[:match.start()]
             post_content = self.content[match.end():]
             match_content = self.content[match.start():match.end()]
