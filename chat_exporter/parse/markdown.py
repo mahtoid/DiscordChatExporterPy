@@ -95,7 +95,7 @@ class ParseMarkdown:
                 indent = len(indent)
 
                 if started:
-                    html += '<ul class="markup">\n'
+                    html += '<ul class="markup" style="padding-left: 20px;">\n'
                     started = False
                 if indent % 2 == 0:
                     while indent < indent_stack[-1]:
@@ -114,17 +114,22 @@ class ParseMarkdown:
 
                 html += f'<li class="markup">{content.strip()}</li>\n'
             else:
-                html += line
+                while len(indent_stack) > 1:
+                    html += '</ul>\n'
+                    indent_stack.pop()
+                if not started:
+                    html += '</ul>\n'
+                    started = True
+                html += line + '\n'
 
         while len(indent_stack) > 1:
             html += '</ul>\n'
             indent_stack.pop()
 
-        if not started:
-            self.content = html
+        self.content = html
 
     def parse_normal_markdown(self):
-        # self.order_list_markdown_to_html()
+        self.order_list_markdown_to_html()
         holder = (
             [r"__(.*?)__", '<span style="text-decoration: underline">%s</span>'],
             [r"\*\*(.*?)\*\*", '<strong>%s</strong>'],
