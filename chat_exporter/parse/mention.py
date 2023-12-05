@@ -35,6 +35,7 @@ class ParseMention:
         [r"&lt;t:([0-9]+):R&gt;", "%e %B %Y %H:%M"],
         [r"&lt;t:([0-9]+)&gt;", "%e %B %Y %H:%M"]
     )
+    REGEX_SLASH_COMMAND = r"<\/([A-Za-z0-9_]+ ?[A-Za-z0-9_]*):[0-9]+>"
 
     ESCAPE_LT = "______lt______"
     ESCAPE_GT = "______gt______"
@@ -52,7 +53,7 @@ class ParseMention:
         await self.member_mention()
         await self.role_mention()
         await self.time_mention()
-
+        await self.slash_command_mention()
         return self.content
 
     async def escape_mentions(self):
@@ -113,6 +114,16 @@ class ParseMention:
                 self.content = self.content.replace(self.content[match.start():match.end()], replacement)
 
                 match = re.search(regex, self.content)
+
+    async def slash_command_mention(self):
+        match = re.search(self.REGEX_SLASH_COMMAND, self.content)
+        while match is not None:
+            slash_command_name = match.group(1)
+            replacement = '<span class="mention" title="%s">/%s</span>' \
+                          % (slash_command_name, slash_command_name)
+            self.content = self.content.replace(self.content[match.start():match.end()], replacement)
+
+            match = re.search(self.REGEX_SLASH_COMMAND, self.content)
 
     async def member_mention(self):
         holder = self.REGEX_MEMBERS, self.REGEX_MEMBERS_2
