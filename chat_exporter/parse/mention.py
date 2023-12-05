@@ -28,14 +28,14 @@ class ParseMention:
     REGEX_EMOJIS = r"&lt;a?(:[^\n:]+:)[0-9]+&gt;"
     REGEX_EMOJIS_2 = r"<a?(:[^\n:]+:)[0-9]+>"
     REGEX_TIME_HOLDER = (
-        [r"(?:&lt;)?<?t:([0-9]{10}):t(&gt;)?>?", "%H:%M"],
-        [r"(?:&lt;)?<?t:([0-9]{10}):T(&gt;)?>?", "%T"],
-        [r"(?:&lt;)?<?t:([0-9]{10}):d(&gt;)?>?", "%d/%m/%Y"],
-        [r"(?:&lt;)?<?t:([0-9]{10}):D(&gt;)?>?", "%e %B %Y"],
-        [r"(?:&lt;)?<?t:([0-9]{10}):f(&gt;)?>?", "%e %B %Y %H:%M"],
-        [r"(?:&lt;)?<?t:([0-9]{10}):F(&gt;)?>?", "%A, %e %B %Y %H:%M"],
-        [r"(?:&lt;)?<?t:([0-9]{10}):R(&gt;)?>?", "%e %B %Y %H:%M"],
-        [r"(?:&lt;)?<?t:([0-9]{10})(&gt;)?>?", "%e %B %Y %H:%M"]
+        [r"(?:&lt;)?<?t:([0-9]{1,10}):t(&gt;)?>?", "%H:%M"],
+        [r"(?:&lt;)?<?t:([0-9]{1,10}):T(&gt;)?>?", "%T"],
+        [r"(?:&lt;)?<?t:([0-9]{1,10}):d(&gt;)?>?", "%d/%m/%Y"],
+        [r"(?:&lt;)?<?t:([0-9]{1,10}):D(&gt;)?>?", "%e %B %Y"],
+        [r"(?:&lt;)?<?t:([0-9]{1,10}):f(&gt;)?>?", "%e %B %Y %H:%M"],
+        [r"(?:&lt;)?<?t:([0-9]{1,10}):F(&gt;)?>?", "%A, %e %B %Y %H:%M"],
+        [r"(?:&lt;)?<?t:([0-9]{1,10}):R(&gt;)?>?", "%e %B %Y %H:%M"],
+        [r"(?:&lt;)?<?t:([0-9]{1,10})(&gt;)?>?", "%e %B %Y %H:%M"]
     )
     REGEX_SLASH_COMMAND = r"<\/([\w]+ ?[\w]*):[0-9]+>"
 
@@ -172,7 +172,9 @@ class ParseMention:
             regex, strf = p
             match = re.search(regex, self.content)
             while match is not None:
-                time = datetime.datetime.fromtimestamp(int(match.group(1)), timezone)
+                timestamp = int(match.group(1)) - 1
+                time = datetime.datetime.fromtimestamp(1, timezone)
+                time += datetime.timedelta(seconds=timestamp)
                 ui_time = time.strftime(strf)
                 tooltip_time = time.strftime("%A, %e %B %Y at %H:%M")
                 original = match.group().replace("&lt;", "<").replace("&gt;", ">")
