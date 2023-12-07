@@ -46,8 +46,10 @@ class ParseMention:
     def __init__(self, content, guild):
         self.content = content
         self.guild = guild
+        self.markdowns = []
 
     async def flow(self):
+        self.parse_code_block_markdown()
         await self.escape_mentions()
         await self.escape_mentions()
         await self.unescape_mentions()
@@ -56,7 +58,51 @@ class ParseMention:
         await self.role_mention()
         await self.time_mention()
         await self.slash_command_mention()
+        self.reverse_code_block_markdown()
         return self.content
+
+    def parse_code_block_markdown(self):
+        self.content = re.sub(r"\n", "<br>", self.content)
+
+        # ```code```
+        pattern = re.compile(r"```(.*?)```")
+        match = re.search(pattern, self.content)
+        while match is not None:
+            language_class = "nohighlight"
+            affected_text = match.group(1)
+            self.markdowns.append('```' + affected_text + '```')
+            self.content = self.content.replace(
+                self.content[match.start():match.end()],
+                '%s' % f'%s{len(self.markdowns)}'
+            )
+
+            match = re.search(pattern, self.content)
+
+        # ``code``
+        pattern = re.compile(r"``(.*?)``")
+        match = re.search(pattern, self.content)
+        while match is not None:
+            affected_text = match.group(1)
+            self.markdowns.append('``' + affected_text + '``')
+            self.content = self.content.replace(self.content[match.start():match.end()],
+                                                '%s' % f'%s{len(self.markdowns)}')
+            match = re.search(pattern, self.content)
+
+        # `code`
+        pattern = re.compile(r"`(.*?)`")
+        match = re.search(pattern, self.content)
+        while match is not None:
+            affected_text = match.group(1)
+            self.markdowns.append('`' + affected_text + '`')
+            self.content = self.content.replace(self.content[match.start():match.end()],
+                                                '%s' % f'%s{len(self.markdowns)}')
+            match = re.search(pattern, self.content)
+
+        self.content = re.sub(r"<br>", "\n", self.content)
+
+    def reverse_code_block_markdown(self):
+        for x in range(len(self.markdowns)):
+            self.content = self.content.replace(f'%s{x + 1}', self.markdowns[x])
 
     async def escape_mentions(self):
         for match in re.finditer("(%s|%s|%s|%s|%s|%s|%s|%s)"
