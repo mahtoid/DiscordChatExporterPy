@@ -101,24 +101,24 @@ class ParseMarkdown:
                 indent = len(indent)
 
                 if started:
-                    html += '<ul class="markuplist">\n'
+                    html += '<ul class="markup" style="padding-left: 20px;margin: 0 !important">\n'
                     started = False
                 if indent % 2 == 0:
                     while indent < indent_stack[-1]:
                         html += '</ul>\n'
                         indent_stack.pop()
                     if indent > indent_stack[-1]:
-                        html += '<ul class="markuplist">\n'
+                        html += '<ul class="markup">\n'
                         indent_stack.append(indent)
                 else:
                     while indent + 1 < indent_stack[-1]:
                         html += '</ul>\n'
                         indent_stack.pop()
                     if indent + 1 > indent_stack[-1]:
-                        html += '<ul class="markuplist">\n'
+                        html += '<ul class="markup">\n'
                         indent_stack.append(indent + 1)
 
-                html += f'<li class="markuplist">{content.strip()}</li>\n'
+                html += f'<li class="markup">{content.strip()}</li>\n'
             else:
                 while len(indent_stack) > 1:
                     html += '</ul>'
