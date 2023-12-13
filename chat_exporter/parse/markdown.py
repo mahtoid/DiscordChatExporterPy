@@ -101,30 +101,30 @@ class ParseMarkdown:
                 indent = len(indent)
 
                 if started:
-                    html += '<ul class="markup" style="padding-left: 20px;">\n'
+                    html += '<ul class="markuplist">\n'
                     started = False
                 if indent % 2 == 0:
                     while indent < indent_stack[-1]:
                         html += '</ul>\n'
                         indent_stack.pop()
                     if indent > indent_stack[-1]:
-                        html += '<ul class="markup">\n'
+                        html += '<ul class="markuplist">\n'
                         indent_stack.append(indent)
                 else:
                     while indent + 1 < indent_stack[-1]:
                         html += '</ul>\n'
                         indent_stack.pop()
                     if indent + 1 > indent_stack[-1]:
-                        html += '<ul class="markup">\n'
+                        html += '<ul class="markuplist">\n'
                         indent_stack.append(indent + 1)
 
-                html += f'<li class="markup">{content.strip()}</li>\n'
+                html += f'<li class="markuplist">{content.strip()}</li>\n'
             else:
                 while len(indent_stack) > 1:
-                    html += '</ul>\n'
+                    html += '</ul>'
                     indent_stack.pop()
                 if not started:
-                    html += '</ul>\n'
+                    html += '</ul>'
                     started = True
                 html += line + '\n'
 
@@ -254,13 +254,8 @@ class ParseMarkdown:
         self.content = re.sub(r"<br>", "\n", self.content)
 
     def reverse_code_block_markdown(self):
-        print("reverse")
-        print(self.content)
-        print(self.markdowns)
         for x in range(len(self.markdowns)):
             self.content = self.content.replace(f'%s{x + 1}', self.markdowns[x])
-        print(self.content)
-        print("Finished reverse")
 
     def parse_embed_markdown(self):
         # [Message](Link)
