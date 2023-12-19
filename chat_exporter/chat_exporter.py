@@ -76,7 +76,6 @@ async def export(
     :param fancy_times: (optional) boolean - set javascript around time display
     :param before: (optional) datetime.datetime - allows before time for history
     :param after: (optional) datetime.datetime - allows after time for history
-    :param support_dev: (optional) boolean - allows support for dev builds
     :param asset_handler: (optional) asset_handler.AssetHandler - allows custom asset handling
     :return: string - transcript file make up
     """
