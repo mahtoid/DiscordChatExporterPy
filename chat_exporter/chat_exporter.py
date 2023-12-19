@@ -120,7 +120,6 @@ async def raw_export(
     :param bot: (optional) discord.Client - set getting member role colour
     :param military_time: (optional) boolean - set military time (24hour clock)
     :param fancy_times: (optional) boolean - set javascript around time display
-    :param support_dev: (optional) boolean - allows support for dev builds
     :param asset_handler: (optional) AssetHandler - allows custom asset handling
     :return: string - transcript file make up
     """
