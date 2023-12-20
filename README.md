@@ -101,7 +101,7 @@ This would be the main function to use within chat-exporter.
 `before`: `datetime.datetime` object which allows to gather messages from before a certain date.<br/>
 `after`: `datetime.datetime` object which allows to gather messages from after a certain date.<br/>
 `bot`: `commands.Bot` object to gather members who are no longer in your guild.<br/>
-`asset_handler`: `chat_exporter.construct.asset_handler.AssetHandler` object to export assets to in order to make them available after the `channel` got deleted.<br/>
+`attachment_handler`: `chat_exporter.AttachmentHandler` object to export assets to in order to make them available after the `channel` got deleted.<br/>
 
 **Return Argument:**<br/>
 `transcript`: The HTML build-up for you to construct the HTML File with Discord.
@@ -150,7 +150,7 @@ This would be for people who want to filter what content to export.
 `military_time`: Boolean value to set a 24h format for times within your exported chat (default=False | 12h format)<br/>
 `fancy_times`: Boolean value which toggles the 'fancy times' (Today|Yesterday|Day)<br/>
 `bot`: `commands.Bot` object to gather members who are no longer in your guild.
-`asset_handler`: `chat_exporter.construct.asset_handler.AssetHandler` object to export assets to in order to make them available after the `channel` got deleted.<br/>
+`attachment_handler`: `chat_exporter.AttachmentHandler` object to export assets to in order to make them available after the `channel` got deleted.<br/>
 
 **Return Argument:**<br/>
 `transcript`: The HTML build-up for you to construct the HTML File with Discord.
@@ -185,29 +185,6 @@ async def purge(ctx: commands.Context, tz_info: str, military_time: bool):
 ```
 </details>
 
-<details><summary><b>Asset handler</b></summary>
-In order to prevent the transcripts from being broken either when a channel is deleted or by the newly introduced 
-restrictions to media links in discord, chat-exporter now supports an asset handler. `chat_exporter.construct.
-asset_handler.AssetHandler` servers as a template for you to implement your own asset handler. As example we provide 
-to basic versions of an asset handler, one that stores the assets locally and one that uploads them to a discord. Of 
-course the second one is also broken, but it should give a good idea on how to implement such an `AssetHandler`.
-If you dont specify an asset handler, chat-exporter will use the normal (proxy) urls for the assets.
-The important part of your implementation is, that you have to overwrite the url and proxy_url attribute of the 
-Attachment in your implementation of `AssetHandler`. The url attribute should be the url where the asset is available.
-
-
-**Example:**
-```python
-import io
-
-...
-
-from chat_exporter.construct.asset_handler import LocalFileHostHandler
-file_handler = LocalFileHostHandler(base_path="/usr/share/assets",
-                                    url_base="https://example.com/assets")
-transcript = await chat_exporter.export(channel, guild=channel.guild, asset_handler=file_handler)
-```
-
 <p align="right">(<a href="#top">back to top</a>)</p>
 
 ---
@@ -227,7 +204,64 @@ transcript = await chat_exporter.export(channel, guild=channel.guild, asset_hand
 
 
 ---
-## Additional Functions
+## Additional Functions/Features
+
+<details><summary><b>Asset handler</b></summary>
+In order to prevent the transcripts from being broken either when a channel is deleted or by the newly introduced 
+restrictions to media links in discord, chat-exporter now supports an asset handler. 
+
+`chat_exporter.AttachmentHandler` servers as a template for you to implement your own asset handler. 
+As example we provide two basic versions of an asset handler, one that stores the assets locally and one that 
+uploads them to a discord. 
+Of course the second one is also in some sense broken, but it should give a good idea on how to implement such an 
+`AttachmentHandler`.
+
+If you don't specify an asset handler, chat-exporter will use the normal (proxy) urls for the assets.
+The important part of your implementation is, that you have to overwrite the url and proxy_url attribute of the 
+Attachment in your implementation of `AttachmentHandler`. The url attribute should be the url where the asset is available.
+
+
+**Example:**
+
+Assuming you have a file server running, which serves the content of the folder `/usr/share/assets/` 
+under `https://example.com/assets/`, you can easily use the `LocalFileHostHandler` like this:
+```python
+import io
+import discord
+from discord.ext import commands
+import chat_exporter
+from chat_exporter import AttachmentToLocalFileHostHandler
+...
+
+# Establish the file handler
+file_handler = AttachmentToLocalFileHostHandler(
+    base_path="/usr/share/assets",
+    url_base="https://example.com/assets/",
+)
+
+@bot.command()
+async def save(ctx: commands.Context, limit: int = 100, tz_info: str = "UTC", military_time: bool = True):
+    transcript = await chat_exporter.export(
+        ctx.channel,
+        limit=limit,
+        tz_info=tz_info,
+        military_time=military_time,
+        bot=bot,
+        attachment_handler=file_handler,
+    )
+
+    if transcript is None:
+        return
+
+    transcript_file = discord.File(
+        io.BytesIO(transcript.encode()),
+        filename=f"transcript-{ctx.channel.name}.html",
+    )
+
+    await ctx.send(file=transcript_file)
+
+```
+</details>
 
 <details><summary><b>Link Function</b></summary>
 Downloading exported chats can build up a bunch of unwanted files on your PC which can get annoying, additionally - not everyone wants to download content from Discord.

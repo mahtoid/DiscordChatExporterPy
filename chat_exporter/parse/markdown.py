@@ -6,7 +6,7 @@ from chat_exporter.ext.emoji_convert import convert_emoji
 class ParseMarkdown:
     def __init__(self, content):
         self.content = content
-        self.markdowns = []
+        self.code_blocks_content = []
 
 
     async def standard_message_flow(self):
@@ -215,16 +215,17 @@ class ParseMarkdown:
                 affected_text = re.sub(r"^<br>|<br>$", '', affected_text)
                 second_match = re.search(second_pattern, affected_text)
             affected_text = re.sub("  ", "&nbsp;&nbsp;", affected_text)
-            self.markdowns.append(affected_text)
+
+            self.code_blocks_content.append(affected_text)
             if not reference:
                 self.content = self.content.replace(
                     self.content[match.start():match.end()],
-                    '<div class="pre pre--multiline %s">%s</div>' % (language_class, f'%s{len(self.markdowns)}')
+                    '<div class="pre pre--multiline %s">%s</div>' % (language_class, f'%s{len(self.code_blocks_content)}')
                 )
             else:
                 self.content = self.content.replace(
                     self.content[match.start():match.end()],
-                    '<span class="pre pre-inline">%s</span>' % f'%s{len(self.markdowns)}'
+                    '<span class="pre pre-inline">%s</span>' % f'%s{len(self.code_blocks_content)}'
                 )
 
             match = re.search(pattern, self.content)
@@ -235,9 +236,9 @@ class ParseMarkdown:
         while match is not None:
             affected_text = match.group(1)
             affected_text = self.return_to_markdown(affected_text)
-            self.markdowns.append(affected_text)
+            self.code_blocks_content.append(affected_text)
             self.content = self.content.replace(self.content[match.start():match.end()],
-                                                '<span class="pre pre-inline">%s</span>' % f'%s{len(self.markdowns)}')
+                                                '<span class="pre pre-inline">%s</span>' % f'%s{len(self.code_blocks_content)}')
             match = re.search(pattern, self.content)
 
         # `code`
@@ -246,16 +247,16 @@ class ParseMarkdown:
         while match is not None:
             affected_text = match.group(1)
             affected_text = self.return_to_markdown(affected_text)
-            self.markdowns.append(affected_text)
+            self.code_blocks_content.append(affected_text)
             self.content = self.content.replace(self.content[match.start():match.end()],
-                                                '<span class="pre pre-inline">%s</span>' % f'%s{len(self.markdowns)}')
+                                                '<span class="pre pre-inline">%s</span>' % f'%s{len(self.code_blocks_content)}')
             match = re.search(pattern, self.content)
 
         self.content = re.sub(r"<br>", "\n", self.content)
 
     def reverse_code_block_markdown(self):
-        for x in range(len(self.markdowns)):
-            self.content = self.content.replace(f'%s{x + 1}', self.markdowns[x])
+        for x in range(len(self.code_blocks_content)):
+            self.content = self.content.replace(f'%s{x + 1}', self.code_blocks_content[x])
 
     def parse_embed_markdown(self):
         # [Message](Link)

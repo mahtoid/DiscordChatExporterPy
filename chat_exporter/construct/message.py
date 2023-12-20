@@ -7,7 +7,7 @@ import aiohttp
 from pytz import timezone
 from datetime import timedelta
 
-from chat_exporter.construct.asset_handler import AssetHandler
+from chat_exporter.construct.attachment_handler import AttachmentHandler
 from chat_exporter.ext.discord_import import discord
 
 from chat_exporter.construct.assets import Attachment, Component, Embed, Reaction
@@ -67,7 +67,7 @@ class MessageConstruct:
         guild: discord.Guild,
         meta_data: dict,
         message_dict: dict,
-        asset_handler: Optional[AssetHandler]
+        attachment_handler: Optional[AttachmentHandler]
     ):
         self.message = message
         self.previous_message = previous_message
@@ -75,7 +75,7 @@ class MessageConstruct:
         self.military_time = military_time
         self.guild = guild
         self.message_dict = message_dict
-        self.asset_handler = asset_handler
+        self.attachment_handler = attachment_handler
         self.time_format = "%A, %e %B %Y %I:%M %p"
         if self.military_time:
             self.time_format = "%A, %e %B %Y %H:%M"
@@ -252,8 +252,8 @@ class MessageConstruct:
             self.embeds += await Embed(e, self.guild).flow()
 
         for a in self.message.attachments:
-            if self.asset_handler and isinstance(self.asset_handler, AssetHandler):
-                a = await self.asset_handler.process_asset(a)
+            if self.attachment_handler and isinstance(self.attachment_handler, AttachmentHandler):
+                a = await self.attachment_handler.process_asset(a)
             self.attachments += await Attachment(a, self.guild).flow()
 
         for c in self.message.components:
@@ -443,7 +443,7 @@ async def gather_messages(
     guild: discord.Guild,
     pytz_timezone,
     military_time,
-    asset_handler: Optional[AssetHandler],
+    attachment_handler: Optional[AttachmentHandler],
 ) -> (str, dict):
     message_html: str = ""
     meta_data: dict = {}
@@ -470,7 +470,7 @@ async def gather_messages(
             guild,
             meta_data,
             message_dict,
-            asset_handler,
+            attachment_handler,
             ).construct_message()
 
         message_html += content_html
