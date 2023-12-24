@@ -227,7 +227,7 @@ Attachment in your implementation of `AttachmentHandler`. The url attribute shou
 <details><summary>AttachmentToLocalFileHostHandler</summary>
 
 Assuming you have a file server running, which serves the content of the folder `/usr/share/assets/` 
-under `https://example.com/assets/`, you can easily use the `LocalFileHostHandler` like this:
+under `https://example.com/assets/`, you can easily use the `AttachmentToLocalFileHostHandler` like this:
 ```python
 import io
 import discord
