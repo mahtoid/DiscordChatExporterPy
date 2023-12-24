@@ -1,5 +1,12 @@
-from chat_exporter.chat_exporter import (export, raw_export, quick_export, link, quick_link, AttachmentHandler,
-                                         AttachmentToLocalFileHostHandler, AttachmentToDiscordChannelHandler)
+from chat_exporter.chat_exporter import (
+    export,
+    raw_export,
+    quick_export,
+    link,
+    quick_link,
+    AttachmentHandler,
+    AttachmentToLocalFileHostHandler,
+    AttachmentToDiscordChannelHandler)
 
 __version__ = "2.7.0"
 

@@ -206,11 +206,11 @@ async def purge(ctx: commands.Context, tz_info: str, military_time: bool):
 ---
 ## Additional Functions/Features
 
-<details><summary><b>Asset handler</b></summary>
+<details><summary><b>Attachment handler</b></summary>
 In order to prevent the transcripts from being broken either when a channel is deleted or by the newly introduced 
 restrictions to media links in discord, chat-exporter now supports an asset handler. 
 
-`chat_exporter.AttachmentHandler` servers as a template for you to implement your own asset handler. 
+`chat_exporter.AttachmentHandler` serves as a template for you to implement your own asset handler. 
 As example we provide two basic versions of an asset handler, one that stores the assets locally and one that 
 uploads them to a discord. 
 Of course the second one is also in some sense broken, but it should give a good idea on how to implement such an 
@@ -221,7 +221,10 @@ The important part of your implementation is, that you have to overwrite the url
 Attachment in your implementation of `AttachmentHandler`. The url attribute should be the url where the asset is available.
 
 
-**Example:**
+**Examples:**
+
+<ol>
+<details><summary>AttachmentToLocalFileHostHandler</summary>
 
 Assuming you have a file server running, which serves the content of the folder `/usr/share/assets/` 
 under `https://example.com/assets/`, you can easily use the `LocalFileHostHandler` like this:
@@ -261,6 +264,52 @@ async def save(ctx: commands.Context, limit: int = 100, tz_info: str = "UTC", mi
     await ctx.send(file=transcript_file)
 
 ```
+</details>
+
+<details><summary>AttachmentToDiscordChannel</summary>
+
+Assuming you want to store your attachments in a discord channel, you can use the `AttachmentToDiscordChannel`. 
+Please note that discord recent changes regarding content links will result in the attachments links being broken 
+after 24 hours. While this is therefor not a recommended way to store your attachments, it should give you a good 
+idea how to perform asynchronous storing of the attachments.
+
+```python
+import io
+import discord
+from discord.ext import commands
+import chat_exporter
+from chat_exporter import AttachmentToDiscordChannel
+...
+
+# Establish the file handler
+channel_handler = AttachmentToDiscordChannel(
+    channel=bot.get_channel(CHANNEL_ID),
+)
+
+@bot.command()
+async def save(ctx: commands.Context, limit: int = 100, tz_info: str = "UTC", military_time: bool = True):
+    transcript = await chat_exporter.export(
+        ctx.channel,
+        limit=limit,
+        tz_info=tz_info,
+        military_time=military_time,
+        bot=bot,
+        attachment_handler=channel_handler,
+    )
+
+    if transcript is None:
+        return
+
+    transcript_file = discord.File(
+        io.BytesIO(transcript.encode()),
+        filename=f"transcript-{ctx.channel.name}.html",
+    )
+
+    await ctx.send(file=transcript_file)
+
+```
+</details>
+</ol>
 </details>
 
 <details><summary><b>Link Function</b></summary>
