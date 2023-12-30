@@ -1,4 +1,5 @@
 import re
+import traceback
 from typing import Optional
 
 import pytz
@@ -28,14 +29,14 @@ class ParseMention:
     REGEX_EMOJIS = r"&lt;a?(:[^\n:]+:)[0-9]+&gt;"
     REGEX_EMOJIS_2 = r"<a?(:[^\n:]+:)[0-9]+>"
     REGEX_TIME_HOLDER = (
-        [r"&lt;t:([0-9]+):t&gt;", "%H:%M"],
-        [r"&lt;t:([0-9]+):T&gt;", "%T"],
-        [r"&lt;t:([0-9]+):d&gt;", "%d/%m/%Y"],
-        [r"&lt;t:([0-9]+):D&gt;", "%e %B %Y"],
-        [r"&lt;t:([0-9]+):f&gt;", "%e %B %Y %H:%M"],
-        [r"&lt;t:([0-9]+):F&gt;", "%A, %e %B %Y %H:%M"],
-        [r"&lt;t:([0-9]+):R&gt;", "%e %B %Y %H:%M"],
-        [r"&lt;t:([0-9]+)&gt;", "%e %B %Y %H:%M"]
+        [r"&lt;t:([0-9]{1,13}):t&gt;", "%H:%M"],
+        [r"&lt;t:([0-9]{1,13}):T&gt;", "%T"],
+        [r"&lt;t:([0-9]{1,13}):d&gt;", "%d/%m/%Y"],
+        [r"&lt;t:([0-9]{1,13}):D&gt;", "%e %B %Y"],
+        [r"&lt;t:([0-9]{1,13}):f&gt;", "%e %B %Y %H:%M"],
+        [r"&lt;t:([0-9]{1,13}):F&gt;", "%A, %e %B %Y %H:%M"],
+        [r"&lt;t:([0-9]{1,13}):R&gt;", "%e %B %Y %H:%M"],
+        [r"&lt;t:([0-9]{1,13})&gt;", "%e %B %Y %H:%M"]
     )
     REGEX_SLASH_COMMAND = r"&lt;\/([\w]+ ?[\w]*):[0-9]+&gt;"
 
@@ -181,18 +182,21 @@ class ParseMention:
             regex, strf = p
             match = re.search(regex, self.content)
             while match is not None:
-                timestamp = int(match.group(1)) - 1
-                time = datetime.datetime.fromtimestamp(1, timezone)
-                time += datetime.timedelta(seconds=timestamp)
-                ui_time = time.strftime(strf)
-                tooltip_time = time.strftime("%A, %e %B %Y at %H:%M")
-                original = match.group().replace("&lt;", "<").replace("&gt;", ">")
-                replacement = (
-                    f'<span class="unix-timestamp" data-timestamp="{tooltip_time}" raw-content="{original}">'
-                    f'{ui_time}</span>'
-                )
+                try:
+                    timestamp = int(match.group(1)) - 1
+                    time = datetime.datetime.fromtimestamp(1, timezone)
+                    time += datetime.timedelta(seconds=timestamp)
+                    ui_time = time.strftime(strf)
+                    tooltip_time = time.strftime("%A, %e %B %Y at %H:%M")
+                    original = match.group().replace("&lt;", "<").replace("&gt;", ">")
+                    replacement = (
+                        f'<span class="unix-timestamp" data-timestamp="{tooltip_time}" raw-content="{original}">'
+                        f'{ui_time}</span>'
+                    )
 
-                self.content = self.content.replace(self.content[match.start():match.end()],
-                                                    replacement)
+                    self.content = self.content.replace(self.content[match.start():match.end()],
+                                                        replacement)
 
-                match = re.search(regex, self.content)
+                    match = re.search(regex, self.content)
+                except Exception as e:
+                    traceback.print_exc()
