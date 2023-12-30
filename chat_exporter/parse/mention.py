@@ -1,9 +1,9 @@
 import re
-import traceback
 from typing import Optional
 
 import pytz
 import datetime
+import time
 
 from chat_exporter.ext.discord_import import discord
 from chat_exporter.parse.markdown import ParseMarkdown
@@ -182,21 +182,20 @@ class ParseMention:
             regex, strf = p
             match = re.search(regex, self.content)
             while match is not None:
-                try:
-                    timestamp = int(match.group(1)) - 1
-                    time = datetime.datetime.fromtimestamp(1, timezone)
-                    time += datetime.timedelta(seconds=timestamp)
-                    ui_time = time.strftime(strf)
-                    tooltip_time = time.strftime("%A, %e %B %Y at %H:%M")
-                    original = match.group().replace("&lt;", "<").replace("&gt;", ">")
-                    replacement = (
-                        f'<span class="unix-timestamp" data-timestamp="{tooltip_time}" raw-content="{original}">'
-                        f'{ui_time}</span>'
-                    )
+                timestamp = int(match.group(1)) - 1
+                time_stamp = time.gmtime(timestamp)
+                datetime_stamp = datetime.datetime(2010, *time_stamp[1:6], tzinfo=pytz.utc)
+                ui_time = datetime_stamp.strftime(strf)
+                ui_time = ui_time.replace(str(datetime_stamp.year), str(time_stamp[0]))
+                tooltip_time = datetime_stamp.strftime("%A, %e %B %Y at %H:%M")
+                tooltip_time = tooltip_time.replace(str(datetime_stamp.year), str(time_stamp[0]))
+                original = match.group().replace("&lt;", "<").replace("&gt;", ">")
+                replacement = (
+                    f'<span class="unix-timestamp" data-timestamp="{tooltip_time}" raw-content="{original}">'
+                    f'{ui_time}</span>'
+                )
 
-                    self.content = self.content.replace(self.content[match.start():match.end()],
-                                                        replacement)
+                self.content = self.content.replace(self.content[match.start():match.end()],
+                                                    replacement)
 
-                    match = re.search(regex, self.content)
-                except Exception as e:
-                    traceback.print_exc()
+                match = re.search(regex, self.content)
