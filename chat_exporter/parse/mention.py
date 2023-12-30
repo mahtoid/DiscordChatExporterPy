@@ -181,12 +181,9 @@ class ParseMention:
             regex, strf = p
             match = re.search(regex, self.content)
             while match is not None:
-                if int(match.group(1)) < 2**31 - 1:
-                    time = datetime.datetime.fromtimestamp(int(match.group(1)), timezone)
-                else:
-                    timestamp = int(match.group(1)) - 1
-                    time = datetime.datetime.fromtimestamp(1, timezone)
-                    time += datetime.timedelta(seconds=timestamp)
+                timestamp = int(match.group(1)) - 1
+                time = datetime.datetime.fromtimestamp(1, timezone)
+                time += datetime.timedelta(seconds=timestamp)
                 ui_time = time.strftime(strf)
                 tooltip_time = time.strftime("%A, %e %B %Y at %H:%M")
                 original = match.group().replace("&lt;", "<").replace("&gt;", ">")
