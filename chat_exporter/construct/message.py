@@ -344,7 +344,7 @@ class MessageConstruct:
             ("NAME", str(html.escape(self.message.author.display_name))),
             ("NAME_TAG", await discriminator(self.message.author.name, self.message.author.discriminator), PARSE_MODE_NONE),
             ("MESSAGE_ID", str(self.message.id), PARSE_MODE_NONE),
-            ("REF_MESSAGE_ID", str(self.message.reference.message_id), PARSE_MODE_NONE)
+            ("REF_MESSAGE_ID", str(self.message.reference.message_id) if self.message.reference else "", PARSE_MODE_NONE)
         ])
 
     async def build_thread_template(self):
@@ -451,7 +451,7 @@ async def gather_messages(
 
     message_dict = {message.id: message for message in messages}
 
-    if "thread" in str(messages[0].channel.type) and messages[0].reference:
+    if messages and "thread" in str(messages[0].channel.type) and messages[0].reference:
         channel = guild.get_channel(messages[0].reference.channel_id)
 
         if not channel:
