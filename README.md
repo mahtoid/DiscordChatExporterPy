@@ -185,41 +185,22 @@ async def purge(ctx: commands.Context, tz_info: str, military_time: bool):
 ```
 </details>
 
+
 <p align="right">(<a href="#top">back to top</a>)</p>
 
 ---
-## Screenshots
+## Attachment Handler
 
-<details><summary><b>General</b></summary>
-<ol>
-    <details><summary>Discord</summary>
-    <img src="https://raw.githubusercontent.com/mahtoid/DiscordChatExporterPy/master/.screenshots/channel_output.png">
-    </details>
-    <details><summary>Chat-Exporter</summary>
-    <img src="https://raw.githubusercontent.com/mahtoid/DiscordChatExporterPy/master/.screenshots/html_output.png">
-    </details>
-</ol>
-</details>
-<p align="right">(<a href="#top">back to top</a>)</p>
+Due to Discords newly introduced restrictions on to their CDN, we have introduced an Attachment Handler. This handler
+will assist you with circumventing the 'broken' and 'dead-assets' which arise when former attachments hosted by Discord
+reach their expiration date.
 
+The `AttachmentHandler` serves as a template for you to implement your own asset handler. Below are two basic examples on
+how to use the `AttachmentHandler`. One using the example of storing files on a local webserver, with the other being
+an example of storing them on Discord *(the latter merely just being an example, this will still obviously run in to
+the expiration issue)*.
 
----
-## Additional Functions/Features
-
-<details><summary><b>Attachment handler</b></summary>
-In order to prevent the transcripts from being broken either when a channel is deleted or by the newly introduced 
-restrictions to media links in discord, chat-exporter now supports an asset handler. 
-
-`chat_exporter.AttachmentHandler` serves as a template for you to implement your own asset handler. 
-As example we provide two basic versions of an asset handler, one that stores the assets locally and one that 
-uploads them to a discord. 
-Of course the second one is also in some sense broken, but it should give a good idea on how to implement such an 
-`AttachmentHandler`.
-
-If you don't specify an asset handler, chat-exporter will use the normal (proxy) urls for the assets.
-The important part of your implementation is, that you have to overwrite the url and proxy_url attribute of the 
-Attachment in your implementation of `AttachmentHandler`. The url attribute should be the url where the asset is available.
-
+If you do not specify an attachment handler, chat-exporter will continue to use the (proxy) URLs for the assets.
 
 **Examples:**
 
@@ -234,6 +215,7 @@ import discord
 from discord.ext import commands
 import chat_exporter
 from chat_exporter import AttachmentToLocalFileHostHandler
+
 ...
 
 # Establish the file handler
@@ -243,13 +225,9 @@ file_handler = AttachmentToLocalFileHostHandler(
 )
 
 @bot.command()
-async def save(ctx: commands.Context, limit: int = 100, tz_info: str = "UTC", military_time: bool = True):
+async def save(ctx: commands.Context):
     transcript = await chat_exporter.export(
         ctx.channel,
-        limit=limit,
-        tz_info=tz_info,
-        military_time=military_time,
-        bot=bot,
         attachment_handler=file_handler,
     )
 
@@ -279,6 +257,7 @@ import discord
 from discord.ext import commands
 import chat_exporter
 from chat_exporter import AttachmentToDiscordChannel
+
 ...
 
 # Establish the file handler
@@ -287,13 +266,9 @@ channel_handler = AttachmentToDiscordChannel(
 )
 
 @bot.command()
-async def save(ctx: commands.Context, limit: int = 100, tz_info: str = "UTC", military_time: bool = True):
+async def save(ctx: commands.Context):
     transcript = await chat_exporter.export(
         ctx.channel,
-        limit=limit,
-        tz_info=tz_info,
-        military_time=military_time,
-        bot=bot,
         attachment_handler=channel_handler,
     )
 
@@ -310,7 +285,25 @@ async def save(ctx: commands.Context, limit: int = 100, tz_info: str = "UTC", mi
 ```
 </details>
 </ol>
+
+---
+## Screenshots
+
+<details><summary><b>General</b></summary>
+<ol>
+    <details><summary>Discord</summary>
+    <img src="https://raw.githubusercontent.com/mahtoid/DiscordChatExporterPy/master/.screenshots/channel_output.png">
+    </details>
+    <details><summary>Chat-Exporter</summary>
+    <img src="https://raw.githubusercontent.com/mahtoid/DiscordChatExporterPy/master/.screenshots/html_output.png">
+    </details>
+</ol>
 </details>
+<p align="right">(<a href="#top">back to top</a>)</p>
+
+
+---
+## Additional Functions
 
 <details><summary><b>Link Function</b></summary>
 Downloading exported chats can build up a bunch of unwanted files on your PC which can get annoying, additionally - not everyone wants to download content from Discord.
