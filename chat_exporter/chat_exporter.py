@@ -4,6 +4,7 @@ from typing import List, Optional
 
 from chat_exporter.construct.transcript import Transcript
 from chat_exporter.ext.discord_import import discord
+from chat_exporter.construct.attachment_handler import AttachmentHandler, AttachmentToLocalFileHostHandler, AttachmentToDiscordChannelHandler
 
 
 async def quick_export(
@@ -61,7 +62,7 @@ async def export(
     before: Optional[datetime.datetime] = None,
     after: Optional[datetime.datetime] = None,
     support_dev: Optional[bool] = True,
-    asset_channel: Optional[discord.TextChannel] = None,
+    attachment_handler: Optional[AttachmentHandler] = None,
 ):
     """
     Create a customised transcript of your Discord channel.
@@ -75,7 +76,7 @@ async def export(
     :param fancy_times: (optional) boolean - set javascript around time display
     :param before: (optional) datetime.datetime - allows before time for history
     :param after: (optional) datetime.datetime - allows after time for history
-    :param asset_channel: (optional) discord.TextChannel - channel to save attachments to
+    :param attachment_handler: (optional) attachment_handler.AttachmentHandler - allows custom asset handling
     :return: string - transcript file make up
     """
     if guild:
@@ -93,7 +94,7 @@ async def export(
             after=after,
             support_dev=support_dev,
             bot=bot,
-            asset_channel=asset_channel,
+            attachment_handler=attachment_handler,
         ).export()
     ).html
 
@@ -107,7 +108,7 @@ async def raw_export(
     military_time: Optional[bool] = False,
     fancy_times: Optional[bool] = True,
     support_dev: Optional[bool] = True,
-    asset_channel: Optional[discord.TextChannel] = None,
+    attachment_handler: Optional[AttachmentHandler] = None,
 ):
     """
     Create a customised transcript with your own captured Discord messages
@@ -119,7 +120,7 @@ async def raw_export(
     :param bot: (optional) discord.Client - set getting member role colour
     :param military_time: (optional) boolean - set military time (24hour clock)
     :param fancy_times: (optional) boolean - set javascript around time display
-    :param asset_channel: (optional) discord.TextChannel - channel to save attachments to
+    :param attachment_handler: (optional) AttachmentHandler - allows custom asset handling
     :return: string - transcript file make up
     """
     if guild:
@@ -137,7 +138,7 @@ async def raw_export(
             after=None,
             support_dev=support_dev,
             bot=bot,
-            asset_channel=asset_channel
+            attachment_handler=attachment_handler
         ).export()
     ).html
 
