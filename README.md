@@ -206,6 +206,186 @@ async def purge(ctx: commands.Context, tz_info: str, military_time: bool):
 ---
 ## Additional Functions
 
+<details><summary><b>Attachment handler</b></summary>
+In order to prevent the transcripts from being broken either when a channel is deleted or by the newly introduced 
+restrictions to media links in discord, chat-exporter now supports an asset handler. 
+
+`chat_exporter.AttachmentHandler` serves as a template for you to implement your own asset handler. 
+As example we provide two basic versions of an asset handler, one that stores the assets locally and one that 
+uploads them to a discord. 
+Of course the second one is also in some sense broken, but it should give a good idea on how to implement such an 
+`AttachmentHandler`.
+
+If you don't specify an asset handler, chat-exporter will use the normal (proxy) urls for the assets.
+The important part of your implementation is, that you have to overwrite the url and proxy_url attribute of the 
+Attachment in your implementation of `AttachmentHandler`. The url attribute should be the url where the asset is available.
+
+<details><summary><b>Concept</b></summary>
+
+The concept of implementing such an AttachmentHandler is very easy. In the following a short general procedure is 
+described to write your own AttachmentHandler fitting your storage solution. Here we will assume, that we store the 
+attachments in a cloud storage.
+
+1. Subclassing
+Start by subclassing `chat_exporter.AttachmentHandler` and implement the `__init__` method if needed. This should look 
+something like this:
+
+```python
+from chat_exporter import AttachmentHandler
+from cloud_wrapper import CloudClient
+
+
+class MyAttachmentHandler(AttachmentHandler):
+    def __init__(self, *args, **kwargs):
+        # Your initialization code here
+        # in your case we just create the cloud client
+        self.cloud_client = CloudClient()
+
+```
+
+2. Overwrite process_asset
+The `process_asset` method is the method that is called for each asset in the chat. Here we have to implement the 
+upload logic and the generation of the asset url from the uploaded asset.
+    
+```python
+import io
+import aiohttp
+from chat_exporter import AttachmentHandler
+from cloud_wrapper import CloudClient
+from discord import Attachment
+
+
+class MyAttachmentHandler(AttachmentHandler):
+    async def process_asset(self, attachment: Attachment):
+        # Your upload logic here, in our example we just upload the asset to the cloud
+        
+        # first we need to authorize the client
+        await self.cloud_client.authorize()
+        
+        # then we fetch the content of the attachment
+        async with aiohttp.ClientSession() as session:
+            async with session.get(attachment.url) as res:
+                if res.status != 200:
+                    res.raise_for_status()
+                data = io.BytesIO(await res.read())
+        data.seek(0)
+        
+        # and upload it to the cloud, back we get some sort of identifier for the uploaded file
+        asset_id = await self.cloud_client.upload(data)
+        
+        # now we can generate the asset url from the identifier
+        asset_url = await self.cloud_client.get_share_url(asset_id, shared_with="everyone")
+        
+        # and set the url attribute of the attachment to the generated url
+        attachment.url = asset_url
+        return attachment
+
+```
+
+Note
+1. The `process_asset` method should return the attachment object with the url attribute set to the generated url.
+2. The `process_asset` method should be an async method, as it is likely that you have to do some async operations 
+   like fetching the content of the attachment or uploading it to the cloud.
+3. You are free to add other methods in your class, and call them from `process_asset` if you need to do some 
+   operations before or after the upload of the asset. But the `process_asset` method is the only method that is 
+called from chat-exporter.
+
+</details>
+
+
+
+
+**Examples:**
+
+<ol>
+<details><summary>AttachmentToLocalFileHostHandler</summary>
+
+Assuming you have a file server running, which serves the content of the folder `/usr/share/assets/` 
+under `https://example.com/assets/`, you can easily use the `AttachmentToLocalFileHostHandler` like this:
+```python
+import io
+import discord
+from discord.ext import commands
+import chat_exporter
+from chat_exporter import AttachmentToLocalFileHostHandler
+...
+
+# Establish the file handler
+file_handler = AttachmentToLocalFileHostHandler(
+    base_path="/usr/share/assets",
+    url_base="https://example.com/assets/",
+)
+
+@bot.command()
+async def save(ctx: commands.Context, limit: int = 100, tz_info: str = "UTC", military_time: bool = True):
+    transcript = await chat_exporter.export(
+        ctx.channel,
+        limit=limit,
+        tz_info=tz_info,
+        military_time=military_time,
+        bot=bot,
+        attachment_handler=file_handler,
+    )
+
+    if transcript is None:
+        return
+
+    transcript_file = discord.File(
+        io.BytesIO(transcript.encode()),
+        filename=f"transcript-{ctx.channel.name}.html",
+    )
+
+    await ctx.send(file=transcript_file)
+
+```
+</details>
+
+<details><summary>AttachmentToDiscordChannel</summary>
+
+Assuming you want to store your attachments in a discord channel, you can use the `AttachmentToDiscordChannel`. 
+Please note that discord recent changes regarding content links will result in the attachments links being broken 
+after 24 hours. While this is therefor not a recommended way to store your attachments, it should give you a good 
+idea how to perform asynchronous storing of the attachments.
+
+```python
+import io
+import discord
+from discord.ext import commands
+import chat_exporter
+from chat_exporter import AttachmentToDiscordChannel
+...
+
+# Establish the file handler
+channel_handler = AttachmentToDiscordChannel(
+    channel=bot.get_channel(CHANNEL_ID),
+)
+
+@bot.command()
+async def save(ctx: commands.Context, limit: int = 100, tz_info: str = "UTC", military_time: bool = True):
+    transcript = await chat_exporter.export(
+        ctx.channel,
+        limit=limit,
+        tz_info=tz_info,
+        military_time=military_time,
+        bot=bot,
+        attachment_handler=channel_handler,
+    )
+
+    if transcript is None:
+        return
+
+    transcript_file = discord.File(
+        io.BytesIO(transcript.encode()),
+        filename=f"transcript-{ctx.channel.name}.html",
+    )
+
+    await ctx.send(file=transcript_file)
+
+```
+</details>
+</ol>
+</details>
+
 <details><summary><b>Link Function</b></summary>
 Downloading exported chats can build up a bunch of unwanted files on your PC which can get annoying, additionally - not everyone wants to download content from Discord.
 
@@ -275,6 +455,8 @@ _Please note that the PHP script does NOT store any information.<br/>
 It simply makes a request to the given URL and echos (prints) the content for you to be able to view it._
 
 </details>
+
+
 
 ---
 ## Attributions
