@@ -101,7 +101,7 @@ This would be the main function to use within chat-exporter.
 `before`: `datetime.datetime` object which allows to gather messages from before a certain date.<br/>
 `after`: `datetime.datetime` object which allows to gather messages from after a certain date.<br/>
 `bot`: `commands.Bot` object to gather members who are no longer in your guild.<br/>
-`asset_channel`: `discord.TextChannel` object to export assets to in order to make them available after the `channel` got deleted.<br/>
+`attachment_handler`: `chat_exporter.AttachmentHandler` object to export assets to in order to make them available after the `channel` got deleted.<br/>
 
 **Return Argument:**<br/>
 `transcript`: The HTML build-up for you to construct the HTML File with Discord.
@@ -150,7 +150,7 @@ This would be for people who want to filter what content to export.
 `military_time`: Boolean value to set a 24h format for times within your exported chat (default=False | 12h format)<br/>
 `fancy_times`: Boolean value which toggles the 'fancy times' (Today|Yesterday|Day)<br/>
 `bot`: `commands.Bot` object to gather members who are no longer in your guild.
-`asset_channel`: `discord.TextChannel` object to export assets to in order to make them available after the `channel` got deleted.<br/>
+`attachment_handler`: `chat_exporter.AttachmentHandler` object to export assets to in order to make them available after the `channel` got deleted.<br/>
 
 **Return Argument:**<br/>
 `transcript`: The HTML build-up for you to construct the HTML File with Discord.
@@ -185,7 +185,106 @@ async def purge(ctx: commands.Context, tz_info: str, military_time: bool):
 ```
 </details>
 
+
 <p align="right">(<a href="#top">back to top</a>)</p>
+
+---
+## Attachment Handler
+
+Due to Discords newly introduced restrictions on to their CDN, we have introduced an Attachment Handler. This handler
+will assist you with circumventing the 'broken' and 'dead-assets' which arise when former attachments hosted by Discord
+reach their expiration date.
+
+The `AttachmentHandler` serves as a template for you to implement your own asset handler. Below are two basic examples on
+how to use the `AttachmentHandler`. One using the example of storing files on a local webserver, with the other being
+an example of storing them on Discord *(the latter merely just being an example, this will still obviously run in to
+the expiration issue)*.
+
+If you do not specify an attachment handler, chat-exporter will continue to use the (proxy) URLs for the assets.
+
+**Examples:**
+
+<ol>
+<details><summary>AttachmentToLocalFileHostHandler</summary>
+
+Assuming you have a file server running, which serves the content of the folder `/usr/share/assets/` 
+under `https://example.com/assets/`, you can easily use the `AttachmentToLocalFileHostHandler` like this:
+```python
+import io
+import discord
+from discord.ext import commands
+import chat_exporter
+from chat_exporter import AttachmentToLocalFileHostHandler
+
+...
+
+# Establish the file handler
+file_handler = AttachmentToLocalFileHostHandler(
+    base_path="/usr/share/assets",
+    url_base="https://example.com/assets/",
+)
+
+@bot.command()
+async def save(ctx: commands.Context):
+    transcript = await chat_exporter.export(
+        ctx.channel,
+        attachment_handler=file_handler,
+    )
+
+    if transcript is None:
+        return
+
+    transcript_file = discord.File(
+        io.BytesIO(transcript.encode()),
+        filename=f"transcript-{ctx.channel.name}.html",
+    )
+
+    await ctx.send(file=transcript_file)
+
+```
+</details>
+
+<details><summary>AttachmentToDiscordChannel</summary>
+
+Assuming you want to store your attachments in a discord channel, you can use the `AttachmentToDiscordChannel`. 
+Please note that discord recent changes regarding content links will result in the attachments links being broken 
+after 24 hours. While this is therefor not a recommended way to store your attachments, it should give you a good 
+idea how to perform asynchronous storing of the attachments.
+
+```python
+import io
+import discord
+from discord.ext import commands
+import chat_exporter
+from chat_exporter import AttachmentToDiscordChannel
+
+...
+
+# Establish the file handler
+channel_handler = AttachmentToDiscordChannel(
+    channel=bot.get_channel(CHANNEL_ID),
+)
+
+@bot.command()
+async def save(ctx: commands.Context):
+    transcript = await chat_exporter.export(
+        ctx.channel,
+        attachment_handler=channel_handler,
+    )
+
+    if transcript is None:
+        return
+
+    transcript_file = discord.File(
+        io.BytesIO(transcript.encode()),
+        filename=f"transcript-{ctx.channel.name}.html",
+    )
+
+    await ctx.send(file=transcript_file)
+
+```
+</details>
+</ol>
 
 ---
 ## Screenshots
