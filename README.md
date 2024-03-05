@@ -202,123 +202,6 @@ the expiration issue)*.
 
 If you do not specify an attachment handler, chat-exporter will continue to use the (proxy) URLs for the assets.
 
-**Examples:**
-
-<ol>
-<details><summary>AttachmentToLocalFileHostHandler</summary>
-
-Assuming you have a file server running, which serves the content of the folder `/usr/share/assets/` 
-under `https://example.com/assets/`, you can easily use the `AttachmentToLocalFileHostHandler` like this:
-```python
-import io
-import discord
-from discord.ext import commands
-import chat_exporter
-from chat_exporter import AttachmentToLocalFileHostHandler
-
-...
-
-# Establish the file handler
-file_handler = AttachmentToLocalFileHostHandler(
-    base_path="/usr/share/assets",
-    url_base="https://example.com/assets/",
-)
-
-@bot.command()
-async def save(ctx: commands.Context):
-    transcript = await chat_exporter.export(
-        ctx.channel,
-        attachment_handler=file_handler,
-    )
-
-    if transcript is None:
-        return
-
-    transcript_file = discord.File(
-        io.BytesIO(transcript.encode()),
-        filename=f"transcript-{ctx.channel.name}.html",
-    )
-
-    await ctx.send(file=transcript_file)
-
-```
-</details>
-
-<details><summary>AttachmentToDiscordChannel</summary>
-
-Assuming you want to store your attachments in a discord channel, you can use the `AttachmentToDiscordChannel`. 
-Please note that discord recent changes regarding content links will result in the attachments links being broken 
-after 24 hours. While this is therefor not a recommended way to store your attachments, it should give you a good 
-idea how to perform asynchronous storing of the attachments.
-
-```python
-import io
-import discord
-from discord.ext import commands
-import chat_exporter
-from chat_exporter import AttachmentToDiscordChannel
-
-...
-
-# Establish the file handler
-channel_handler = AttachmentToDiscordChannel(
-    channel=bot.get_channel(CHANNEL_ID),
-)
-
-@bot.command()
-async def save(ctx: commands.Context):
-    transcript = await chat_exporter.export(
-        ctx.channel,
-        attachment_handler=channel_handler,
-    )
-
-    if transcript is None:
-        return
-
-    transcript_file = discord.File(
-        io.BytesIO(transcript.encode()),
-        filename=f"transcript-{ctx.channel.name}.html",
-    )
-
-    await ctx.send(file=transcript_file)
-
-```
-</details>
-</ol>
-
----
-## Screenshots
-
-<details><summary><b>General</b></summary>
-<ol>
-    <details><summary>Discord</summary>
-    <img src="https://raw.githubusercontent.com/mahtoid/DiscordChatExporterPy/master/.screenshots/channel_output.png">
-    </details>
-    <details><summary>Chat-Exporter</summary>
-    <img src="https://raw.githubusercontent.com/mahtoid/DiscordChatExporterPy/master/.screenshots/html_output.png">
-    </details>
-</ol>
-</details>
-<p align="right">(<a href="#top">back to top</a>)</p>
-
-
----
-## Additional Functions
-
-<details><summary><b>Attachment handler</b></summary>
-In order to prevent the transcripts from being broken either when a channel is deleted or by the newly introduced 
-restrictions to media links in discord, chat-exporter now supports an asset handler. 
-
-`chat_exporter.AttachmentHandler` serves as a template for you to implement your own asset handler. 
-As example we provide two basic versions of an asset handler, one that stores the assets locally and one that 
-uploads them to a discord. 
-Of course the second one is also in some sense broken, but it should give a good idea on how to implement such an 
-`AttachmentHandler`.
-
-If you don't specify an asset handler, chat-exporter will use the normal (proxy) urls for the assets.
-The important part of your implementation is, that you have to overwrite the url and proxy_url attribute of the 
-Attachment in your implementation of `AttachmentHandler`. The url attribute should be the url where the asset is available.
-
 <details><summary><b>Concept</b></summary>
 
 The concept of implementing such an AttachmentHandler is very easy. In the following a short general procedure is 
@@ -391,9 +274,6 @@ called from chat-exporter.
 
 </details>
 
-
-
-
 **Examples:**
 
 <ol>
@@ -407,6 +287,7 @@ import discord
 from discord.ext import commands
 import chat_exporter
 from chat_exporter import AttachmentToLocalFileHostHandler
+
 ...
 
 # Establish the file handler
@@ -416,13 +297,9 @@ file_handler = AttachmentToLocalFileHostHandler(
 )
 
 @bot.command()
-async def save(ctx: commands.Context, limit: int = 100, tz_info: str = "UTC", military_time: bool = True):
+async def save(ctx: commands.Context):
     transcript = await chat_exporter.export(
         ctx.channel,
-        limit=limit,
-        tz_info=tz_info,
-        military_time=military_time,
-        bot=bot,
         attachment_handler=file_handler,
     )
 
@@ -452,6 +329,7 @@ import discord
 from discord.ext import commands
 import chat_exporter
 from chat_exporter import AttachmentToDiscordChannel
+
 ...
 
 # Establish the file handler
@@ -460,13 +338,9 @@ channel_handler = AttachmentToDiscordChannel(
 )
 
 @bot.command()
-async def save(ctx: commands.Context, limit: int = 100, tz_info: str = "UTC", military_time: bool = True):
+async def save(ctx: commands.Context):
     transcript = await chat_exporter.export(
         ctx.channel,
-        limit=limit,
-        tz_info=tz_info,
-        military_time=military_time,
-        bot=bot,
         attachment_handler=channel_handler,
     )
 
@@ -483,7 +357,27 @@ async def save(ctx: commands.Context, limit: int = 100, tz_info: str = "UTC", mi
 ```
 </details>
 </ol>
+<p align="right">(<a href="#top">back to top</a>)</p>
+
+---
+## Screenshots
+
+<details><summary><b>General</b></summary>
+<ol>
+    <details><summary>Discord</summary>
+    <img src="https://raw.githubusercontent.com/mahtoid/DiscordChatExporterPy/master/.screenshots/channel_output.png">
+    </details>
+    <details><summary>Chat-Exporter</summary>
+    <img src="https://raw.githubusercontent.com/mahtoid/DiscordChatExporterPy/master/.screenshots/html_output.png">
+    </details>
+</ol>
 </details>
+<p align="right">(<a href="#top">back to top</a>)</p>
+
+
+---
+## Additional Functions
+
 
 <details><summary><b>Link Function</b></summary>
 Downloading exported chats can build up a bunch of unwanted files on your PC which can get annoying, additionally - not everyone wants to download content from Discord.
