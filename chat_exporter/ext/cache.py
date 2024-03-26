@@ -1,5 +1,5 @@
 from functools import wraps
-from typing import Any
+from typing import Any, Tuple, Dict
 
 _internal_cache: dict = {}
 
@@ -24,7 +24,7 @@ def clear_cache():
 
 def cache():
     def decorator(func):
-        def _make_key(args: tuple[Any, ...], kwargs: dict[str, Any]) -> str:
+        def _make_key(args: Tuple[Any, ...], kwargs: Dict[str, Any]) -> str:
             def _true_repr(o):
                 if o.__class__.__repr__ is object.__repr__:
                     # this is how MessageConstruct can retain
