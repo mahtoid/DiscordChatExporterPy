@@ -3,9 +3,10 @@ from typing import Optional
 
 import pytz
 import datetime
+import time
 
 from chat_exporter.ext.discord_import import discord
-
+from chat_exporter.parse.markdown import ParseMarkdown
 bot: Optional[discord.Client] = None
 
 
@@ -19,6 +20,8 @@ def pass_bot(_bot):
 class ParseMention:
     REGEX_ROLES = r"&lt;@&amp;([0-9]+)&gt;"
     REGEX_ROLES_2 = r"<@&([0-9]+)>"
+    REGEX_EVERYONE = r"@(everyone)(?:[$\s\t\n\f\r\0]|$)"
+    REGEX_HERE = r"@(here)(?:[$\s\t\n\f\r\0]|$)"
     REGEX_MEMBERS = r"&lt;@!?([0-9]+)&gt;"
     REGEX_MEMBERS_2 = r"<@!?([0-9]+)>"
     REGEX_CHANNELS = r"&lt;#([0-9]+)&gt;"
@@ -26,15 +29,16 @@ class ParseMention:
     REGEX_EMOJIS = r"&lt;a?(:[^\n:]+:)[0-9]+&gt;"
     REGEX_EMOJIS_2 = r"<a?(:[^\n:]+:)[0-9]+>"
     REGEX_TIME_HOLDER = (
-        [r"&lt;t:([0-9]+):t&gt;", "%H:%M"],
-        [r"&lt;t:([0-9]+):T&gt;", "%T"],
-        [r"&lt;t:([0-9]+):d&gt;", "%d/%m/%Y"],
-        [r"&lt;t:([0-9]+):D&gt;", "%e %B %Y"],
-        [r"&lt;t:([0-9]+):f&gt;", "%e %B %Y %H:%M"],
-        [r"&lt;t:([0-9]+):F&gt;", "%A, %e %B %Y %H:%M"],
-        [r"&lt;t:([0-9]+):R&gt;", "%e %B %Y %H:%M"],
-        [r"&lt;t:([0-9]+)&gt;", "%e %B %Y %H:%M"]
+        [r"&lt;t:([0-9]{1,13}):t&gt;", "%H:%M"],
+        [r"&lt;t:([0-9]{1,13}):T&gt;", "%T"],
+        [r"&lt;t:([0-9]{1,13}):d&gt;", "%d/%m/%Y"],
+        [r"&lt;t:([0-9]{1,13}):D&gt;", "%e %B %Y"],
+        [r"&lt;t:([0-9]{1,13}):f&gt;", "%e %B %Y %H:%M"],
+        [r"&lt;t:([0-9]{1,13}):F&gt;", "%A, %e %B %Y %H:%M"],
+        [r"&lt;t:([0-9]{1,13}):R&gt;", "%e %B %Y %H:%M"],
+        [r"&lt;t:([0-9]{1,13})&gt;", "%e %B %Y %H:%M"]
     )
+    REGEX_SLASH_COMMAND = r"&lt;\/([\w]+ ?[\w]*):[0-9]+&gt;"
 
     ESCAPE_LT = "______lt______"
     ESCAPE_GT = "______gt______"
@@ -43,8 +47,12 @@ class ParseMention:
     def __init__(self, content, guild):
         self.content = content
         self.guild = guild
+        self.code_blocks_content = []
 
     async def flow(self):
+        markdown = ParseMarkdown(self.content)
+        markdown.parse_code_block_markdown()
+        self.content = markdown.content
         await self.escape_mentions()
         await self.escape_mentions()
         await self.unescape_mentions()
@@ -52,8 +60,12 @@ class ParseMention:
         await self.member_mention()
         await self.role_mention()
         await self.time_mention()
-
+        await self.slash_command_mention()
+        markdown.content = self.content
+        markdown.reverse_code_block_markdown()
+        self.content = markdown.content
         return self.content
+
 
     async def escape_mentions(self):
         for match in re.finditer("(%s|%s|%s|%s|%s|%s|%s|%s)"
@@ -94,6 +106,16 @@ class ParseMention:
                 match = re.search(regex, self.content)
 
     async def role_mention(self):
+        holder = self.REGEX_EVERYONE, self.REGEX_HERE
+        for regex in holder:
+            match = re.search(regex, self.content)
+            while match is not None:
+                role_name = match.group(1)
+                replacement = '<span class="mention" title="%s">@%s</span>' % (str(role_name), str(role_name))
+
+                self.content = self.content.replace(self.content[match.start():match.end()],
+                                                    replacement)
+                match = re.search(regex, self.content)
         holder = self.REGEX_ROLES, self.REGEX_ROLES_2
         for regex in holder:
             match = re.search(regex, self.content)
@@ -108,11 +130,21 @@ class ParseMention:
                         colour = "#dee0fc"
                     else:
                         colour = "#%02x%02x%02x" % (role.color.r, role.color.g, role.color.b)
-                    replacement = '<span style="color: %s;">@%s</span>' \
-                                  % (colour, role.name)
+                    replacement = '<span style="color: %s;">@%s</span>' % (colour, role.name)
                 self.content = self.content.replace(self.content[match.start():match.end()], replacement)
-
                 match = re.search(regex, self.content)
+
+    async def slash_command_mention(self):
+        match = re.search(self.REGEX_SLASH_COMMAND, self.content)
+        while match is not None:
+            slash_command_name = match.group(1)
+            replacement = (
+                    '<span class="mention" title="%s">/%s</span>'
+                    % (slash_command_name, slash_command_name)
+            )
+            self.content = self.content.replace(self.content[match.start():match.end()], replacement)
+
+            match = re.search(self.REGEX_SLASH_COMMAND, self.content)
 
     async def member_mention(self):
         holder = self.REGEX_MEMBERS, self.REGEX_MEMBERS_2
@@ -150,9 +182,13 @@ class ParseMention:
             regex, strf = p
             match = re.search(regex, self.content)
             while match is not None:
-                time = datetime.datetime.fromtimestamp(int(match.group(1)), timezone)
-                ui_time = time.strftime(strf)
-                tooltip_time = time.strftime("%A, %e %B %Y at %H:%M")
+                timestamp = int(match.group(1)) - 1
+                time_stamp = time.gmtime(timestamp)
+                datetime_stamp = datetime.datetime(2010, *time_stamp[1:6], tzinfo=pytz.utc)
+                ui_time = datetime_stamp.strftime(strf)
+                ui_time = ui_time.replace(str(datetime_stamp.year), str(time_stamp[0]))
+                tooltip_time = datetime_stamp.strftime("%A, %e %B %Y at %H:%M")
+                tooltip_time = tooltip_time.replace(str(datetime_stamp.year), str(time_stamp[0]))
                 original = match.group().replace("&lt;", "<").replace("&gt;", ">")
                 replacement = (
                     f'<span class="unix-timestamp" data-timestamp="{tooltip_time}" raw-content="{original}">'
