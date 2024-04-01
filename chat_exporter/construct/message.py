@@ -1,14 +1,19 @@
 import html
+import io
+import traceback
 from typing import List, Optional, Union
 
+import aiohttp
 from pytz import timezone
 from datetime import timedelta
 
+from chat_exporter.construct.attachment_handler import AttachmentHandler
 from chat_exporter.ext.discord_import import discord
 
 from chat_exporter.construct.assets import Attachment, Component, Embed, Reaction
 from chat_exporter.ext.discord_utils import DiscordUtils
 from chat_exporter.ext.discriminator import discriminator
+from chat_exporter.ext.cache import cache
 from chat_exporter.ext.html_generator import (
     fill_out,
     bot_tag,
@@ -61,7 +66,8 @@ class MessageConstruct:
         military_time: bool,
         guild: discord.Guild,
         meta_data: dict,
-        message_dict: dict
+        message_dict: dict,
+        attachment_handler: Optional[AttachmentHandler]
     ):
         self.message = message
         self.previous_message = previous_message
@@ -69,7 +75,7 @@ class MessageConstruct:
         self.military_time = military_time
         self.guild = guild
         self.message_dict = message_dict
-
+        self.attachment_handler = attachment_handler
         self.time_format = "%A, %e %B %Y %I:%M %p"
         if self.military_time:
             self.time_format = "%A, %e %B %Y %H:%M"
@@ -246,6 +252,8 @@ class MessageConstruct:
             self.embeds += await Embed(e, self.guild).flow()
 
         for a in self.message.attachments:
+            if self.attachment_handler and isinstance(self.attachment_handler, AttachmentHandler):
+                a = await self.attachment_handler.process_asset(a)
             self.attachments += await Attachment(a, self.guild).flow()
 
         for c in self.message.components:
@@ -336,7 +344,7 @@ class MessageConstruct:
             ("NAME", str(html.escape(self.message.author.display_name))),
             ("NAME_TAG", await discriminator(self.message.author.name, self.message.author.discriminator), PARSE_MODE_NONE),
             ("MESSAGE_ID", str(self.message.id), PARSE_MODE_NONE),
-            ("REF_MESSAGE_ID", str(self.message.reference.message_id), PARSE_MODE_NONE)
+            ("REF_MESSAGE_ID", str(self.message.reference.message_id) if self.message.reference else "", PARSE_MODE_NONE)
         ])
 
     async def build_thread_template(self):
@@ -382,6 +390,7 @@ class MessageConstruct:
             ("MESSAGE_ID", str(self.message.id), PARSE_MODE_NONE),
         ])
 
+    @cache()
     async def _gather_member(self, author: discord.Member):
         member = self.guild.get_member(author.id)
 
@@ -434,6 +443,7 @@ async def gather_messages(
     guild: discord.Guild,
     pytz_timezone,
     military_time,
+    attachment_handler: Optional[AttachmentHandler],
 ) -> (str, dict):
     message_html: str = ""
     meta_data: dict = {}
@@ -441,7 +451,7 @@ async def gather_messages(
 
     message_dict = {message.id: message for message in messages}
 
-    if "thread" in str(messages[0].channel.type) and messages[0].reference:
+    if messages and "thread" in str(messages[0].channel.type) and messages[0].reference:
         channel = guild.get_channel(messages[0].reference.channel_id)
 
         if not channel:
@@ -460,7 +470,9 @@ async def gather_messages(
             guild,
             meta_data,
             message_dict,
-        ).construct_message()
+            attachment_handler,
+            ).construct_message()
+
         message_html += content_html
         previous_message = message
 
