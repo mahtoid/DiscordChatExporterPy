@@ -4,7 +4,7 @@ import pathlib
 from typing import Union
 
 import aiohttp
-import discord
+from chat_exporter.ext.discord_import import discord
 
 
 class AttachmentHandler:
