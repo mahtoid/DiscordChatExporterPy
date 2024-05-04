@@ -238,6 +238,11 @@ from discord import Attachment
 
 
 class MyAttachmentHandler(AttachmentHandler):
+    def __init__(self, *args, **kwargs):
+        # Your initialization code here
+        # in your case we just create the cloud client
+        self.cloud_client = CloudClient()
+
     async def process_asset(self, attachment: Attachment):
         # Your upload logic here, in our example we just upload the asset to the cloud
         
