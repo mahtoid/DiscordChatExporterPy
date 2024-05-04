@@ -26,12 +26,12 @@
 
 To install the library to your virtual environment, for bot usage, run the command:
 ```sh 
-pip install git+https://github.com/1337Syntax/DiscordChatExporterPy
+pip install chat-exporter
 ```
 
 To clone the repository locally, run the command:
 ```sh
-git clone https://github.com/1337Syntax/DiscordChatExporterPy
+git clone https://github.com/mahtoid/DiscordChatExporterPy
 ```
 
 <p align="right">(<a href="#top">back to top</a>)</p>
