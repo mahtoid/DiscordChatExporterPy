@@ -31,7 +31,7 @@ pip install git+https://github.com/1337Syntax/DiscordChatExporterPy
 
 To clone the repository locally, run the command:
 ```sh
-git clone [https://github.com/mahtoid/DiscordChatExporterPy](https://github.com/1337Syntax/DiscordChatExporterPy)
+git clone https://github.com/1337Syntax/DiscordChatExporterPy
 ```
 
 <p align="right">(<a href="#top">back to top</a>)</p>
