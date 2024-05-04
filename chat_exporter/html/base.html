@@ -700,6 +700,7 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             color: #fff;
             margin: 0;
             padding: 0;
+            overflow: auto;
         }
 
         a {
@@ -740,11 +741,12 @@ If you have any issues or suggestions - open an issue on the Github Repository o
 
         .chatlog__message-container {
             background-color: transparent;
-            transition: background-color 1s ease;
+            transition: background-color 0.5s ease;
         }
 
         .chatlog__message-container--highlighted {
-            background-color: rgba(114, 137, 218, 0.2);
+            background-color: rgba(114, 137, 218, 0.2) !important;
+            transition: none !important;
         }
 
         .chatlog__followup-symbol {
@@ -1281,40 +1283,21 @@ If you have any issues or suggestions - open an issue on the Github Repository o
     <script>
         <!--  Scroll to Message (References)  -->
         function scrollToMessage(event, id) {
-            var element = document.getElementById('message-' + id);
+            var element = document.getElementById('chatlog__message-container-' + id);
 
             if (element !== null && element !== undefined) {
                 event.preventDefault();
 
                 element.classList.add('chatlog__message-container--highlighted');
 
-                window.scrollTo({
-                    top: element.getBoundingClientRect().top - document.body.getBoundingClientRect().top - (window.innerHeight / 2),
-                    behavior: 'smooth'
+                element.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center',
                 });
 
-                window.setTimeout(function() {
+                setTimeout(function() {
                     element.classList.remove('chatlog__message-container--highlighted');
-                }, 2000);
-            }
-        }
-
-        function scrollToMessage(event, id) {
-            var element = document.getElementById('message-' + id);
-
-            if (element) {
-                event.preventDefault();
-
-                element.classList.add('chatlog__message--highlighted');
-
-                window.scrollTo({
-                    top: element.getBoundingClientRect().top - document.body.getBoundingClientRect().top - (window.innerHeight / 2),
-                    behavior: 'smooth'
-                });
-
-                window.setTimeout(function() {
-                    element.classList.remove('chatlog__message--highlighted');
-                }, 2000);
+                }, 1500);
             }
         }
 
