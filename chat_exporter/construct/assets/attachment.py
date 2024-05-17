@@ -32,13 +32,13 @@ class Attachment:
 
     async def image(self):
         self.attachments = await fill_out(self.guild, img_attachment, [
-            ("ATTACH_URL", self.attachments.url, PARSE_MODE_NONE),
-            ("ATTACH_URL_THUMB", self.attachments.url, PARSE_MODE_NONE)
+            ("ATTACH_URL", self.attachments.proxy_url, PARSE_MODE_NONE),
+            ("ATTACH_URL_THUMB", self.attachments.proxy_url, PARSE_MODE_NONE)
         ])
 
     async def video(self):
         self.attachments = await fill_out(self.guild, video_attachment, [
-            ("ATTACH_URL", self.attachments.url, PARSE_MODE_NONE)
+            ("ATTACH_URL", self.attachments.proxy_url, PARSE_MODE_NONE)
         ])
 
     async def audio(self):
@@ -47,9 +47,9 @@ class Attachment:
 
         self.attachments = await fill_out(self.guild, audio_attachment, [
             ("ATTACH_ICON", file_icon, PARSE_MODE_NONE),
-            ("ATTACH_URL", self.attachments.url, PARSE_MODE_NONE),
+            ("ATTACH_URL", self.attachments.proxy_url, PARSE_MODE_NONE),
             ("ATTACH_BYTES", str(file_size), PARSE_MODE_NONE),
-            ("ATTACH_AUDIO", self.attachments.url, PARSE_MODE_NONE),
+            ("ATTACH_AUDIO", self.attachments.proxy_url, PARSE_MODE_NONE),
             ("ATTACH_FILE", str(self.attachments.filename), PARSE_MODE_NONE)
         ])
 
@@ -60,7 +60,7 @@ class Attachment:
 
         self.attachments = await fill_out(self.guild, msg_attachment, [
             ("ATTACH_ICON", file_icon, PARSE_MODE_NONE),
-            ("ATTACH_URL", self.attachments.url, PARSE_MODE_NONE),
+            ("ATTACH_URL", self.attachments.proxy_url, PARSE_MODE_NONE),
             ("ATTACH_BYTES", str(file_size), PARSE_MODE_NONE),
             ("ATTACH_FILE", str(self.attachments.filename), PARSE_MODE_NONE)
         ])
@@ -88,7 +88,7 @@ class Attachment:
             "arj", "pkg", "z"
         )
 
-        extension = self.attachments.url.rsplit('.', 1)[1]
+        extension = self.attachments.proxy_url.rsplit('.', 1)[1]
         if extension in acrobat_types:
             return DiscordUtils.file_attachment_acrobat
         elif extension in webcode_types:
