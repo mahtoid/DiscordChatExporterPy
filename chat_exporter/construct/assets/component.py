@@ -60,7 +60,7 @@ class Component:
             ("DISABLED", "chatlog__component-disabled" if c.disabled else "", PARSE_MODE_NONE),
             ("URL", url, PARSE_MODE_NONE),
             ("LABEL", label, PARSE_MODE_MARKDOWN),
-            ("EMOJI", str(emoji), PARSE_MODE_EMOJI),
+            ("EMOJI", emoji, PARSE_MODE_EMOJI),
             ("ICON", str(icon), PARSE_MODE_NONE),
             ("STYLE", style, PARSE_MODE_NONE)
         ])
