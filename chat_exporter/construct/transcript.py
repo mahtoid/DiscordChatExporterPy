@@ -76,7 +76,10 @@ class TranscriptDAO:
         guild_name = html.escape(self.channel.guild.name)
 
         timezone = pytz.timezone(self.pytz_timezone)
-        time_now = datetime.datetime.now(timezone).strftime("%e %B %Y at %T (%Z)")
+        if self.military_time:
+            time_now = datetime.datetime.now(timezone).strftime("%e %B %Y at %H:%M:%S (%Z)")
+        else:
+            time_now = datetime.datetime.now(timezone).strftime("%e %B %Y at %I:%M:%S %p (%Z)")
 
         meta_data_html: str = ""
         for data in meta_data:
@@ -105,7 +108,10 @@ class TranscriptDAO:
                 ("MESSAGE_COUNT", str(meta_data[int(data)][4]))
             ])
 
-        channel_creation_time = self.channel.created_at.astimezone(timezone).strftime("%b %d, %Y (%T)")
+        if self.military_time:
+            channel_creation_time = self.channel.created_at.astimezone(timezone).strftime("%b %d, %Y (%H:%M:%S)")
+        else:
+            channel_creation_time = self.channel.created_at.astimezone(timezone).strftime("%b %d, %Y (%I:%M:%S %p)")
 
         raw_channel_topic = (
             self.channel.topic if isinstance(self.channel, discord.TextChannel) and self.channel.topic else ""
@@ -136,7 +142,13 @@ class TranscriptDAO:
         _fancy_time = ""
 
         if self.fancy_times:
+            if self.military_time:
+                time_format = "HH:mm"
+            else:
+                time_format = "hh:mm A"
+
             _fancy_time = await fill_out(self.channel.guild, fancy_time, [
+                ("TIME_FORMAT", time_format, PARSE_MODE_NONE),
                 ("TIMEZONE", str(self.pytz_timezone), PARSE_MODE_NONE)
             ])
 

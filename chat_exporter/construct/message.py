@@ -279,7 +279,7 @@ class MessageConstruct:
             ("COMPONENTS", self.components, PARSE_MODE_NONE),
             ("EMOJI", self.reactions, PARSE_MODE_NONE),
             ("TIMESTAMP", self.message_created_at, PARSE_MODE_NONE),
-            ("TIME", self.message_created_at.split()[-1], PARSE_MODE_NONE),
+            ("TIME", self.message_created_at.split(maxsplit=4)[4], PARSE_MODE_NONE),
         ])
 
         return self.message_html
@@ -312,7 +312,10 @@ class MessageConstruct:
             if not self.message.created_at.tzinfo:
                 time = timezone("UTC").localize(time)
 
-            default_timestamp = time.astimezone(timezone(self.pytz_timezone)).strftime("%d-%m-%Y %H:%M")
+            if self.military_time:
+                default_timestamp = time.astimezone(timezone(self.pytz_timezone)).strftime("%d-%m-%Y %H:%M")
+            else:
+                default_timestamp = time.astimezone(timezone(self.pytz_timezone)).strftime("%d-%m-%Y %I:%M %p")
 
             self.message_html += await fill_out(self.guild, start_message, [
                 ("REFERENCE_SYMBOL", followup_symbol, PARSE_MODE_NONE),
@@ -431,9 +434,6 @@ class MessageConstruct:
             time = timezone("UTC").localize(time)
 
         local_time = time.astimezone(timezone(self.pytz_timezone))
-
-        if self.military_time:
-            return local_time.strftime(self.time_format)
 
         return local_time.strftime(self.time_format)
 

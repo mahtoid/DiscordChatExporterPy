@@ -35,7 +35,7 @@ async def fill_out(guild, base, replacements):
         elif mode == PARSE_MODE_EMOJI:
             v = await ParseMarkdown(v).special_emoji_flow()
 
-        base = base.replace("{{" + k + "}}", v)
+        base = base.replace("{{" + k + "}}", v.strip())
 
     return base
 

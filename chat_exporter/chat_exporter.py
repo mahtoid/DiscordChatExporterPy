@@ -36,6 +36,7 @@ async def quick_export(
             after=None,
             support_dev=True,
             bot=bot,
+            attachment_handler=None
             ).export()
         ).html
 
