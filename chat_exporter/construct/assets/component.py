@@ -52,7 +52,7 @@ class Component:
             url = "javascript:;"
             target = ""
             icon = ""
-        label = c.label if c.label else ""
+        label = str(c.label) if c.label else ""
         style = self.styles[str(c.style).split(".")[1]]
         emoji = str(c.emoji) if c.emoji else ""
 
