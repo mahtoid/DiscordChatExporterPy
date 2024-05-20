@@ -279,7 +279,7 @@ class MessageConstruct:
             ("COMPONENTS", self.components, PARSE_MODE_NONE),
             ("EMOJI", self.reactions, PARSE_MODE_NONE),
             ("TIMESTAMP", self.message_created_at, PARSE_MODE_NONE),
-            ("TIME", self.message_created_at.split()[4], PARSE_MODE_NONE),
+            ("TIME", self.message_created_at.split(maxsplit=4)[4], PARSE_MODE_NONE),
         ])
 
         return self.message_html
