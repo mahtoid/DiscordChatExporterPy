@@ -44,7 +44,14 @@ class Component:
             Component.menu_div_id += 1
 
     async def build_button(self, c):
-        url = f"<a href='{c.url}' style='text-decoration:none' target='_blank'>" if c.url else "<a href='javascript:;' style='text-decoration:none'>"
+        If c.url:
+            url = str(c.url)
+            target = " target='_blank'"
+            icon = str(DiscordUtils.button_external_link)
+        else:
+            url = "javascript:;"
+            target = ""
+            icon = ""
         label = c.label if c.label else ""
         style = self.styles[str(c.style).split(".")[1]]
         icon = DiscordUtils.button_external_link if c.url else ""
