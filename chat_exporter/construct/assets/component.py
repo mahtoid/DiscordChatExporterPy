@@ -61,7 +61,8 @@ class Component:
             ("URL", url, PARSE_MODE_NONE),
             ("LABEL", label, PARSE_MODE_MARKDOWN),
             ("EMOJI", emoji, PARSE_MODE_EMOJI),
-            ("ICON", str(icon), PARSE_MODE_NONE),
+            ("ICON", icon, PARSE_MODE_NONE),
+            ("TARGET", target, PARSE_MODE_NONE),
             ("STYLE", style, PARSE_MODE_NONE)
         ])
 
