@@ -432,9 +432,6 @@ class MessageConstruct:
 
         local_time = time.astimezone(timezone(self.pytz_timezone))
 
-        if self.military_time:
-            return local_time.strftime(self.time_format)
-
         return local_time.strftime(self.time_format)
 
 

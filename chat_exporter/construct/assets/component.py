@@ -44,7 +44,7 @@ class Component:
             Component.menu_div_id += 1
 
     async def build_button(self, c):
-        If c.url:
+        if c.url:
             url = str(c.url)
             target = " target='_blank'"
             icon = str(DiscordUtils.button_external_link)
@@ -52,6 +52,7 @@ class Component:
             url = "javascript:;"
             target = ""
             icon = ""
+            
         label = str(c.label) if c.label else ""
         style = self.styles[str(c.style).split(".")[1]]
         emoji = str(c.emoji) if c.emoji else ""
