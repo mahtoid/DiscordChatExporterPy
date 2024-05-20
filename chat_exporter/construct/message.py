@@ -312,7 +312,10 @@ class MessageConstruct:
             if not self.message.created_at.tzinfo:
                 time = timezone("UTC").localize(time)
 
-            default_timestamp = time.astimezone(timezone(self.pytz_timezone)).strftime("%d-%m-%Y %H:%M")
+            if self.military_time:
+                default_timestamp = time.astimezone(timezone(self.pytz_timezone)).strftime("%d-%m-%Y %H:%M")
+            else:
+                default_timestamp = time.astimezone(timezone(self.pytz_timezone)).strftime("%d-%m-%Y %I:%M %p")
 
             self.message_html += await fill_out(self.guild, start_message, [
                 ("REFERENCE_SYMBOL", followup_symbol, PARSE_MODE_NONE),
