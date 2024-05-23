@@ -34,10 +34,10 @@ class AttachmentToLocalFileHostHandler(AttachmentHandler):
 		:param attachment: discord.Attachment
 		:return: str
 		"""
-		file_name = f"{uuid.uuid4()}_{attachment.filename}"
+		file_name = urllib.parse.quote_plus(f"{uuid.uuid4()}_{attachment.filename}")
 		asset_path = self.base_path / file_name
 		await attachment.save(asset_path)
-		file_url = urllib.parse.quote_plus(f"{self.url_base}/{file_name}")
+		file_url = f"{self.url_base}/{file_name}"
 		attachment.url = file_url
 		attachment.proxy_url = file_url
 		return attachment
