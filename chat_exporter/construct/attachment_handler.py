@@ -1,7 +1,8 @@
-import datetime
 import io
 import pathlib
 from typing import Union
+import urllib.parse
+import uuid
 
 import aiohttp
 from chat_exporter.ext.discord_import import discord
@@ -33,10 +34,10 @@ class AttachmentToLocalFileHostHandler(AttachmentHandler):
 		:param attachment: discord.Attachment
 		:return: str
 		"""
-		file_name = f"{int(datetime.datetime.utcnow().timestamp())}_{attachment.filename}".replace(' ', '%20')
+		file_name = f"{uuid.uuid4()}_{attachment.filename}"
 		asset_path = self.base_path / file_name
 		await attachment.save(asset_path)
-		file_url = f"{self.url_base}/{file_name}"
+		file_url = urllib.parse.quote_plus(f"{self.url_base}/{file_name}")
 		attachment.url = file_url
 		attachment.proxy_url = file_url
 		return attachment
