@@ -179,15 +179,15 @@ class MessageConstruct:
         is_bot = _gather_user_bot(message.author)
         user_colour = await self._gather_user_colour(message.author)
 
-        if not message.content and not message.interaction:
+        if not message.content and not message.interaction_metadata:
             message.content = "Click to see attachment"
-        elif not message.content and message.interaction:
+        elif not message.content and message.interaction_metadata:
             message.content = "Click to see command"
 
         icon = ""
-        if not message.interaction and (message.embeds or message.attachments):
+        if not message.interaction_metadata and (message.embeds or message.attachments):
             icon = DiscordUtils.reference_attachment_icon
-        elif message.interaction:
+        elif message.interaction_metadata:
             icon = DiscordUtils.interaction_command_icon
 
         _, message_edited_at = self.set_time(message)
@@ -210,24 +210,24 @@ class MessageConstruct:
         ])
 
     async def build_interaction(self):
-        if not self.message.interaction:
-            self.message.interaction = ""
+        if not self.message.interaction_metadata_metadata:
+            self.message.interaction_metadata = ""
             return
 
-        user: Union[discord.Member, discord.User] = self.message.interaction.user
+        user: Union[discord.Member, discord.User] = self.message.interaction_metadata.user
         is_bot = _gather_user_bot(user)
         user_colour = await self._gather_user_colour(user)
         avatar_url = user.display_avatar if user.display_avatar else DiscordUtils.default_avatar
-        self.message.interaction = await fill_out(self.guild, message_interaction, [
+        self.message.interaction_metadata = await fill_out(self.guild, message_interaction, [
             ("AVATAR_URL", str(avatar_url), PARSE_MODE_NONE),
             ("BOT_TAG", is_bot, PARSE_MODE_NONE),
             ("NAME_TAG", await discriminator(user.name, user.discriminator), PARSE_MODE_NONE),
             ("NAME", str(html.escape(user.display_name))),
             ("USER_COLOUR", user_colour, PARSE_MODE_NONE),
             ("FILLER", "used ", PARSE_MODE_NONE),
-            ("COMMAND", "/" + self.message.interaction.name, PARSE_MODE_NONE),
+            ("COMMAND", "/" + self.message.interaction_metadata.name, PARSE_MODE_NONE),
             ("USER_ID", str(user.id), PARSE_MODE_NONE),
-            ("INTERACTION_ID", str(self.message.interaction.id), PARSE_MODE_NONE),
+            ("INTERACTION_ID", str(self.message.interaction_metadata.id), PARSE_MODE_NONE),
         ])
 
     async def build_sticker(self):
@@ -287,7 +287,7 @@ class MessageConstruct:
     def _generate_message_divider_check(self):
         return bool(
             self.previous_message is None or self.message.reference != "" or
-            self.previous_message.type is not discord.MessageType.default or self.message.interaction != "" or
+            self.previous_message.type is not discord.MessageType.default or self.message.interaction_metadata != "" or
             self.previous_message.author.id != self.message.author.id or self.message.webhook_id is not None or
             self.message.created_at > (self.previous_message.created_at + timedelta(minutes=4))
         )
@@ -305,7 +305,7 @@ class MessageConstruct:
             is_bot = _gather_user_bot(self.message.author)
             avatar_url = self.message.author.display_avatar if self.message.author.display_avatar else DiscordUtils.default_avatar
 
-            if self.message.reference != "" or self.message.interaction:
+            if self.message.reference != "" or self.message.interaction_metadata:
                 followup_symbol = "<div class='chatlog__followup-symbol'></div>"
 
             time = self.message.created_at
@@ -316,7 +316,7 @@ class MessageConstruct:
 
             self.message_html += await fill_out(self.guild, start_message, [
                 ("REFERENCE_SYMBOL", followup_symbol, PARSE_MODE_NONE),
-                ("REFERENCE", self.message.reference if self.message.reference else self.message.interaction,
+                ("REFERENCE", self.message.reference if self.message.reference else self.message.interaction_metadata,
                  PARSE_MODE_NONE),
                 ("AVATAR_URL", str(avatar_url), PARSE_MODE_NONE),
                 ("NAME_TAG", await discriminator(self.message.author.name, self.message.author.discriminator), PARSE_MODE_NONE),
