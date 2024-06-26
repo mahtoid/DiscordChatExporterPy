@@ -388,28 +388,34 @@ class ParseMarkdown:
 
                 if "&lt;" in word and "&gt;" in word:
                     pattern = r"&lt;https?:\/\/(.*)&gt;"
-                    match_url = re.search(pattern, word).group(1)
-                    url = f'<a href="https://{match_url}">https://{match_url}</a>'
-                    word = word.replace("https://" + match_url, url)
-                    word = word.replace("http://" + match_url, url)
+                    match_url = re.search(pattern, word)
+                    if match_url:
+                        match_url = match_url.group(1)
+                        url = f'<a href="https://{match_url}">https://{match_url}</a>'
+                        word = word.replace("https://" + match_url, url)
+                        word = word.replace("http://" + match_url, url)
                     output.append(remove_silent_link(word, match_url))
                 elif "https://" in word:
                     pattern = r"https://[^\s>`\"*]*"
-                    word_link = re.search(pattern, word).group()
-                    if word_link.endswith(")"):
+                    word_link = re.search(pattern, word)
+                    if word_link and word_link.group().endswith(")"):
                         output.append(word)
                         continue
-                    word_full = f'<a href="{word_link}">{word_link}</a>'
-                    word = re.sub(pattern, word_full, word)
+                    elif word_link:
+                        word_link = word_link.group()
+                        word_full = f'<a href="{word_link}">{word_link}</a>'
+                        word = re.sub(pattern, word_full, word)
                     output.append(remove_silent_link(word))
                 elif "http://" in word:
                     pattern = r"http://[^\s>`\"*]*"
-                    word_link = re.search(pattern, word).group()
-                    if word_link.endswith(")"):
+                    word_link = re.search(pattern, word)
+                    if word_link and word_link.group().endswith(")"):
                         output.append(word)
                         continue
-                    word_full = f'<a href="{word_link}">{word_link}</a>'
-                    word = re.sub(pattern, word_full, word)
+                    elif word_link:
+                        word_link = word_link.group()
+                        word_full = f'<a href="{word_link}">{word_link}</a>'
+                        word = re.sub(pattern, word_full, word)
                     output.append(remove_silent_link(word))
                 else:
                     output.append(word)
