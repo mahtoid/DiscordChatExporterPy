@@ -11,14 +11,14 @@ async def quick_export(
     channel: discord.TextChannel,
     guild: Optional[discord.Guild] = None,
     bot: Optional[discord.Client] = None,
-):
+) -> Optional[discord.Message]:
     """
     Create a quick export of your Discord channel.
     This function will produce the transcript and post it back in to your channel.
     :param channel: discord.TextChannel
     :param guild: (optional) discord.Guild
     :param bot: (optional) discord.Client
-    :return: discord.Message (posted transcript)
+    :return: (optional) discord.Message (posted transcript)
     """
 
     if guild:
@@ -38,8 +38,7 @@ async def quick_export(
             bot=bot,
             attachment_handler=None
             ).export()
-        ).html
-
+        )
     if not transcript:
         return
 
@@ -48,7 +47,7 @@ async def quick_export(
         colour=discord.Colour.blurple()
     )
 
-    transcript_file = discord.File(io.BytesIO(transcript.encode()), filename=f"transcript-{channel.name}.html")
+    transcript_file = discord.File(io.BytesIO(transcript.html.encode()), filename=f"transcript-{channel.name}.html")
     return await channel.send(embed=transcript_embed, file=transcript_file)
 
 
@@ -64,7 +63,7 @@ async def export(
     after: Optional[datetime.datetime] = None,
     support_dev: Optional[bool] = True,
     attachment_handler: Optional[AttachmentHandler] = None,
-):
+) -> Optional[str]:
     """
     Create a customised transcript of your Discord channel.
     This function will return the transcript which you can then turn in to a file to post wherever.
@@ -78,13 +77,12 @@ async def export(
     :param before: (optional) datetime.datetime - allows before time for history
     :param after: (optional) datetime.datetime - allows after time for history
     :param attachment_handler: (optional) attachment_handler.AttachmentHandler - allows custom asset handling
-    :return: string - transcript file make up
+    :return: (optional) string - transcript file mark up (html)
     """
     if guild:
         channel.guild = guild
 
-    return (
-        await Transcript(
+    transcript = await Transcript(
             channel=channel,
             limit=limit,
             messages=None,
@@ -97,7 +95,10 @@ async def export(
             bot=bot,
             attachment_handler=attachment_handler,
         ).export()
-    ).html
+    if not transcript:
+        return
+    
+    return transcript.html
 
 
 async def raw_export(
@@ -110,7 +111,7 @@ async def raw_export(
     fancy_times: Optional[bool] = True,
     support_dev: Optional[bool] = True,
     attachment_handler: Optional[AttachmentHandler] = None,
-):
+) -> Optional[str]:
     """
     Create a customised transcript with your own captured Discord messages
     This function will return the transcript which you can then turn in to a file to post wherever.
@@ -122,13 +123,12 @@ async def raw_export(
     :param military_time: (optional) boolean - set military time (24hour clock)
     :param fancy_times: (optional) boolean - set javascript around time display
     :param attachment_handler: (optional) AttachmentHandler - allows custom asset handling
-    :return: string - transcript file make up
+    :return: (optional) string - transcript file mark up (html)
     """
     if guild:
         channel.guild = guild
 
-    return (
-        await Transcript(
+    transcript = await Transcript(
             channel=channel,
             limit=None,
             messages=messages,
@@ -141,7 +141,10 @@ async def raw_export(
             bot=bot,
             attachment_handler=attachment_handler
         ).export()
-    ).html
+    if not transcript:
+        return
+    
+    return transcript.html
 
 
 async def quick_link(

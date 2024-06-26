@@ -172,7 +172,7 @@ class TranscriptDAO:
 
 
 class Transcript(TranscriptDAO):
-    async def export(self):
+    async def export(self) -> Optional[TranscriptDAO]:
         if not self.messages:
             self.messages = [message async for message in self.channel.history(
                 limit=self.limit,
@@ -186,7 +186,6 @@ class Transcript(TranscriptDAO):
         try:
             return await super().build_transcript()
         except Exception:
-            self.html = "Whoops! Something went wrong..."
             traceback.print_exc()
             print("Please send a screenshot of the above error to https://www.github.com/mahtoid/DiscordChatExporterPy")
-            return self
+            return None
