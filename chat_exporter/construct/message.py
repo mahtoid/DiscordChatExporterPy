@@ -226,7 +226,7 @@ class MessageConstruct:
             user = self.message.interaction_metadata.user
             interaction_id = self.message.interaction_metadata.id
         elif self.message.interaction:
-            command = self.message.interaction.command
+            command = f"/{self.message.interaction.name}"
             user = self.message.interaction.user
             interaction_id = self.message.interaction.id
         else:
