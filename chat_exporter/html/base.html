@@ -1,6 +1,6 @@
 <!--
 This transcript was generated using: https://github.com/mahtoid/DiscordChatExporterPy
-If you have any issues or suggestions - open an issue on the Github Repository or alternatively join discord.gg/2uhHBQDwcc
+If you have any issues or suggestions - open an issue on the Github Repository or alternatively join https://discord.mahto.id
 
 
 
@@ -13,6 +13,20 @@ If you have any issues or suggestions - open an issue on the Github Repository o
     <title>{{SERVER_NAME}} - {{CHANNEL_NAME}}</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width" />
+    <meta name="title" content="{{SERVER_NAME}} - {{CHANNEL_NAME}}">
+    <meta name="description" content="Transcript of channel {{CHANNEL_NAME}} ({{CHANNEL_ID}}) from {{SERVER_NAME}} ({{GUILD_ID}}) with {{MESSAGE_COUNT}} messages. This transcript was generated on {{DATE_TIME}}.">
+    <meta name="theme-color" content="#638dfc" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="{{SERVER_NAME}} - {{CHANNEL_NAME}}" />
+    <meta property="og:description" content="Transcript of channel {{CHANNEL_NAME}} ({{CHANNEL_ID}}) from {{SERVER_NAME}} ({{GUILD_ID}}) with {{MESSAGE_COUNT}} messages. This transcript was generated on {{DATE_TIME}}." />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary" />
+    <meta name='twitter:title' content="{{SERVER_NAME}} - {{CHANNEL_NAME}}" />
+    <meta name='twitter:description' content="Transcript of channel {{CHANNEL_NAME}} ({{CHANNEL_ID}}) from {{SERVER_NAME}} ({{GUILD_ID}}) with {{MESSAGE_COUNT}} messages. This transcript was generated on {{DATE_TIME}}." />
+
 
     <style>
         @font-face {
@@ -182,7 +196,7 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             width: 1.25em;
             height: 1.25em;
             margin: 0 0.06em;
-            vertical-align: -0.4em;
+            vertical-align: -0.1em;
         }
 
         .emoji--small {
@@ -399,6 +413,10 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             border-radius: 50%;
         }
 
+        .chatlog__avatar:hover {
+            cursor: pointer;
+        }
+
         .chatlog__attachment {
             margin-top: 0.3em;
         }
@@ -411,7 +429,6 @@ If you have any issues or suggestions - open an issue on the Github Repository o
         }
 
         .chatlog__attachment-audio-container {
-            height: 80px;
             width: 100%;
             max-width: 520px;
             padding: 10px;
@@ -419,6 +436,11 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             overflow: hidden;
             background-color: #2f3136;
             border: 1px solid #292b2f;
+        }
+
+        .chatlog__attachment-audio-container audio {
+            padding-top: 0.5em;
+            width: 100%;
         }
 
         .chatlog__attachment-container {
@@ -591,10 +613,11 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             font-weight: 500;
         }
 
-        .chatlog__button-label img {
-            padding-right: 5px;
+        .chatlog__button-label > * {
+            padding-left: 2.5px;
+            padding-right: 2.5px;
         }
-
+        
         .chatlog__reactions {
             display: flex;
         }
@@ -695,6 +718,7 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             color: #fff;
             margin: 0;
             padding: 0;
+            overflow: auto;
         }
 
         a {
@@ -735,11 +759,12 @@ If you have any issues or suggestions - open an issue on the Github Repository o
 
         .chatlog__message-container {
             background-color: transparent;
-            transition: background-color 1s ease;
+            transition: background-color 0.5s ease;
         }
 
         .chatlog__message-container--highlighted {
-            background-color: rgba(114, 137, 218, 0.2);
+            background-color: rgba(114, 137, 218, 0.2) !important;
+            transition: none !important;
         }
 
         .chatlog__followup-symbol {
@@ -951,9 +976,8 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             align-items: center;
             height: 20px;
             border-radius: 5px;
-            margin: 0 16px 24px;
+            margin: 0 16px 16px;
             padding: 16px;
-            width: calc(100% - 50px);
             background-color: #202225;
             position: relative;
             z-index: 10;
@@ -1277,40 +1301,21 @@ If you have any issues or suggestions - open an issue on the Github Repository o
     <script>
         <!--  Scroll to Message (References)  -->
         function scrollToMessage(event, id) {
-            var element = document.getElementById('message-' + id);
+            var element = document.getElementById('chatlog__message-container-' + id);
 
             if (element !== null && element !== undefined) {
                 event.preventDefault();
 
                 element.classList.add('chatlog__message-container--highlighted');
 
-                window.scrollTo({
-                    top: element.getBoundingClientRect().top - document.body.getBoundingClientRect().top - (window.innerHeight / 2),
-                    behavior: 'smooth'
+                element.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center',
                 });
 
-                window.setTimeout(function() {
+                setTimeout(function() {
                     element.classList.remove('chatlog__message-container--highlighted');
-                }, 2000);
-            }
-        }
-
-        function scrollToMessage(event, id) {
-            var element = document.getElementById('message-' + id);
-
-            if (element) {
-                event.preventDefault();
-
-                element.classList.add('chatlog__message--highlighted');
-
-                window.scrollTo({
-                    top: element.getBoundingClientRect().top - document.body.getBoundingClientRect().top - (window.innerHeight / 2),
-                    behavior: 'smooth'
-                });
-
-                window.setTimeout(function() {
-                    element.classList.remove('chatlog__message--highlighted');
-                }, 2000);
+                }, 1500);
             }
         }
 

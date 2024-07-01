@@ -238,6 +238,11 @@ from discord import Attachment
 
 
 class MyAttachmentHandler(AttachmentHandler):
+    def __init__(self, *args, **kwargs):
+        # Your initialization code here
+        # in your case we just create the cloud client
+        self.cloud_client = CloudClient()
+
     async def process_asset(self, attachment: Attachment):
         # Your upload logic here, in our example we just upload the asset to the cloud
         
@@ -258,14 +263,14 @@ class MyAttachmentHandler(AttachmentHandler):
         # now we can generate the asset url from the identifier
         asset_url = await self.cloud_client.get_share_url(asset_id, shared_with="everyone")
         
-        # and set the url attribute of the attachment to the generated url
-        attachment.url = asset_url
+        # and set the proxy url attribute of the attachment to the generated url
+        attachment.proxy_url = asset_url
         return attachment
 
 ```
 
 Note
-1. The `process_asset` method should return the attachment object with the url attribute set to the generated url.
+1. The `process_asset` method should return the attachment object with the proxy_url attribute set to the generated url.
 2. The `process_asset` method should be an async method, as it is likely that you have to do some async operations 
    like fetching the content of the attachment or uploading it to the cloud.
 3. You are free to add other methods in your class, and call them from `process_asset` if you need to do some 
