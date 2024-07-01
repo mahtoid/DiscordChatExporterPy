@@ -44,18 +44,26 @@ class Component:
             Component.menu_div_id += 1
 
     async def build_button(self, c):
-        url = c.url if c.url else ""
-        label = c.label if c.label else ""
+        if c.url:
+            url = str(c.url)
+            target = " target='_blank'"
+            icon = str(DiscordUtils.button_external_link)
+        else:
+            url = "javascript:;"
+            target = ""
+            icon = ""
+            
+        label = str(c.label) if c.label else ""
         style = self.styles[str(c.style).split(".")[1]]
-        icon = DiscordUtils.button_external_link if url else ""
         emoji = str(c.emoji) if c.emoji else ""
 
         self.buttons += await fill_out(self.guild, component_button, [
             ("DISABLED", "chatlog__component-disabled" if c.disabled else "", PARSE_MODE_NONE),
-            ("URL", str(url), PARSE_MODE_NONE),
-            ("LABEL", str(label), PARSE_MODE_MARKDOWN),
-            ("EMOJI", str(emoji), PARSE_MODE_EMOJI),
-            ("ICON", str(icon), PARSE_MODE_NONE),
+            ("URL", url, PARSE_MODE_NONE),
+            ("LABEL", label, PARSE_MODE_MARKDOWN),
+            ("EMOJI", emoji, PARSE_MODE_EMOJI),
+            ("ICON", icon, PARSE_MODE_NONE),
+            ("TARGET", target, PARSE_MODE_NONE),
             ("STYLE", style, PARSE_MODE_NONE)
         ])
 
