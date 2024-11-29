@@ -17,7 +17,7 @@ from chat_exporter.ext.cache import clear_cache
 from chat_exporter.parse.mention import pass_bot
 from chat_exporter.ext.discord_utils import DiscordUtils
 from chat_exporter.ext.html_generator import (
-    fill_out, total, channel_topic, meta_data_temp, fancy_time, channel_subject, PARSE_MODE_NONE
+    fill_out, total, channel_topic, meta_data_temp, fancy_time, channel_subject, PARSE_MODE_NONE, PARSE_MODE_HTML_SAFE
 )
 
 
@@ -167,7 +167,9 @@ class TranscriptDAO:
             ("CHANNEL_ID", str(self.channel.id), PARSE_MODE_NONE),
             ("MESSAGE_PARTICIPANTS", str(len(meta_data)), PARSE_MODE_NONE),
             ("FANCY_TIME", _fancy_time, PARSE_MODE_NONE),
-            ("SD", sd, PARSE_MODE_NONE)
+            ("SD", sd, PARSE_MODE_NONE),
+            ("SERVER_NAME_SAFE", f"{guild_name}", PARSE_MODE_HTML_SAFE),
+            ("CHANNEL_NAME_SAFE", f"{html.escape(self.channel.name)}", PARSE_MODE_HTML_SAFE),
         ])
 
 
