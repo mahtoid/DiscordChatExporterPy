@@ -181,12 +181,8 @@ class MessageConstruct:
         is_bot = _gather_user_bot(message.author)
         user_colour = await self._gather_user_colour(message.author)
 
-        if not message.content and not getattr(message, 'interaction_metadata', None) and not getattr(message, 'interaction', None):
-            message.content = "Click to see attachment"
-        elif not message.content and ((hasattr(message, 'interaction_metadata') and message.interaction_metadata) or message.interaction):
-            message.content = "Click to see command"
-
         icon = ""
+        dummy = ""
         def get_interaction_status(interaction_message):
             if hasattr(interaction_message, 'interaction_metadata'):
                 return interaction_message.interaction_metadata
@@ -195,8 +191,13 @@ class MessageConstruct:
         interaction_status = get_interaction_status(message)
         if not interaction_status and (message.embeds or message.attachments):
             icon = DiscordUtils.reference_attachment_icon
+            dummy = "Click to see attachment"
         elif interaction_status:
             icon = DiscordUtils.interaction_command_icon
+            dummy = "Click to see command"
+
+        if not message.content:
+            message.content = dummy
 
         _, message_edited_at = self.set_time(message)
 
