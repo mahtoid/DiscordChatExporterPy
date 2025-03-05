@@ -167,3 +167,6 @@ bot.py
 chat_exporter/config.py
 *.fs*
 *.sqlite
+
+.idea/*
+.idea\*
