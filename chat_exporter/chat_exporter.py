@@ -1,5 +1,6 @@
 import datetime
 import io
+import warnings
 from typing import List, Optional
 
 from chat_exporter.construct.transcript import Transcript
@@ -155,6 +156,8 @@ async def quick_link(
     :param message: discord.Message
     :return: discord.Message (posted link)
     """
+    warnings.warn("quick_link is deprecated and will be removed along with the site on the 31st March.", DeprecationWarning, stacklevel=2)
+
     embed = discord.Embed(
         title="Transcript Link",
         description=(
@@ -175,4 +178,5 @@ async def link(
     :param message: discord.Message
     :return: string (link: https://mahto.id/chat-exporter?url=ATTACHMENT_URL)
     """
+    warnings.warn("link is deprecated and will be removed along with the site on the 31st March.", DeprecationWarning, stacklevel=2)
     return "https://mahto.id/chat-exporter?url=" + message.attachments[0].url
