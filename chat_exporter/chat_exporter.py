@@ -1,6 +1,5 @@
 import datetime
 import io
-import warnings
 from typing import List, Optional
 
 from chat_exporter.construct.transcript import Transcript
@@ -143,40 +142,3 @@ async def raw_export(
             attachment_handler=attachment_handler
         ).export()
     ).html
-
-
-async def quick_link(
-    channel: discord.TextChannel,
-    message: discord.Message
-):
-    """
-    Create a quick link for your transcript file.
-    This function will return an embed with a link to view the transcript online.
-    :param channel: discord.TextChannel
-    :param message: discord.Message
-    :return: discord.Message (posted link)
-    """
-    warnings.warn("quick_link is deprecated and will be removed along with the site on the 31st March.", DeprecationWarning, stacklevel=2)
-
-    embed = discord.Embed(
-        title="Transcript Link",
-        description=(
-            f"[Click here to view the transcript](https://mahto.id/chat-exporter?url={message.attachments[0].url})"
-        ),
-        colour=discord.Colour.blurple(),
-    )
-
-    return await channel.send(embed=embed)
-
-
-async def link(
-    message: discord.Message
-):
-    """
-    Returns a link which you can use to display in a message.
-    This function will return a string of the link.
-    :param message: discord.Message
-    :return: string (link: https://mahto.id/chat-exporter?url=ATTACHMENT_URL)
-    """
-    warnings.warn("link is deprecated and will be removed along with the site on the 31st March.", DeprecationWarning, stacklevel=2)
-    return "https://mahto.id/chat-exporter?url=" + message.attachments[0].url

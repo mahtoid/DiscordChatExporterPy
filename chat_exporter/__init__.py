@@ -8,7 +8,7 @@ from chat_exporter.chat_exporter import (
     AttachmentToLocalFileHostHandler,
     AttachmentToDiscordChannelHandler)
 
-__version__ = "2.8.2"
+__version__ = "2.8.3"
 
 __all__ = (
     export,
