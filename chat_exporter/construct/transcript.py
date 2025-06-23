@@ -37,7 +37,7 @@ class TranscriptDAO:
         support_dev: bool,
         bot: Optional[discord.Client],
         attachment_handler: Optional[AttachmentHandler],
-        raise_exceptions: bool
+        raise_exceptions: bool = False,
     ):
         self.channel = channel
         self.messages = messages
@@ -189,10 +189,10 @@ class Transcript(TranscriptDAO):
 
         try:
             return await super().build_transcript()
-        except Exception as e:
+        except Exception:
             self.html = "Whoops! Something went wrong..."
             traceback.print_exc()
             print("Please send a screenshot of the above error to https://www.github.com/mahtoid/DiscordChatExporterPy")
             if self.raise_exceptions:
-                raise e
+                raise
             return self
