@@ -24,6 +24,7 @@ from chat_exporter.ext.html_generator import (
     message_content,
     message_reference,
     message_reference_unknown,
+    message_reference_forwarded,
     message_interaction,
     img_attachment,
     start_message,
@@ -148,8 +149,9 @@ class MessageConstruct:
                 user_name_discriminator, user_created_at, user_bot, user_avatar, 1, user_joined_at, user_display_name
             ]
 
+    forwarded = False
     async def build_content(self):
-        if not self.message.content:
+        if not self.message.content and not self.message.message_snapshots:
             self.message.content = ""
             return
 
@@ -161,6 +163,17 @@ class MessageConstruct:
             ("MESSAGE_CONTENT", self.message.content, PARSE_MODE_MARKDOWN),
             ("EDIT", self.message_edited_at, PARSE_MODE_NONE)
         ])
+
+        if hasattr(self.message, "message_snapshots") and self.message.message_snapshots:
+                self.message.content = f"{self.message.content} {' '.join(s.content for s in self.message.message_snapshots if hasattr(s, 'content'))}"
+                self.forwarded = True
+            
+        self.message.content = await fill_out(
+                self.guild, message_content, [
+                    ("MESSAGE_CONTENT", self.message.content, PARSE_MODE_MARKDOWN),
+                    ("EDIT", self.message_edited_at, PARSE_MODE_NONE),
+                ],
+            )
 
     async def build_reference(self):
         if not self.message.reference:
@@ -174,6 +187,9 @@ class MessageConstruct:
                 message: discord.Message = await self.message.channel.fetch_message(self.message.reference.message_id)
             except (discord.NotFound, discord.HTTPException) as e:
                 self.message.reference = ""
+                if self.forwarded:
+                    self.message.reference = message_reference_forwarded
+                    return
                 if isinstance(e, discord.NotFound):
                     self.message.reference = message_reference_unknown
                 return
@@ -251,13 +267,30 @@ class MessageConstruct:
         ])
 
     async def build_sticker(self):
-        if not self.message.stickers or not hasattr(self.message.stickers[0], "url"):
-            return
+        sticker = None
+        sticker_image_url = None
+        
+        if self.message.stickers and hasattr(self.message.stickers[0], "url"):
+            sticker_image_url = self.message.stickers[0].url
+        if not sticker_image_url:
+            for snapshot in self.message.message_snapshots:
+                if hasattr(snapshot, "stickers") and snapshot.stickers and hasattr(snapshot.stickers[0], "url"):
+                    sticker_image_url = snapshot.stickers[0].url
+                    self.message.reference = message_reference_forwarded
+                    break
 
-        sticker_image_url = self.message.stickers[0].url
+        if not sticker_image_url:
+            return
+            
 
         if sticker_image_url.endswith(".json"):
-            sticker = await self.message.stickers[0].fetch()
+            try:
+                sticker = await self.message.stickers[0].fetch()
+            except:
+                for snapshot in self.message.message_snapshots:
+                    if hasattr(snapshot, "stickers") and snapshot.stickers and hasattr(snapshot.stickers[0], "url"):
+                        sticker = await snapshot.stickers[0].fetch()
+                        break
             sticker_image_url = (
                 f"https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/stickers/{sticker.pack_id}/{sticker.id}.gif"
             )
@@ -271,13 +304,30 @@ class MessageConstruct:
         for e in self.message.embeds:
             self.embeds += await Embed(e, self.guild).flow()
 
+        for snapshot in self.message.message_snapshots:
+            for se in snapshot.embeds:
+                self.embeds += await Embed(se, self.guild).flow()
+                self.message.reference = message_reference_forwarded
+
         for a in self.message.attachments:
             if self.attachment_handler and isinstance(self.attachment_handler, AttachmentHandler):
                 a = await self.attachment_handler.process_asset(a)
             self.attachments += await Attachment(a, self.guild).flow()
+        
+        for snapshot in self.message.message_snapshots:
+            for sa in snapshot.attachments:
+                if self.attachment_handler:
+                    sa = await self.attachment_handler.process_asset(sa)
+                self.attachments += await Attachment(sa,self.guild).flow()
+                self.message.reference = message_reference_forwarded
 
         for c in self.message.components:
             self.components += await Component(c, self.guild).flow()
+
+        for snapshot in self.message.message_snapshots:
+            for ac in snapshot.components:
+                self.components += await Component(ac,self.guild).flow()
+                self.message.reference = message_reference_forwarded
 
         for r in self.message.reactions:
             self.reactions += await Reaction(r, self.guild).flow()

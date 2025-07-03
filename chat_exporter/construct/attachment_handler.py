@@ -4,6 +4,9 @@ import pathlib
 from typing import Union
 import urllib.parse
 
+from discord import SyncWebhook, Attachment, File
+import asyncio
+import os
 
 import aiohttp
 from chat_exporter.ext.discord_import import discord
@@ -68,3 +71,34 @@ class AttachmentToDiscordChannelHandler(AttachmentHandler):
 		except discord.errors.HTTPException as e:
 			# discords http errors, including missing permissions
 			raise e
+		
+class AttachmentToWebhookHandler(AttachmentHandler):
+	"""Save the attachment to a discord channel using webhook and embed the assets in the transcript from there."""
+
+	def __init__(self, webhook_link: str) -> None:
+		self.webhook_link = webhook_link
+		self.size_limit = 8 * 1024 * 1024
+		self.placeholder_path = os.path.join(os.path.dirname(__file__), "too_large.png")
+
+	async def process_asset(self, attachment: discord.Attachment) -> discord.Attachment:
+		"""Implement this to process the asset and return a url to the stored attachment.
+		:param attachment: discord.Attachment
+		:return: str"""
+		try:  
+			if attachment.size > self.size_limit:
+				file = File(self.placeholder_path, filename="too_large.png")
+			else:
+				file = await attachment.to_file()
+			webhook = SyncWebhook.from_url(self.webhook_link)
+			for i in range(3):
+				try: 
+					message = webhook.send(file=file,wait=True)
+					await asyncio.sleep(0.2)
+					break
+				except requests.exceptions.ConnectionError as e:
+					print(f"Retry {i+1}/3 | Error - Webhook Connection failed.")
+					await asyncio.sleep(3)
+		except discord.HTTPException as E:
+			raise E
+		else:
+			return message.attachments[0]
