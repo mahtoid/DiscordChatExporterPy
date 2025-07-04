@@ -1,6 +1,6 @@
-import datetime
 import html
 import traceback
+from datetime import datetime
 
 import re
 from typing import List, Optional
@@ -32,8 +32,8 @@ class TranscriptDAO:
         pytz_timezone,
         military_time: bool,
         fancy_times: bool,
-        before: Optional[datetime.datetime],
-        after: Optional[datetime.datetime],
+        before: Optional[datetime],
+        after: Optional[datetime],
         support_dev: bool,
         bot: Optional[discord.Client],
         attachment_handler: Optional[AttachmentHandler],
@@ -77,9 +77,9 @@ class TranscriptDAO:
 
         timezone = pytz.timezone(self.pytz_timezone)
         if self.military_time:
-            time_now = datetime.datetime.now(timezone).strftime("%e %B %Y at %H:%M:%S (%Z)")
+            time_now = datetime.now(timezone).strftime("%e %B %Y at %H:%M:%S (%Z)")
         else:
-            time_now = datetime.datetime.now(timezone).strftime("%e %B %Y at %I:%M:%S %p (%Z)")
+            time_now = datetime.now(timezone).strftime("%e %B %Y at %I:%M:%S %p (%Z)")
 
         meta_data_html: str = ""
         for data in meta_data:
@@ -160,7 +160,7 @@ class TranscriptDAO:
             ("MESSAGE_COUNT", str(len(self.messages))),
             ("MESSAGES", message_html, PARSE_MODE_NONE),
             ("META_DATA", meta_data_html, PARSE_MODE_NONE),
-            ("DATE_TIME", str(time_now)),
+            ("DATE_TIME", datetime.now(pytz.timezone("UTC")).strftime("%b %d, %Y, %I:%M:%S %p UTC")),
             ("SUBJECT", subject, PARSE_MODE_NONE),
             ("CHANNEL_CREATED_AT", str(channel_creation_time), PARSE_MODE_NONE),
             ("CHANNEL_TOPIC", str(channel_topic_html), PARSE_MODE_NONE),

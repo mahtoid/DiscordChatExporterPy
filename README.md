@@ -361,6 +361,47 @@ async def save(ctx: commands.Context):
 
 ```
 </details>
+
+<details><summary>AttachmentToWebhookHandler</summary>
+
+Assuming you want to store your attachments in a discord channel using webhook, you can use the `AttachmentToWebhookHandler`. 
+Please note that discord recent changes regarding content links will result in the attachments links being broken 
+after 24 hours. While this is therefor not a recommended way to store your attachments, it should give you a good 
+idea how to perform asynchronous storing of the attachments.
+
+```python
+import io
+import discord
+from discord.ext import commands
+import chat_exporter
+from chat_exporter import AttachmentToWebhookHandler
+
+...
+
+# Establish the file handler
+channel_handler = AttachmentToWebhookHandler(
+    webhook_link="https://discord.com/api/webhooks/....",
+)
+
+@bot.command()
+async def save(ctx: commands.Context):
+    transcript = await chat_exporter.export(
+        ctx.channel,
+        attachment_handler=channel_handler,
+    )
+
+    if transcript is None:
+        return
+
+    transcript_file = discord.File(
+        io.BytesIO(transcript.encode()),
+        filename=f"transcript-{ctx.channel.name}.html",
+    )
+
+    await ctx.send(file=transcript_file)
+
+```
+</details>
 </ol>
 <p align="right">(<a href="#top">back to top</a>)</p>
 
