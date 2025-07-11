@@ -87,6 +87,11 @@ class MessageConstruct:
         self.meta_data = meta_data
         self.forwarded = False
 
+    def get_message_snapshots(self):
+        if hasattr(self.message, "message_snapshots"):
+            return self.message.message_snapshots
+        return []
+
     async def construct_message(
         self,
     ) -> (str, dict):
@@ -151,7 +156,7 @@ class MessageConstruct:
             ]
 
     async def build_content(self):
-        if not self.message.content and not self.message.message_snapshots:
+        if not self.message.content and not self.get_message_snapshots():
             self.message.content = ""
             return
 
@@ -164,9 +169,10 @@ class MessageConstruct:
             ("EDIT", self.message_edited_at, PARSE_MODE_NONE)
         ])
 
-        if hasattr(self.message, "message_snapshots") and self.message.message_snapshots:
-                self.message.content = f"{self.message.content} {' '.join(s.content for s in self.message.message_snapshots if hasattr(s, 'content'))}"
-                self.forwarded = True
+        snapshots = self.get_message_snapshots()
+        if snapshots:
+            self.message.content = f"{self.message.content} {' '.join(s.content for s in snapshots if hasattr(s, 'content'))}"
+            self.forwarded = True
             
         self.message.content = await fill_out(
                 self.guild, message_content, [
@@ -273,7 +279,7 @@ class MessageConstruct:
         if self.message.stickers and hasattr(self.message.stickers[0], "url"):
             sticker_image_url = self.message.stickers[0].url
         if not sticker_image_url:
-            for snapshot in self.message.message_snapshots:
+            for snapshot in self.get_message_snapshots():
                 if hasattr(snapshot, "stickers") and snapshot.stickers and hasattr(snapshot.stickers[0], "url"):
                     sticker_image_url = snapshot.stickers[0].url
                     self.message.reference = message_reference_forwarded
@@ -287,7 +293,7 @@ class MessageConstruct:
             try:
                 sticker = await self.message.stickers[0].fetch()
             except:
-                for snapshot in self.message.message_snapshots:
+                for snapshot in self.get_message_snapshots():
                     if hasattr(snapshot, "stickers") and snapshot.stickers and hasattr(snapshot.stickers[0], "url"):
                         sticker = await snapshot.stickers[0].fetch()
                         break
@@ -304,7 +310,7 @@ class MessageConstruct:
         for e in self.message.embeds:
             self.embeds += await Embed(e, self.guild).flow()
 
-        for snapshot in self.message.message_snapshots:
+        for snapshot in self.get_message_snapshots():
             for se in snapshot.embeds:
                 self.embeds += await Embed(se, self.guild).flow()
                 self.message.reference = message_reference_forwarded
@@ -314,7 +320,7 @@ class MessageConstruct:
                 a = await self.attachment_handler.process_asset(a)
             self.attachments += await Attachment(a, self.guild).flow()
         
-        for snapshot in self.message.message_snapshots:
+        for snapshot in self.get_message_snapshots():
             for sa in snapshot.attachments:
                 if self.attachment_handler:
                     sa = await self.attachment_handler.process_asset(sa)
@@ -324,7 +330,7 @@ class MessageConstruct:
         for c in self.message.components:
             self.components += await Component(c, self.guild).flow()
 
-        for snapshot in self.message.message_snapshots:
+        for snapshot in self.get_message_snapshots():
             for ac in snapshot.components:
                 self.components += await Component(ac,self.guild).flow()
                 self.message.reference = message_reference_forwarded
