@@ -4,7 +4,7 @@ import pathlib
 from typing import Union
 import urllib.parse
 
-from discord import SyncWebhook, Attachment, File
+from discord import Webhook, Attachment, File
 import asyncio
 import os
 
@@ -77,7 +77,7 @@ class AttachmentToWebhookHandler(AttachmentHandler):
 
 	def __init__(self, webhook_link: str) -> None:
 		self.webhook_link = webhook_link
-		self.size_limit = 8 * 1024 * 1024
+		self.size_limit = 8 * 1024 * 1024 # 8 MB = 8 * 1024 KB * 1024 B
 		self.placeholder_path = os.path.join(os.path.dirname(__file__), "too_large.png")
 
 	async def process_asset(self, attachment: discord.Attachment) -> discord.Attachment:
@@ -89,16 +89,19 @@ class AttachmentToWebhookHandler(AttachmentHandler):
 				file = File(self.placeholder_path, filename="too_large.png")
 			else:
 				file = await attachment.to_file()
-			webhook = SyncWebhook.from_url(self.webhook_link)
-			for i in range(3):
-				try: 
-					message = webhook.send(file=file,wait=True)
-					await asyncio.sleep(0.2)
-					break
-				except requests.exceptions.ConnectionError as e:
-					print(f"Retry {i+1}/3 | Error - Webhook Connection failed.")
-					await asyncio.sleep(3)
-		except discord.HTTPException as E:
-			raise E
+				
+			async with aiohttp.ClientSession() as session:
+				webhook = Webhook.from_url(self.webhook_link, session=session)
+				for i in range(3):
+					try:
+						message = await webhook.send(file=file, wait=True)
+						break
+					except aiohttp.ClientConnectionError:
+						print(f"Retry {i+1}/3 | Error - Webhook connection failed.")
+						await asyncio.sleep(3) # to prevent frequent retries on connection error
+
+		except discord.errors.HTTPException as e:
+			# discords http errors, including missing permissions
+			raise e
 		else:
 			return message.attachments[0]

@@ -378,8 +378,8 @@ from chat_exporter import AttachmentToWebhookHandler
 
 ...
 
-# Establish the file handler
-channel_handler = AttachmentToWebhookHandler(
+# Establish the webhook handler
+webhook_handler = AttachmentToWebhookHandler(
     webhook_link="https://discord.com/api/webhooks/....",
 )
 
@@ -387,7 +387,7 @@ channel_handler = AttachmentToWebhookHandler(
 async def save(ctx: commands.Context):
     transcript = await chat_exporter.export(
         ctx.channel,
-        attachment_handler=channel_handler,
+        attachment_handler=webhook_handler,
     )
 
     if transcript is None:

@@ -85,6 +85,7 @@ class MessageConstruct:
 
         self.message_created_at, self.message_edited_at = self.set_time()
         self.meta_data = meta_data
+        self.forwarded = False
 
     async def construct_message(
         self,
@@ -149,7 +150,6 @@ class MessageConstruct:
                 user_name_discriminator, user_created_at, user_bot, user_avatar, 1, user_joined_at, user_display_name
             ]
 
-    forwarded = False
     async def build_content(self):
         if not self.message.content and not self.message.message_snapshots:
             self.message.content = ""

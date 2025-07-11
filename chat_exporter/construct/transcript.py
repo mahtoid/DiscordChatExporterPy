@@ -160,7 +160,7 @@ class TranscriptDAO:
             ("MESSAGE_COUNT", str(len(self.messages))),
             ("MESSAGES", message_html, PARSE_MODE_NONE),
             ("META_DATA", meta_data_html, PARSE_MODE_NONE),
-            ("DATE_TIME", datetime.now(pytz.timezone("UTC")).strftime("%b %d, %Y, %I:%M:%S %p UTC")),
+            ("DATE_TIME", datetime.now(timezone).strftime("%b %d, %Y, %I:%M:%S %p (%Z)")),
             ("SUBJECT", subject, PARSE_MODE_NONE),
             ("CHANNEL_CREATED_AT", str(channel_creation_time), PARSE_MODE_NONE),
             ("CHANNEL_TOPIC", str(channel_topic_html), PARSE_MODE_NONE),
