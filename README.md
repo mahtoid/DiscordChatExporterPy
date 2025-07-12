@@ -392,7 +392,10 @@ async def save(ctx: commands.Context):
 
     if transcript is None:
         return
-
+    
+    # Due to Discord webhook file size limits (8MB),
+    # Attachments larger than 8MB are not attached directly.
+    # Instead, it stores a placeholder image saying "Attachment size is too high".
     transcript_file = discord.File(
         io.BytesIO(transcript.encode()),
         filename=f"transcript-{ctx.channel.name}.html",

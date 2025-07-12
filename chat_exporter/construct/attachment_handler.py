@@ -4,7 +4,6 @@ import pathlib
 from typing import Union
 import urllib.parse
 
-from discord import Webhook, Attachment, File
 import asyncio
 import os
 
@@ -86,12 +85,12 @@ class AttachmentToWebhookHandler(AttachmentHandler):
 		:return: str"""
 		try:  
 			if attachment.size > self.size_limit:
-				file = File(self.placeholder_path, filename="too_large.png")
+				file = discord.File(self.placeholder_path, filename="too_large.png")
 			else:
 				file = await attachment.to_file()
 				
 			async with aiohttp.ClientSession() as session:
-				webhook = Webhook.from_url(self.webhook_link, session=session)
+				webhook = discord.Webhook.from_url(self.webhook_link, session=session)
 				for i in range(3):
 					try:
 						message = await webhook.send(file=file, wait=True)
