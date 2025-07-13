@@ -182,13 +182,10 @@ class ParseMention:
             regex, strf = p
             match = re.search(regex, self.content)
             while match is not None:
-                timestamp = int(match.group(1)) - 1
-                time_stamp = time.gmtime(timestamp)
-                datetime_stamp = datetime.datetime(2010, *time_stamp[:6], tzinfo=pytz.utc)
+                timestamp = int(match.group(1))
+                datetime_stamp = datetime.datetime.fromtimestamp(timestamp, tz=pytz.utc)
                 ui_time = datetime_stamp.strftime(strf)
-                ui_time = ui_time.replace(str(datetime_stamp.year), str(time_stamp[0]))
                 tooltip_time = datetime_stamp.strftime("%A, %e %B %Y at %H:%M")
-                tooltip_time = tooltip_time.replace(str(datetime_stamp.year), str(time_stamp[0]))
                 original = match.group().replace("&lt;", "<").replace("&gt;", ">")
                 replacement = (
                     f'<span class="unix-timestamp" data-timestamp="{tooltip_time}" raw-content="{original}">'
