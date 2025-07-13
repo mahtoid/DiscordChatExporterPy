@@ -184,7 +184,7 @@ class ParseMention:
             while match is not None:
                 timestamp = int(match.group(1)) - 1
                 time_stamp = time.gmtime(timestamp)
-                datetime_stamp = datetime.datetime(2010, *time_stamp[1:6], tzinfo=pytz.utc)
+                datetime_stamp = datetime.datetime(*time_stamp[:6], tzinfo=pytz.utc)
                 ui_time = datetime_stamp.strftime(strf)
                 ui_time = ui_time.replace(str(datetime_stamp.year), str(time_stamp[0]))
                 tooltip_time = datetime_stamp.strftime("%A, %e %B %Y at %H:%M")
