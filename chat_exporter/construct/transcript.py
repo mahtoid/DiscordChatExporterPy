@@ -37,6 +37,7 @@ class TranscriptDAO:
         support_dev: bool,
         bot: Optional[discord.Client],
         attachment_handler: Optional[AttachmentHandler],
+        raise_exceptions: bool = False,
     ):
         self.channel = channel
         self.messages = messages
@@ -48,6 +49,7 @@ class TranscriptDAO:
         self.support_dev = support_dev
         self.pytz_timezone = pytz_timezone
         self.attachment_handler = attachment_handler
+        self.raise_exceptions = raise_exceptions
 
         # This is to pass timezone in to mention.py without rewriting
         setattr(discord.Guild, "timezone", self.pytz_timezone)
@@ -191,4 +193,6 @@ class Transcript(TranscriptDAO):
             self.html = "Whoops! Something went wrong..."
             traceback.print_exc()
             print("Please send a screenshot of the above error to https://www.github.com/mahtoid/DiscordChatExporterPy")
+            if self.raise_exceptions:
+                raise
             return self
