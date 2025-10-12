@@ -7,7 +7,7 @@ from chat_exporter.chat_exporter import (
     AttachmentToWebhookHandler,
     AttachmentToDiscordChannelHandler)
 
-__version__ = "2.9.1"
+__version__ = "2.9.0"
 
 __all__ = (
     export,
