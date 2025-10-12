@@ -90,6 +90,8 @@ class MessageConstruct:
     def get_message_snapshots(self):
         if hasattr(self.message, "message_snapshots"):
             return self.message.message_snapshots
+        elif hasattr(self.message, "snapshots"):
+            return self.message.snapshots
         return []
 
     async def construct_message(
@@ -311,9 +313,10 @@ class MessageConstruct:
             self.embeds += await Embed(e, self.guild).flow()
 
         for snapshot in self.get_message_snapshots():
-            for se in snapshot.embeds:
-                self.embeds += await Embed(se, self.guild).flow()
-                self.message.reference = message_reference_forwarded
+            if hasattr(snapshot, "embeds"):
+                for se in snapshot.embeds:
+                    self.embeds += await Embed(se, self.guild).flow()
+                    self.message.reference = message_reference_forwarded
 
         for a in self.message.attachments:
             if self.attachment_handler and isinstance(self.attachment_handler, AttachmentHandler):
@@ -321,19 +324,21 @@ class MessageConstruct:
             self.attachments += await Attachment(a, self.guild).flow()
         
         for snapshot in self.get_message_snapshots():
-            for sa in snapshot.attachments:
-                if self.attachment_handler:
-                    sa = await self.attachment_handler.process_asset(sa)
-                self.attachments += await Attachment(sa,self.guild).flow()
-                self.message.reference = message_reference_forwarded
+            if hasattr(snapshot, "attachments"):
+                for sa in snapshot.attachments:
+                    if self.attachment_handler:
+                        sa = await self.attachment_handler.process_asset(sa)
+                    self.attachments += await Attachment(sa,self.guild).flow()
+                    self.message.reference = message_reference_forwarded
 
         for c in self.message.components:
             self.components += await Component(c, self.guild).flow()
 
         for snapshot in self.get_message_snapshots():
-            for ac in snapshot.components:
-                self.components += await Component(ac,self.guild).flow()
-                self.message.reference = message_reference_forwarded
+            if hasattr(snapshot, "components"):
+                for ac in snapshot.components:
+                    self.components += await Component(ac,self.guild).flow()
+                    self.message.reference = message_reference_forwarded
 
         for r in self.message.reactions:
             self.reactions += await Reaction(r, self.guild).flow()
