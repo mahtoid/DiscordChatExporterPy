@@ -54,6 +54,7 @@ This is mostly seen as a demo function, as opposed to a command you should actua
 
 **Optional Argument(s):**<br/>
 `bot`: `commands.Bot` object to gather members who are no longer in your guild.
+`raise_exceptions`: `bool` flag to raise exceptions instead of printing them to the console and surpressing the exception.
 
 **Return Argument:**<br/>
 `discord.Message`: The message _quick_export_ will send, containing the embed and exported chat file.
@@ -102,6 +103,7 @@ This would be the main function to use within chat-exporter.
 `after`: `datetime.datetime` object which allows to gather messages from after a certain date.<br/>
 `bot`: `commands.Bot` object to gather members who are no longer in your guild.<br/>
 `attachment_handler`: `chat_exporter.AttachmentHandler` object to export assets to in order to make them available after the `channel` got deleted.<br/>
+`raise_exceptions`: `bool` flag to raise exceptions instead of printing them to the console and surpressing the exception.
 
 **Return Argument:**<br/>
 `transcript`: The HTML build-up for you to construct the HTML File with Discord.
@@ -151,6 +153,7 @@ This would be for people who want to filter what content to export.
 `fancy_times`: Boolean value which toggles the 'fancy times' (Today|Yesterday|Day)<br/>
 `bot`: `commands.Bot` object to gather members who are no longer in your guild.
 `attachment_handler`: `chat_exporter.AttachmentHandler` object to export assets to in order to make them available after the `channel` got deleted.<br/>
+`raise_exceptions`: `bool` flag to raise exceptions instead of printing them to the console and surpressing the exception.
 
 **Return Argument:**<br/>
 `transcript`: The HTML build-up for you to construct the HTML File with Discord.

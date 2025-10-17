@@ -11,6 +11,7 @@ async def quick_export(
     channel: discord.TextChannel,
     guild: Optional[discord.Guild] = None,
     bot: Optional[discord.Client] = None,
+    raise_exceptions: bool = False
 ):
     """
     Create a quick export of your Discord channel.
@@ -18,6 +19,7 @@ async def quick_export(
     :param channel: discord.TextChannel
     :param guild: (optional) discord.Guild
     :param bot: (optional) discord.Client
+    :param raise_exceptions: boolean - raise exceptions if they occur
     :return: discord.Message (posted transcript)
     """
 
@@ -36,7 +38,8 @@ async def quick_export(
             after=None,
             support_dev=True,
             bot=bot,
-            attachment_handler=None
+            attachment_handler=None,
+            raise_exceptions=raise_exceptions
             ).export()
         ).html
 
@@ -64,6 +67,7 @@ async def export(
     after: Optional[datetime.datetime] = None,
     support_dev: Optional[bool] = True,
     attachment_handler: Optional[AttachmentHandler] = None,
+    raise_exceptions: bool = False
 ):
     """
     Create a customised transcript of your Discord channel.
@@ -78,6 +82,7 @@ async def export(
     :param before: (optional) datetime.datetime - allows before time for history
     :param after: (optional) datetime.datetime - allows after time for history
     :param attachment_handler: (optional) attachment_handler.AttachmentHandler - allows custom asset handling
+    :param raise_exceptions: boolean - raise exceptions if they occur
     :return: string - transcript file make up
     """
     if guild:
@@ -96,6 +101,7 @@ async def export(
             support_dev=support_dev,
             bot=bot,
             attachment_handler=attachment_handler,
+            raise_exceptions=raise_exceptions
         ).export()
     ).html
 
@@ -110,6 +116,7 @@ async def raw_export(
     fancy_times: Optional[bool] = True,
     support_dev: Optional[bool] = True,
     attachment_handler: Optional[AttachmentHandler] = None,
+    raise_exceptions: bool = False
 ):
     """
     Create a customised transcript with your own captured Discord messages
@@ -122,6 +129,7 @@ async def raw_export(
     :param military_time: (optional) boolean - set military time (24hour clock)
     :param fancy_times: (optional) boolean - set javascript around time display
     :param attachment_handler: (optional) AttachmentHandler - allows custom asset handling
+    :param raise_exceptions: boolean - raise exceptions if they occur
     :return: string - transcript file make up
     """
     if guild:
@@ -139,6 +147,7 @@ async def raw_export(
             after=None,
             support_dev=support_dev,
             bot=bot,
-            attachment_handler=attachment_handler
+            attachment_handler=attachment_handler,
+            raise_exceptions=raise_exceptions
         ).export()
     ).html
