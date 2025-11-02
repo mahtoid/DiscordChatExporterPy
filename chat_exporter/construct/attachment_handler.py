@@ -26,34 +26,34 @@ class AttachmentHandler:
 class AttachmentToLocalFileHostHandler(AttachmentHandler):
 	"""Save the assets to a local file host and embed the assets in the transcript from there."""
 
-	def __init__(self, base_path: Union[str, pathlib.Path], url_base: str):
+	def __init__(self, base_path: Union[str, pathlib.Path], url_base: str, compress_amount: Optional[int] = None):
 		if isinstance(base_path, str):
 			base_path = pathlib.Path(base_path)
 		self.base_path = base_path
 		self.url_base = url_base
+		self.compress_amount = compress_amount
 
-	async def process_asset(self, attachment: discord.Attachment, compress_amount: Optional[int] = None) -> discord.Attachment:
+	async def process_asset(self, attachment: discord.Attachment) -> discord.Attachment:
 		"""Implement this to process the asset and return a url to the stored attachment.
 		:param attachment: discord.Attachment
 		:return: str
 		"""
 		file_name = urllib.parse.quote_plus(f"{datetime.datetime.utcnow().timestamp()}_{attachment.filename}")
-		if compress_amount is not None and file_name.endswith(".png"):
+		if self.compress_amount is not None and file_name.endswith(".png"):
 			try:
-				# session = await ClientSessionFactory.create_or_get_session()
-				async with aiohttp.ClientSession() as session:
-					async with session.get(attachment.url) as res:
-						if res.status != 200:
-							res.raise_for_status()
-						data = io.BytesIO(await res.read())
-						data.seek(0)
-						image = Image.open(data)
-						rgb_image = image.convert('RGB')
-						compressed_path = self.base_path / file_name
-						rgb_image.save(compressed_path, format='JPEG', quality=compress_amount)  # compress it down using jpeg compressor, works even with .png
-						print(f"[DiscordChatExporterPy] Compressed image saved to {compressed_path} from original size {image.size}")
+				session = await ClientSessionFactory.create_or_get_session()
+				# async with aiohttp.ClientSession() as session:
+				async with session.get(attachment.url) as res:
+					if res.status != 200:
+						res.raise_for_status()
+					data = io.BytesIO(await res.read())
+					data.seek(0)
+					image = Image.open(data)
+					rgb_image = image.convert('RGB')
+					compressed_path = self.base_path / file_name
+					rgb_image.save(compressed_path, format='JPEG', quality=self.compress_amount)  # compress it down using jpeg compressor, works even with .png
 			except Exception as e:
-				print(f"[DiscordChatExporterPy] Error compressing image: {e}")
+				# fall back to not compressing..
 				pass
 		else:
 			asset_path = self.base_path / file_name
