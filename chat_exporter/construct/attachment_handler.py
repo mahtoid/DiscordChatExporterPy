@@ -39,10 +39,11 @@ class AttachmentToLocalFileHostHandler(AttachmentHandler):
 		:return: str
 		"""
 		file_name = urllib.parse.quote_plus(f"{datetime.datetime.utcnow().timestamp()}_{attachment.filename}")
-		if self.compress_amount is not None and file_name.endswith(".png"):
+		valid_image_exts = [".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tiff", ".gif"]
+		is_valid = any(attachment.filename.lower().endswith(ext) for ext in valid_image_exts)
+		if self.compress_amount is not None and is_valid:
 			try:
 				session = await ClientSessionFactory.create_or_get_session()
-				# async with aiohttp.ClientSession() as session:
 				async with session.get(attachment.url) as res:
 					if res.status != 200:
 						res.raise_for_status()
