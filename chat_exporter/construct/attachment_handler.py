@@ -1,11 +1,13 @@
 import datetime
 import io
 import pathlib
-from typing import Union
+from typing import Union, Optional
 import urllib.parse
+from PIL import Image
 
 
 import aiohttp
+from chat_exporter.ext.aiohttp_factory import ClientSessionFactory
 from chat_exporter.ext.discord_import import discord
 
 
@@ -30,14 +32,31 @@ class AttachmentToLocalFileHostHandler(AttachmentHandler):
 		self.base_path = base_path
 		self.url_base = url_base
 
-	async def process_asset(self, attachment: discord.Attachment) -> discord.Attachment:
+	async def process_asset(self, attachment: discord.Attachment, compress_amount: Optional[int]) -> discord.Attachment:
 		"""Implement this to process the asset and return a url to the stored attachment.
 		:param attachment: discord.Attachment
 		:return: str
 		"""
 		file_name = urllib.parse.quote_plus(f"{datetime.datetime.utcnow().timestamp()}_{attachment.filename}")
-		asset_path = self.base_path / file_name
-		await attachment.save(asset_path)
+		if compress_amount is not None and file_name.endswith(any(['.png', '.jpg', '.jpeg'])):
+			try:
+				session = await ClientSessionFactory.create_or_get_session()
+				async with session.get(attachment.url) as res:
+					if res.status != 200:
+						res.raise_for_status()
+					data = io.BytesIO(await res.read())
+					data.seek(0)
+					image = Image.open(data)
+					rgb_image = image.convert('RGB')
+					compressed_path = self.base_path / file_name
+					rgb_image.save(compressed_path, format='JPEG', quality=compress_amount)  # compress it down using jpeg compressor, works even with .png
+			except Exception as e:
+				print(f"[DiscordChatExporterPy] Error compressing image: {e}")
+				pass
+		else:
+			asset_path = self.base_path / file_name
+			await attachment.save(asset_path)
+			
 		file_url = f"{self.url_base}/{file_name}"
 		attachment.url = file_url
 		attachment.proxy_url = file_url
