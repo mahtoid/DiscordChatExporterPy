@@ -32,7 +32,7 @@ class AttachmentToLocalFileHostHandler(AttachmentHandler):
 		self.base_path = base_path
 		self.url_base = url_base
 
-	async def process_asset(self, attachment: discord.Attachment, compress_amount: Optional[int]) -> discord.Attachment:
+	async def process_asset(self, attachment: discord.Attachment, compress_amount: Optional[int] = None) -> discord.Attachment:
 		"""Implement this to process the asset and return a url to the stored attachment.
 		:param attachment: discord.Attachment
 		:return: str
