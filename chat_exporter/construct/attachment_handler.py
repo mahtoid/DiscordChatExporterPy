@@ -40,17 +40,18 @@ class AttachmentToLocalFileHostHandler(AttachmentHandler):
 		file_name = urllib.parse.quote_plus(f"{datetime.datetime.utcnow().timestamp()}_{attachment.filename}")
 		if compress_amount is not None and file_name.endswith(".png"):
 			try:
-				session = await ClientSessionFactory.create_or_get_session()
-				async with session.get(attachment.url) as res:
-					if res.status != 200:
-						res.raise_for_status()
-					data = io.BytesIO(await res.read())
-					data.seek(0)
-					image = Image.open(data)
-					rgb_image = image.convert('RGB')
-					compressed_path = self.base_path / file_name
-					rgb_image.save(compressed_path, format='JPEG', quality=compress_amount)  # compress it down using jpeg compressor, works even with .png
-					print(f"[DiscordChatExporterPy] Compressed image saved to {compressed_path} from original size {image.size}")
+				# session = await ClientSessionFactory.create_or_get_session()
+				async with aiohttp.ClientSession() as session:
+					async with session.get(attachment.url) as res:
+						if res.status != 200:
+							res.raise_for_status()
+						data = io.BytesIO(await res.read())
+						data.seek(0)
+						image = Image.open(data)
+						rgb_image = image.convert('RGB')
+						compressed_path = self.base_path / file_name
+						rgb_image.save(compressed_path, format='JPEG', quality=compress_amount)  # compress it down using jpeg compressor, works even with .png
+						print(f"[DiscordChatExporterPy] Compressed image saved to {compressed_path} from original size {image.size}")
 			except Exception as e:
 				print(f"[DiscordChatExporterPy] Error compressing image: {e}")
 				pass
