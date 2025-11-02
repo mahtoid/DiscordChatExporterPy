@@ -50,6 +50,7 @@ class AttachmentToLocalFileHostHandler(AttachmentHandler):
 					rgb_image = image.convert('RGB')
 					compressed_path = self.base_path / file_name
 					rgb_image.save(compressed_path, format='JPEG', quality=compress_amount)  # compress it down using jpeg compressor, works even with .png
+					print(f"[DiscordChatExporterPy] Compressed image saved to {compressed_path} from original size {image.size}")
 			except Exception as e:
 				print(f"[DiscordChatExporterPy] Error compressing image: {e}")
 				pass
