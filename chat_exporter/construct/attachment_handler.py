@@ -38,7 +38,7 @@ class AttachmentToLocalFileHostHandler(AttachmentHandler):
 		:return: str
 		"""
 		file_name = urllib.parse.quote_plus(f"{datetime.datetime.utcnow().timestamp()}_{attachment.filename}")
-		if compress_amount is not None and file_name.endswith(any(['.png', '.jpg', '.jpeg'])):
+		if compress_amount is not None and file_name.endswith(".png"):
 			try:
 				session = await ClientSessionFactory.create_or_get_session()
 				async with session.get(attachment.url) as res:
