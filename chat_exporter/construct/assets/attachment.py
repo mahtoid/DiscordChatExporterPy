@@ -21,14 +21,28 @@ class Attachment:
         return self.attachments
 
     async def build_attachment(self):
+        is_spoiler = self._is_spoiler(self.attachments)
+
         if self.attachments.content_type is not None:
             if "image" in self.attachments.content_type:
-                return await self.image()
+                await self.image()
+                if is_spoiler:
+                    self._mark_spoiler()
+                return
             elif "video" in self.attachments.content_type:
-                return await self.video()
+                await self.video()
+                if is_spoiler:
+                    self._mark_spoiler()
+                return
             elif "audio" in self.attachments.content_type:
-                return await self.audio()
+                await self.audio()
+                if is_spoiler:
+                    self._mark_spoiler()
+                return
+
         await self.file()
+        if is_spoiler:
+            self._mark_spoiler()
 
     async def image(self):
         self.attachments = await fill_out(self.guild, img_attachment, [
@@ -104,3 +118,40 @@ class Attachment:
                 return DiscordUtils.file_attachment_archive
         
         return DiscordUtils.file_attachment_unknown
+
+    @staticmethod
+    def _is_spoiler(attachment) -> bool:
+        """Check if an attachment is marked as a spoiler."""
+        spoiler_attr = getattr(attachment, "spoiler", None)
+        if callable(spoiler_attr):
+            try:
+                return bool(spoiler_attr())
+            except Exception:
+                pass
+        if spoiler_attr is not None:
+            return bool(spoiler_attr)
+
+        is_spoiler_method = getattr(attachment, "is_spoiler", None)
+        if callable(is_spoiler_method):
+            try:
+                return bool(is_spoiler_method())
+            except Exception:
+                return False
+
+        return False
+
+    def _mark_spoiler(self):
+        """Add spoiler styling class to the rendered attachment HTML."""
+        if not isinstance(self.attachments, str):
+            return
+
+        target = '<div class=chatlog__attachment>'
+        replacement = '<div class="chatlog__attachment chatlog__attachment-spoiler">'
+        if target in self.attachments:
+            self.attachments = self.attachments.replace(target, replacement, 1)
+        elif 'class="chatlog__attachment"' in self.attachments:
+            self.attachments = self.attachments.replace(
+                'class="chatlog__attachment"',
+                'class="chatlog__attachment chatlog__attachment-spoiler"',
+                1,
+            )

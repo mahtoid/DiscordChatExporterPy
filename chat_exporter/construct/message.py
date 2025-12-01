@@ -277,7 +277,7 @@ class MessageConstruct:
             self.attachments += await Attachment(a, self.guild).flow()
 
         for c in self.message.components:
-            self.components += await Component(c, self.guild).flow()
+            self.components += await Component(c, self.guild, self.message.attachments).flow()
 
         for r in self.message.reactions:
             self.reactions += await Reaction(r, self.guild).flow()
