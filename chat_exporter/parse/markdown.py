@@ -12,6 +12,7 @@ class ParseMarkdown:
     async def standard_message_flow(self):
         self.parse_code_block_markdown()
         self.https_http_links()
+        self.parse_embed_markdown()
         self.parse_normal_markdown()
 
         await self.parse_emoji()
@@ -44,6 +45,8 @@ class ParseMarkdown:
     async def message_reference_flow(self):
         self.strip_preserve()
         self.parse_code_block_markdown(reference=True)
+        self.https_http_links()
+        self.parse_embed_markdown()
         self.parse_normal_markdown()
         self.reverse_code_block_markdown()
         self.parse_br()
@@ -158,36 +161,11 @@ class ParseMarkdown:
                 self.content = self.content.replace(self.content[match.start():match.end()], r % affected_text)
                 match = re.search(pattern, self.content)
 
-        # > quote
-        self.content = self.content.split("<br>")
-        y = None
-        new_content = ""
-        pattern = re.compile(r"^&gt;\s(.+)")
-
-        if len(self.content) == 1:
-            if re.search(pattern, self.content[0]):
-                self.content = f'<div class="quote">{self.content[0][5:]}</div>'
-                return
-            self.content = self.content[0]
-            return
-
-        for x in self.content:
-            if re.search(pattern, x) and y:
-                y = y + "<br>" + x[5:]
-            elif not y:
-                if re.search(pattern, x):
-                    y = x[5:]
-                else:
-                    new_content = new_content + x + "<br>"
-            else:
-                new_content = new_content + f'<div class="quote">{y}</div>'
-                new_content = new_content + x
-                y = ""
-
-        if y:
-            new_content = new_content + f'<div class="quote">{y}</div>'
-
-        self.content = new_content
+        # > quote (minimal replacement to avoid disturbing surrounding formatting)
+        quote_pattern = re.compile(r'(^|<br>)(?:&gt;|>)\s?(.*?)(?:<br>|$)', re.MULTILINE)
+        self.content = quote_pattern.sub(lambda m: f'{m.group(1)}<div class="quote">{m.group(2)}</div>', self.content)
+        # Remove stray breaks/newlines immediately following quotes to avoid trailing gaps
+        self.content = re.sub(r'</div>(?:<br>|\n)+', '</div>', self.content)
 
     def parse_code_block_markdown(self, reference=False):
         markdown_languages = ["asciidoc", "autohotkey", "bash", "coffeescript", "cpp", "cs", "css",
@@ -260,7 +238,7 @@ class ParseMarkdown:
 
     def parse_embed_markdown(self):
         # [Message](Link)
-        pattern = re.compile(r"\[(.+?)]\((.+?)\)")
+        pattern = re.compile(r"\[(.+?)]\((https?://[^\s)]+)\)")
         match = re.search(pattern, self.content)
         while match is not None:
             affected_text = match.group(1)
@@ -379,8 +357,13 @@ class ParseMarkdown:
 
         content = re.sub("\n", "<br>", self.content)
         output = []
-        if "http://" in content or "https://" in content and "](" not in content:
+        if "http://" in content or "https://" in content:
             for word in content.replace("<br>", " <br>").split():
+
+                # Skip markdown links to avoid wrapping the URL twice
+                if "](" in word:
+                    output.append(word)
+                    continue
 
                 if "http" not in word:
                     output.append(word)

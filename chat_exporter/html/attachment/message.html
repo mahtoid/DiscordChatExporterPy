@@ -1,15 +1,11 @@
-<div class=chatlog__attachment>
-    <div class="" onclick="">
-        <div class="">
-            <div class="chatlog__attachment-container">
-                <img src="{{ATTACH_ICON}}" class="chatlog__attachment-icon">
-                <div class="chatlog__attachment-filename">
-                    <a href={{ATTACH_URL}}>{{ATTACH_FILE}}</a>
-                </div>
-                <div class="chatlog__attachment-filesize">
-                    {{ATTACH_BYTES}}
-                </div>
-            </div>
+<div class="chatlog__attachment">
+    <div class="chatlog__attachment-container">
+        <img src="{{ATTACH_ICON}}" class="chatlog__attachment-icon" alt="File icon">
+        <div class="chatlog__attachment-filename">
+            <a href="{{ATTACH_URL}}" target="_blank" rel="noreferrer">{{ATTACH_FILE}}</a>
+        </div>
+        <div class="chatlog__attachment-filesize">
+            {{ATTACH_BYTES}}
         </div>
     </div>
 </div>
