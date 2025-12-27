@@ -161,11 +161,8 @@ class ParseMarkdown:
                 self.content = self.content.replace(self.content[match.start():match.end()], r % affected_text)
                 match = re.search(pattern, self.content)
 
-        # > quote (minimal replacement to avoid disturbing surrounding formatting)
-        quote_pattern = re.compile(r'(^|<br>)(?:&gt;|>)\s?(.*?)(?:<br>|$)', re.MULTILINE)
-        self.content = quote_pattern.sub(lambda m: f'{m.group(1)}<div class="quote">{m.group(2)}</div>', self.content)
-        # Remove stray breaks/newlines immediately following quotes to avoid trailing gaps
-        self.content = re.sub(r'</div>(?:<br>|\n)+', '</div>', self.content)
+        # > quote (group consecutive lines into a single block so the bar spans them)
+        self.content = self.merge_quote_lines(self.content)
 
     def parse_code_block_markdown(self, reference=False):
         markdown_languages = ["asciidoc", "autohotkey", "bash", "coffeescript", "cpp", "cs", "css",
@@ -247,35 +244,7 @@ class ParseMarkdown:
                                                 '<a href="%s">%s</a>' % (affected_url, affected_text))
             match = re.search(pattern, self.content)
 
-        self.content = self.content.split("\n")
-        y = None
-        new_content = ""
-        pattern = re.compile(r"^>\s(.+)")
-
-        if len(self.content) == 1:
-            if re.search(pattern, self.content[0]):
-                self.content = f'<div class="quote">{self.content[0][2:]}</div>'
-                return
-            self.content = self.content[0]
-            return
-
-        for x in self.content:
-            if re.search(pattern, x) and y:
-                y = y + "\n" + x[2:]
-            elif not y:
-                if re.search(pattern, x):
-                    y = x[2:]
-                else:
-                    new_content = new_content + x + "\n"
-            else:
-                new_content = new_content + f'<div class="quote">{y}</div>'
-                new_content = new_content + x
-                y = ""
-
-        if y:
-            new_content = new_content + f'<div class="quote">{y}</div>'
-
-        self.content = new_content
+        self.content = self.merge_quote_lines(self.content)
 
     @staticmethod
     def order_list_html_to_markdown(content):
@@ -345,6 +314,34 @@ class ParseMarkdown:
             match = re.search(pattern, content)
 
         return content.lstrip().rstrip()
+
+    @staticmethod
+    def merge_quote_lines(content: str) -> str:
+        """
+        Convert consecutive blockquote-style lines into a single quote block so the visual bar spans all lines.
+        """
+        lines = content.split("\n")
+        merged_content = []
+        quote_buffer = []
+        quote_pattern = re.compile(r"^(?:&gt;|>)\s?(.*)")
+
+        for line in lines:
+            match = quote_pattern.match(line)
+            if match:
+                quote_buffer.append(match.group(1))
+            else:
+                if quote_buffer:
+                    merged_content.append(f'<div class="quote">{"\n".join(quote_buffer)}</div>')
+                    quote_buffer = []
+                merged_content.append(line)
+
+        if quote_buffer:
+            merged_content.append(f'<div class="quote">{"\n".join(quote_buffer)}</div>')
+
+        merged = "\n".join(merged_content)
+        # Remove a single trailing newline after a quote block; the block element already provides separation.
+        merged = re.sub(r"</div>[ \t]*\n(?!\n)", "</div>", merged)
+        return merged
 
     def https_http_links(self):
         def remove_silent_link(url, raw_url=None):
