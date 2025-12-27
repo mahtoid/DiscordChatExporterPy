@@ -45,7 +45,14 @@ class Component:
     def __init__(self, component, guild, attachments=None):
         self.component = component
         self.guild = guild
-        self.attachments = list(attachments) if attachments else []
+        self.attachments = []
+        if attachments:
+            attachment_iterable = attachments if isinstance(attachments, (list, tuple, set)) else [attachments]
+            for attachment in attachment_iterable:
+                if isinstance(attachment, (list, tuple, set)):
+                    self.attachments.extend(list(attachment))
+                else:
+                    self.attachments.append(attachment)
         # Reset per-component accumulators
         self.components = ""
         self.menus = ""
@@ -122,69 +129,9 @@ class Component:
             return ""
         return name.rsplit(".", 1)[-1].lower()
 
-    def _get_file_icon(self, file_name: str, content_type: str = "") -> str:
+    def _get_file_icon(self, file_name: str, content_type: str = "", media_url: str = "") -> str:
         """Return the most appropriate file icon for the given name or content type."""
-        content_type = (content_type or "").lower()
-        if content_type.startswith("audio/"):
-            return DiscordUtils.file_attachment_audio
-
-        ext = self._get_file_extension(file_name)
-        if not ext and content_type:
-            if "html" in content_type:
-                ext = "html"
-            elif "pdf" in content_type:
-                ext = "pdf"
-
-        if ext in ("pdf",):
-            return DiscordUtils.file_attachment_acrobat
-        elif ext in ("html", "htm", "css", "rss", "xhtml", "xml"):
-            return DiscordUtils.file_attachment_webcode
-        elif ext in ("py", "cgi", "pl", "gadget", "jar", "msi", "wsf", "bat", "php", "js"):
-            return DiscordUtils.file_attachment_code
-        elif ext in (
-            "txt",
-            "doc",
-            "docx",
-            "rtf",
-            "xls",
-            "xlsx",
-            "ppt",
-            "pptx",
-            "odt",
-            "odp",
-            "ods",
-            "odg",
-            "odf",
-            "swx",
-            "sxi",
-            "sxc",
-            "sxd",
-            "stw",
-        ):
-            return DiscordUtils.file_attachment_document
-        elif ext in (
-            "br",
-            "rpm",
-            "dcm",
-            "epub",
-            "zip",
-            "tar",
-            "rar",
-            "gz",
-            "bz2",
-            "7x",
-            "deb",
-            "ar",
-            "z",
-            "lzo",
-            "lz",
-            "lz4",
-            "arj",
-            "pkg",
-        ):
-            return DiscordUtils.file_attachment_archive
-
-        return DiscordUtils.file_attachment_unknown
+        return Attachment.resolve_file_icon(file_name, content_type, media_url)
 
     async def build_component(self, c):
         # Check for component type attribute
@@ -259,7 +206,7 @@ class Component:
         url_value = self._get_attr(c, "url", None)
         disabled = bool(self._get_attr(c, "disabled", False))
 
-        if url_value:
+        if url_value and not disabled:
             url = str(url_value)
             target = " target='_blank'"
             icon = str(DiscordUtils.button_external_link)
@@ -267,7 +214,7 @@ class Component:
             url = "javascript:;"
             target = ""
             icon = ""
-            
+
         label = str(self._get_attr(c, "label", "") or "")
         raw_style = self._get_attr(c, "style", None)
         style_key = ""
@@ -283,11 +230,14 @@ class Component:
             raw_style_str = str(raw_style)
             style_key = raw_style_str.split(".")[-1].lower()
         style = self.styles.get(style_key, "#4F545C")
+        button_variant = "chatlog__component-button--link" if style_key == "link" else "chatlog__component-button--filled"
         emoji = self._stringify_emoji(self._get_attr(c, "emoji", None))
 
         return await fill_out(self.guild, component_button, [
             ("DISABLED", "chatlog__component-disabled" if disabled else "", PARSE_MODE_NONE),
             ("URL", url, PARSE_MODE_NONE),
+            ("BUTTON_VARIANT", button_variant, PARSE_MODE_NONE),
+            ("ARIA_DISABLED", "true" if disabled else "false", PARSE_MODE_NONE),
             ("LABEL", label, PARSE_MODE_MARKDOWN),
             ("EMOJI", emoji, PARSE_MODE_EMOJI),
             ("ICON", icon, PARSE_MODE_NONE),
@@ -308,8 +258,9 @@ class Component:
                 if emoji:
                     label = f"{emoji} {label}".strip()
                 default_labels.append(label)
-        if not placeholder and default_labels:
-            placeholder = ", ".join([label for label in default_labels if label])
+        selected_label = ", ".join([label for label in default_labels if label]) if default_labels else placeholder
+        if not selected_label:
+            selected_label = "Select an option"
         if not placeholder:
             placeholder = "Select an option"
 
@@ -319,7 +270,8 @@ class Component:
         menu_html = await fill_out(self.guild, component_menu, [
             ("DISABLED", "chatlog__component-disabled" if disabled else "", PARSE_MODE_NONE),
             ("ID", str(self.menu_div_id), PARSE_MODE_NONE),
-            ("PLACEHOLDER", str(placeholder), PARSE_MODE_MARKDOWN),
+            ("PLACEHOLDER", str(selected_label), PARSE_MODE_MARKDOWN),
+            ("PLACEHOLDER_TITLE", str(placeholder), PARSE_MODE_MARKDOWN),
             ("CONTENT", str(content), PARSE_MODE_NONE),
             ("ICON", DiscordUtils.interaction_dropdown_icon, PARSE_MODE_NONE),
         ])
@@ -333,6 +285,7 @@ class Component:
             option_emoji = self._stringify_emoji(self._get_attr(option, "emoji", None))
             is_default = bool(self._get_attr(option, "default", False))
             default_class = "dropdownContentSelected" if is_default else ""
+            check_mark = "✓" if is_default else ""
 
             if option_emoji:
                 content.append(await fill_out(self.guild, component_menu_options_emoji, [
@@ -340,12 +293,14 @@ class Component:
                     ("TITLE", str(label), PARSE_MODE_MARKDOWN),
                     ("DESCRIPTION", str(description) if description else "", PARSE_MODE_MARKDOWN),
                     ("DEFAULT_CLASS", default_class, PARSE_MODE_NONE),
+                    ("CHECK", check_mark, PARSE_MODE_NONE),
                 ]))
             else:
                 content.append(await fill_out(self.guild, component_menu_options, [
                     ("TITLE", str(label), PARSE_MODE_MARKDOWN),
                     ("DESCRIPTION", str(description) if description else "", PARSE_MODE_MARKDOWN),
                     ("DEFAULT_CLASS", default_class, PARSE_MODE_NONE),
+                    ("CHECK", check_mark, PARSE_MODE_NONE),
                 ]))
 
         if content:
@@ -368,6 +323,7 @@ class Component:
         
         # Handle accent color
         accent_style = ""
+        accent_class = ""
         if accent_color is not None:
             # Discord Colour objects don't support string formatting with :x directly
             try:
@@ -383,14 +339,18 @@ class Component:
                 else:
                     color_value = int(accent_color)
                 color_hex = f"#{color_value:06x}"
-                accent_style = f'style="border-left: 4px solid {color_hex}; padding-left: 12px;"'
+                accent_style = f'--component-accent:{color_hex};'
+                accent_class = "chatlog__component-container--accent"
             except (TypeError, ValueError):
                 accent_style = ""
         
         spoiler_class = "chatlog__component-spoiler" if spoiler else ""
+        spoiler_label = '<div class="chatlog__component-spoiler-label">SPOILER</div>' if spoiler else ""
         
         return await fill_out(self.guild, component_container, [
             ("SPOILER_CLASS", spoiler_class, PARSE_MODE_NONE),
+            ("SPOILER_TAG", spoiler_label, PARSE_MODE_NONE),
+            ("ACCENT_CLASS", accent_class, PARSE_MODE_NONE),
             ("ACCENT_COLOR_STYLE", accent_style, PARSE_MODE_NONE),
             ("CONTENT", content_html, PARSE_MODE_NONE),
         ])
@@ -399,6 +359,7 @@ class Component:
         """Build a section component with content and accessory"""
         components = getattr(c, 'components', []) or getattr(c, 'children', [])
         accessory = getattr(c, 'accessory', None)
+        has_accessory = accessory is not None
         
         # Build content (text displays)
         content_html = ""
@@ -415,6 +376,7 @@ class Component:
         return await fill_out(self.guild, component_section, [
             ("CONTENT", content_html, PARSE_MODE_NONE),
             ("ACCESSORY", accessory_html, PARSE_MODE_NONE),
+            ("HAS_ACCESSORY_CLASS", "chatlog__component-section--has-accessory" if has_accessory else "", PARSE_MODE_NONE),
         ])
 
     async def build_text_display(self, c):
@@ -435,17 +397,32 @@ class Component:
         if not url:
             return ""
 
+        file_name = self._file_display_name(url)
+        related_attachment = self._find_related_attachment(media, file_name)
+        if not description and related_attachment:
+            description = getattr(related_attachment, "description", None)
         spoiler_class = "chatlog__component-spoiler" if spoiler else ""
         description_text = description if description else ""
         description_overlay = ""
+        spoiler_label = ""
+        title_text = description_text
+        alt_text = description_text or file_name
         
-        if description:
+        if spoiler:
+            spoiler_label = '<div class="chatlog__component-spoiler-label">SPOILER</div>'
+            title_text = "Spoiler"
+            alt_text = "Spoiler"
+            description_overlay = ""
+        elif description:
             description_overlay = f'<div class="chatlog__component-thumbnail-description">{description}</div>'
         
         return await fill_out(self.guild, component_thumbnail, [
             ("URL", str(url), PARSE_MODE_NONE),
+            ("TITLE", title_text, PARSE_MODE_MARKDOWN),
+            ("ALT", alt_text, PARSE_MODE_MARKDOWN),
             ("DESCRIPTION", description_text, PARSE_MODE_MARKDOWN),
             ("SPOILER_CLASS", spoiler_class, PARSE_MODE_NONE),
+            ("SPOILER_TAG", spoiler_label, PARSE_MODE_NONE),
             ("DESCRIPTION_OVERLAY", description_overlay, PARSE_MODE_NONE),
         ])
 
@@ -484,17 +461,32 @@ class Component:
         if not url:
             return ""
 
+        file_name = self._file_display_name(url)
+        related_attachment = self._find_related_attachment(media, file_name)
+        if not description and related_attachment:
+            description = getattr(related_attachment, "description", None)
+
         spoiler_class = "chatlog__component-spoiler" if spoiler else ""
         description_text = description if description else ""
         description_overlay = ""
+        spoiler_label = ""
+        title_text = description_text
+        alt_text = description_text or file_name
         
-        if description:
+        if spoiler:
+            spoiler_label = '<div class="chatlog__component-spoiler-label">SPOILER</div>'
+            title_text = "Spoiler"
+            alt_text = "Spoiler"
+        elif description:
             description_overlay = f'<div class="chatlog__component-media-description">{description}</div>'
         
         return await fill_out(self.guild, component_media_gallery_item, [
             ("URL", str(url), PARSE_MODE_NONE),
+            ("TITLE", title_text, PARSE_MODE_MARKDOWN),
+            ("ALT", alt_text, PARSE_MODE_MARKDOWN),
             ("DESCRIPTION", description_text, PARSE_MODE_MARKDOWN),
             ("SPOILER_CLASS", spoiler_class, PARSE_MODE_NONE),
+            ("SPOILER_TAG", spoiler_label, PARSE_MODE_NONE),
             ("DESCRIPTION_OVERLAY", description_overlay, PARSE_MODE_NONE),
         ])
 
@@ -540,7 +532,7 @@ class Component:
         content_type = getattr(file, "content_type", None)
         if related_attachment and not content_type:
             content_type = getattr(related_attachment, "content_type", None)
-        file_icon = self._get_file_icon(file_name, content_type)
+        file_icon = self._get_file_icon(file_name, content_type, url)
         
         spoiler_class = "chatlog__component-spoiler" if spoiler else ""
         

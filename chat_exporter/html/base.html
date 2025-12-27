@@ -63,6 +63,11 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             text-decoration: underline;
         }
 
+        .chatlog__component-button a,
+        .chatlog__component-button:hover {
+            text-decoration: none;
+        }
+
         img {
             object-fit: contain;
         }
@@ -89,19 +94,22 @@ If you have any issues or suggestions - open an issue on the Github Repository o
 
         .spoiler {
             display: inline-block;
+            border-radius: 6px;
         }
 
         .spoiler--hidden {
             cursor: pointer;
-            background-color: #202225;
+            border-radius: 6px;
         }
 
         .spoiler-text {
-            border-radius: 3px;
+            border-radius: 6px;
+            padding: 1px 6px;
         }
 
         .spoiler--hidden .spoiler-text {
-            opacity: 0;
+            opacity: 1;
+            color: #555861;
         }
 
         .spoiler--hidden .spoiler-text::selection {
@@ -111,7 +119,7 @@ If you have any issues or suggestions - open an issue on the Github Repository o
         .spoiler-image {
             position: relative;
             overflow: hidden;
-            border-radius: 3px;
+            border-radius: 6px;
         }
 
         .spoiler--hidden .spoiler-image {
@@ -153,9 +161,9 @@ If you have any issues or suggestions - open an issue on the Github Repository o
 
         .pre {
             font-family: "Consolas", "Courier New", Courier, monospace;
-            padding: .2em;
+            padding: .25em .45em;
             margin: -.2em 0;
-            border-radius: 3px;
+            border-radius: 6px;
             font-size: 85%;
         }
 
@@ -167,9 +175,11 @@ If you have any issues or suggestions - open an issue on the Github Repository o
         }
 
         .pre--inline {
-            padding: 2px;
-            border-radius: 3px;
-            font-size: 0.85em;
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            background-color: #2f3136;
+            border: 1px solid #202225;
         }
 
         .unix-timestamp {
@@ -648,23 +658,75 @@ If you have any issues or suggestions - open an issue on the Github Repository o
 
         .chatlog__components {
             display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 4px;
         }
 
         .chatlog__component-button {
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            margin: 0.35em 0.1em 0.1em 0.1em;
-            padding: 0.2em 0.35em;
-            border-radius: 2px;
+            background-color: var(--button-color, #4f545c);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            box-shadow: 0 1px 0 rgba(0, 0, 0, 0.15);
+            min-height: 38px;
+            padding: 0 12px;
+            cursor: pointer;
+            transition: background-color 0.12s ease, transform 0.12s ease;
+            text-decoration: none;
+        }
+
+        .chatlog__component-button--link {
+            background-color: rgba(255, 255, 255, 0.03);
+            border-color: rgba(79, 84, 92, 0.6);
+        }
+
+        .chatlog__component-button--link {
+            color: #f2f3f5;
+        }
+
+        .chatlog__component-button:hover:not(.chatlog__component-disabled) {
+            filter: brightness(1.05);
+        }
+
+        .chatlog__component-button:active:not(.chatlog__component-disabled) {
+            transform: translateY(1px);
+        }
+
+        .chatlog__button-inner {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #fff;
+            text-decoration: none;
+            width: 100%;
+        }
+
+        .chatlog__button-emoji:empty,
+        .chatlog__button-icon:empty {
+            display: none;
+        }
+
+        .chatlog__button-icon {
+            display: inline-flex;
+            align-items: center;
+            line-height: 0;
+            opacity: 0.8;
+        }
+
+        .chatlog__button-icon img {
+            height: 14px;
+            width: 14px;
+            display: block;
         }
 
         .chatlog__button-label {
-            min-width: 9px;
-            margin-left: 0.35em;
-            margin-right: 0.35em;
-            font-size: 0.875em;
-            color: white;
-            font-weight: 500;
+            font-size: 14px;
+            font-weight: 600;
+            color: inherit;
+            white-space: nowrap;
+            line-height: 1.2;
         }
 
         .chatlog__button-label > * {
@@ -674,21 +736,34 @@ If you have any issues or suggestions - open an issue on the Github Repository o
         
         .chatlog__reactions {
             display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-top: 6px;
         }
 
         .chatlog__reaction {
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            margin: 0.35em 0.1em 0.1em 0.1em;
-            padding: 0.2em 0.35em;
-            border-radius: 8px;
+            gap: 6px;
+            padding: 4px 9px;
+            border-radius: 9px;
             background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            box-shadow: 0 1px 0 rgba(0, 0, 0, 0.12);
         }
 
         .chatlog__reaction-count {
             min-width: 9px;
-            margin-left: 0.35em;
-            font-size: 0.875em;
+            margin-left: 0.1em;
+            font-size: 13px;
+            font-weight: 600;
+            color: #d6d8db;
+            line-height: 1.2;
+        }
+
+        .chatlog__reaction img {
+            width: 20px;
+            height: 20px;
         }
 
         .chatlog__bot-tag {
@@ -780,15 +855,21 @@ If you have any issues or suggestions - open an issue on the Github Repository o
         }
 
         .spoiler-text {
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: rgba(255, 255, 255, 0.12);
+            border-radius: 6px;
+            padding: 1px 6px;
+            display: inline-block;
+            color: #e6e6e6;
         }
 
         .spoiler--hidden .spoiler-text {
-            background-color: #202225;
+            background-color: #6a6d75;
+            color: transparent;
         }
 
         .spoiler--hidden:hover .spoiler-text {
-            background-color: rgba(32, 34, 37, 0.8);
+            background-color: #5c5f66;
+            color: transparent;
         }
 
         .quote {
@@ -1214,23 +1295,40 @@ If you have any issues or suggestions - open an issue on the Github Repository o
 
         .dropdownButton {
           width: 100%;
-          color: #6E767D;
-          padding: 11.5px;
-          font-size: 15px;
+          color: #e3e5e8;
+          padding: 10px 14px;
+          font-size: 14px;
+          font-weight: 600;
           cursor: pointer;
           text-align: left;
-          border-radius: 5px;
-          background-color: #2F3136;
-          border: 1px solid #202225;
+          border-radius: 8px;
+          background-color: #2f3136;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+        }
+
+        .dropdownButtonLabel {
+          overflow: hidden;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+          color: #dbdee1;
+        }
+
+        .dropdownButtonLabel > .chatlog__markdown {
+          display: inline;
         }
 
         .chatlog__component-disabled {
           cursor: not-allowed;
-          opacity: 0.6;
+          opacity: 0.55;
         }
 
         .chatlog__component-disabled a {
           cursor: not-allowed;
+          pointer-events: none;
         }
 
         .chatlog__component-disabled button {
@@ -1239,18 +1337,24 @@ If you have any issues or suggestions - open an issue on the Github Repository o
 
         .chatlog__component-dropdown {
           width: 320px;
-          margin-top: 5px;
+          margin-top: 6px;
           position: relative;
           display: inline-block;
         }
 
+        .dropdownMenuContent {
+          position: relative;
+          width: 100%;
+        }
+
         .chatlog__dropdown-content {
           position: relative;
+          width: 100%;
         }
 
         .chatlog__dropdown-emoji {
-          left: 10px;
-          position: absolute;
+          display: flex;
+          align-items: center;
         }
 
         .chatlog__dropdown-emoji img {
@@ -1259,7 +1363,10 @@ If you have any issues or suggestions - open an issue on the Github Repository o
         }
 
         .chatlog__dropdown-text {
-          padding-left: 25px
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+          min-width: 0;
         }
 
         .chatlog__role-icon {
@@ -1270,36 +1377,64 @@ If you have any issues or suggestions - open an issue on the Github Repository o
         }
 
         .dropdownContent {
-          z-index: 1;
+          z-index: 10;
           display: none;
-          width: 99.5%;
+          width: 100%;
           font-size: 14px;
           position: absolute;
-          margin-top: -0.7px;
-          background-color: #2F3136;
-          border: 1px solid #202225;
-          box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+          margin-top: 4px;
+          background-color: #18191c;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          box-shadow: 0 4px 18px rgba(0,0,0,0.45);
+          border-radius: 8px;
+          overflow: hidden;
         }
 
-        .dropdownContentEmoji {
-          width: 25px;
-          position: absolute;
+        .dropdownContentOption {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 12px 14px;
+          text-decoration: none;
+          color: #f2f3f5;
+          background: transparent;
+        }
+
+        .dropdownContentOption:hover {
+          background-color: rgba(255, 255, 255, 0.04);
+        }
+
+        .dropdownContentOption.dropdownContentSelected {
+          background-color: #2f3356;
+          border-left: 3px solid #5865F2;
+        }
+
+        .dropdownContentText {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+          min-width: 0;
         }
 
         .dropdownContentTitle {
           color: white;
           font-weight: 600;
+          line-height: 1.2;
         }
 
-        .dropdownContent a {
-          display: block;
-          padding: 12px 16px;
-          text-decoration: none;
+        .dropdownContentDesc {
+          color: #9ca3af;
+          font-size: 12px;
         }
 
-        .dropdownContent a.dropdownContentSelected {
-          background-color: #2b2d31;
-          border-left: 2px solid #5865F2;
+        .dropdownContentCheck {
+          margin-left: auto;
+          color: #ffffff;
+          font-weight: 700;
+        }
+
+        .dropdownContentCheck:empty {
+          display: none;
         }
 
         .chatlog__dropdown-icon {
@@ -1315,6 +1450,10 @@ If you have any issues or suggestions - open an issue on the Github Repository o
           border-bottom-left-radius: 0px;
           border-bottom-right-radius: 0px;
         }
+
+        .chatlog__component-dropdown-show { display: block; }
+
+        .chatlog__component-dropdown a:hover { background-color: inherit; }
 
         .tippy-box[data-theme~='disc'] {
             font-weight: 600;
@@ -1338,65 +1477,125 @@ If you have any issues or suggestions - open an issue on the Github Repository o
           border-right-color: #111214;
         }
 
-        .dropdownContentDesc { color: #999B9E; }
-        .dropdownButton:hover { border: 1px solid #040405; }
-        .chatlog__component-dropdown-show { display: block; }
-        .chatlog__component-dropdown a:hover { background-color: #292B2F; }
 
         .cursor_pointer { cursor: pointer; }
 
         /* Components v2 Styles */
         .chatlog__component-container {
-            background-color: #2f3136;
-            border-radius: 4px;
-            margin: 8px 0;
-            padding: 12px;
             position: relative;
+            background-color: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            margin: 8px 0;
+            padding: 12px 14px;
             width: min(100%, 560px);
             max-width: 560px;
+            overflow: hidden;
+        }
+
+        .chatlog__component-container::before {
+            content: "";
+            position: absolute;
+            left: 1px;
+            top: 1px;
+            bottom: 1px;
+            width: 4px;
+            border-radius: 6px 0 0 6px;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .chatlog__component-container.chatlog__component-container--accent::before {
+            background: var(--component-accent);
+        }
+
+        .chatlog__component-container.chatlog__component-container--accent {
+            padding-left: 18px;
         }
 
         .chatlog__component-container.chatlog__component-spoiler {
-            filter: blur(44px);
             cursor: pointer;
         }
 
-        .chatlog__component-container.chatlog__component-spoiler:hover {
+        .chatlog__component-container.chatlog__component-spoiler::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.35);
+            border-radius: inherit;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .chatlog__component-container.chatlog__component-spoiler > :not(.chatlog__component-spoiler-label) {
+            filter: blur(18px);
+        }
+
+        .chatlog__component-container.chatlog__component-spoiler:hover::after {
+            opacity: 0;
+        }
+
+        .chatlog__component-container.chatlog__component-spoiler:hover > :not(.chatlog__component-spoiler-label) {
             filter: blur(0);
         }
 
+        .chatlog__component-spoiler-label {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            color: #dcddde;
+            background-color: rgba(0, 0, 0, 0.6);
+            font-weight: 700;
+            padding: 10px 16px;
+            border-radius: 999px;
+            letter-spacing: 0.05em;
+            font-size: 0.9em;
+            z-index: 2;
+            pointer-events: none;
+        }
+
         .chatlog__component-section {
-            display: flex;
-            gap: 12px;
-            margin: 4px 0;
-            align-items: flex-start;
-        }
-
-        .chatlog__component-section-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .chatlog__component-section-accessory {
-            flex-shrink: 0;
-            margin-left: auto;
-            display: flex;
+            display: grid;
+            grid-template-columns: 1fr min-content;
+            gap: 8px;
+            margin: 0;
+            padding: 6px 0;
             align-items: center;
         }
 
+        .chatlog__component-section--has-accessory {
+            align-items: start;
+        }
+
+        .chatlog__component-section-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .chatlog__component-section-accessory {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
         .chatlog__component-text-display {
-            color: #dcddde;
+            color: #e3e5e8;
             font-size: 14px;
             line-height: 1.375;
-            margin: 4px 0;
+            margin: 2px 0;
+            padding: 0;
+            background: none;
+            border: none;
         }
 
         .chatlog__component-thumbnail {
-            width: 80px;
-            height: 80px;
-            border-radius: 4px;
+            width: 90px;
+            height: 90px;
+            background: #2f3136;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            box-shadow: 0 0 2px rgba(0, 0, 0, 0.4);
             overflow: hidden;
             position: relative;
             cursor: pointer;
@@ -1408,12 +1607,19 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             object-fit: cover;
         }
 
-        .chatlog__component-thumbnail.chatlog__component-spoiler img {
-            filter: blur(44px);
+        .chatlog__component-thumbnail.chatlog__component-spoiler::before,
+        .chatlog__component-media-item.chatlog__component-spoiler::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.35);
+            z-index: 1;
+            pointer-events: none;
         }
 
-        .chatlog__component-thumbnail.chatlog__component-spoiler:hover img {
-            filter: blur(0);
+        .chatlog__component-thumbnail.chatlog__component-spoiler img,
+        .chatlog__component-media-item.chatlog__component-spoiler img {
+            filter: blur(26px);
         }
 
         .chatlog__component-thumbnail-description {
@@ -1421,42 +1627,51 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             bottom: 0;
             left: 0;
             right: 0;
-            background: rgba(0, 0, 0, 0.7);
+            background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.7) 100%);
             color: #fff;
-            padding: 4px;
+            padding: 6px;
             font-size: 12px;
+            z-index: 2;
         }
 
         .chatlog__component-media-gallery {
             display: grid;
-            gap: 8px;
+            gap: 10px;
             margin: 8px 0;
-            grid-template-columns: repeat(2, minmax(120px, 1fr));
-            grid-auto-rows: 140px;
+            grid-template-columns: repeat(12, 1fr);
             width: 100%;
+            grid-auto-flow: row dense;
         }
 
-        .chatlog__component-media-gallery.chatlog__media-gallery-single {
-            grid-template-columns: repeat(1, minmax(180px, 1fr));
-            grid-auto-rows: 200px;
+        .chatlog__component-media-gallery.chatlog__media-gallery-single .chatlog__component-media-item:first-child {
+            grid-column: 1 / span 12;
+            aspect-ratio: 3 / 2;
         }
 
-        .chatlog__component-media-gallery.chatlog__media-gallery-double {
-            grid-template-columns: repeat(2, minmax(140px, 1fr));
-            grid-auto-rows: 150px;
+        .chatlog__component-media-gallery.chatlog__media-gallery-double .chatlog__component-media-item:nth-child(-n+2) {
+            grid-column-end: span 6;
+            aspect-ratio: 3 / 2;
         }
 
-        .chatlog__component-media-gallery.chatlog__media-gallery-triple {
-            grid-template-columns: 2fr 1fr;
-            grid-auto-rows: 140px;
+        .chatlog__component-media-gallery.chatlog__media-gallery-triple .chatlog__component-media-item:nth-child(1) {
+            grid-column: 1 / span 8;
+            grid-row: 1 / span 2;
         }
 
-        .chatlog__component-media-gallery.chatlog__media-gallery-grid {
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            grid-auto-rows: 140px;
+        .chatlog__component-media-gallery.chatlog__media-gallery-triple .chatlog__component-media-item:nth-child(2) {
+            grid-column: 9 / span 4;
         }
 
-        .chatlog__component-media-item {
+        .chatlog__component-media-gallery.chatlog__media-gallery-triple .chatlog__component-media-item:nth-child(3) {
+            grid-column: 9 / span 4;
+        }
+
+        .chatlog__component-media-gallery.chatlog__media-gallery-grid .chatlog__component-media-item {
+            grid-column-end: span 6;
+            aspect-ratio: 3 / 2;
+        }
+
+        .chatlog__component-media-gallery .chatlog__component-media-item {
             position: relative;
             border-radius: 8px;
             overflow: hidden;
@@ -1464,25 +1679,14 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             width: 100%;
             height: 100%;
             min-height: 100px;
-        }
-
-        .chatlog__component-media-gallery.chatlog__media-gallery-triple .chatlog__component-media-item:first-child {
-            grid-row: span 2;
-            height: 100%;
+            grid-column-end: span 4;
         }
 
         .chatlog__component-media-item img {
             width: 100%;
             height: 100%;
             object-fit: cover;
-        }
-
-        .chatlog__component-media-item.chatlog__component-spoiler img {
-            filter: blur(44px);
-        }
-
-        .chatlog__component-media-item.chatlog__component-spoiler:hover img {
-            filter: blur(0);
+            background: rgba(0, 0, 0, 0.08);
         }
 
         .chatlog__component-media-description {
@@ -1490,10 +1694,11 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             bottom: 0;
             left: 0;
             right: 0;
-            background: rgba(0, 0, 0, 0.7);
+            background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.75) 100%);
             color: #fff;
-            padding: 4px;
+            padding: 6px;
             font-size: 12px;
+            z-index: 2;
         }
 
         .chatlog__component-separator {
@@ -1517,25 +1722,28 @@ If you have any issues or suggestions - open an issue on the Github Repository o
         .chatlog__component-file {
             display: flex;
             align-items: center;
-            background-color: #2f3136;
-            border: 1px solid #202225;
-            border-radius: 4px;
-            padding: 10px 12px;
+            background-color: #43464d;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 8px;
+            padding: 15px;
             margin: 6px 0;
             cursor: pointer;
-            max-width: 520px;
+            max-width: 320px;
             width: 100%;
             min-height: 44px;
             position: relative;
             overflow: hidden;
+            gap: 10px;
+            font-weight: 500;
         }
 
         .chatlog__component-file:hover {
-            background-color: #36393f;
+            background-color: #4b4e55;
         }
 
         .chatlog__component-file.chatlog__component-spoiler {
             overflow: hidden;
+            cursor: pointer;
         }
 
         .chatlog__component-file.chatlog__component-spoiler::before {
@@ -1556,7 +1764,7 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             transform: translate(-50%, -50%);
             color: #dcddde;
             background-color: rgba(0, 0, 0, 0.55);
-            font-weight: 600;
+            font-weight: 700;
             padding: 10px 16px;
             border-radius: 999px;
             letter-spacing: 0.05em;
@@ -1566,16 +1774,7 @@ If you have any issues or suggestions - open an issue on the Github Repository o
         }
 
         .chatlog__component-file.chatlog__component-spoiler > * {
-            filter: blur(26px);
-        }
-
-        .chatlog__component-file.chatlog__component-spoiler:hover::before,
-        .chatlog__component-file.chatlog__component-spoiler:hover::after {
-            opacity: 0;
-        }
-
-        .chatlog__component-file.chatlog__component-spoiler:hover > * {
-            filter: blur(0);
+            filter: blur(20px);
         }
 
         .chatlog__component-file-icon {
@@ -1612,7 +1811,7 @@ If you have any issues or suggestions - open an issue on the Github Repository o
         }
 
         .chatlog__component-file-size {
-            color: #72767d;
+            color: #b5bac1;
             font-size: 12px;
         }
 
@@ -1660,11 +1859,40 @@ If you have any issues or suggestions - open an issue on the Github Repository o
 
         <!--  Menu Dropdown (Selectmenu)  -->
         function showDropdown(dropdownID) {
-          <!--    If you are reading this and can improve the JS logic, let me know!-->
-          document.getElementById("dropdownButton" + dropdownID).classList.toggle("chatlog__component-dropdown-border");
-          document.getElementById("dropdownMenuContent" + dropdownID).classList.toggle("chatlog__component-dropdown-show");
-          document.getElementById("dropdownMenu" + dropdownID).classList.toggle("chatlog__component-dropdown-show");
+          const button = document.getElementById("dropdownButton" + dropdownID);
+          const menuContent = document.getElementById("dropdownMenuContent" + dropdownID);
+          const menu = document.getElementById("dropdownMenu" + dropdownID);
+          const isOpen = button.getAttribute("aria-expanded") === "true";
+          button.setAttribute("aria-expanded", isOpen ? "false" : "true");
+          button.classList.toggle("chatlog__component-dropdown-border");
+          if (menuContent) {
+            menuContent.classList.toggle("chatlog__component-dropdown-show");
+          }
+          if (menu) {
+            menu.classList.toggle("chatlog__component-dropdown-show");
+          }
         }
+
+        <!--  Component Spoiler (click to reveal thumbnails/media) -->
+        document.addEventListener('DOMContentLoaded', () => {
+          const spoilerTargets = document.querySelectorAll(
+            '.chatlog__component-thumbnail.chatlog__component-spoiler, ' +
+            '.chatlog__component-media-item.chatlog__component-spoiler, ' +
+            '.chatlog__component-container.chatlog__component-spoiler, ' +
+            '.chatlog__component-file.chatlog__component-spoiler'
+          );
+          spoilerTargets.forEach((el) => {
+            el.addEventListener('click', (e) => {
+              if (!el.classList.contains('chatlog__component-spoiler')) return;
+              e.preventDefault();
+              el.classList.remove('chatlog__component-spoiler');
+              const label = el.querySelector('.chatlog__component-spoiler-label');
+              if (label) {
+                label.remove();
+              }
+            });
+          });
+        });
 
         <!--  Code Block Markdown (```lang```) -->
         document.addEventListener('DOMContentLoaded', () => {

@@ -21,7 +21,7 @@ class Attachment:
         return self.attachments
 
     async def build_attachment(self):
-        is_spoiler = self._is_spoiler(self.attachments)
+        is_spoiler = self._is_spoiler()
 
         if self.attachments.content_type is not None:
             if "image" in self.attachments.content_type:
@@ -90,6 +90,14 @@ class Attachment:
         return "%s %s" % (s, size_name[i])
 
     async def get_file_icon(self) -> str:
+        return self.resolve_file_icon(
+            name=str(getattr(self.attachments, "filename", "") or ""),
+            content_type=str(getattr(self.attachments, "content_type", "") or ""),
+            url=str(getattr(self.attachments, "proxy_url", "") or "")
+        )
+
+    @staticmethod
+    def resolve_file_icon(name: str = "", content_type: str = "", url: str = "") -> str:
         acrobat_types = "pdf"
         webcode_types = "html", "htm", "css", "rss", "xhtml", "xml"
         code_types = "py", "cgi", "pl", "gadget", "jar", "msi", "wsf", "bat", "php", "js"
@@ -98,30 +106,50 @@ class Attachment:
             "sxi", "sxc", "sxd", "stw"
         )
         archive_types = (
-            "br", "rpm", "dcm", "epub", "zip", "tar", "rar", "gz", "bz2", "7x", "deb", "ar", "Z", "lzo", "lz", "lz4",
-            "arj", "pkg", "z"
+            "br", "rpm", "dcm", "epub", "zip", "tar", "rar", "gz", "bz2", "7x", "7z", "deb", "ar", "z", "lzo", "lz",
+            "lz4", "arj", "pkg"
         )
 
-        for tmp in [self.attachments.proxy_url, self.attachments.filename]:
-            if not tmp:
-                continue
-            extension = tmp.rsplit('.', 1)[-1]
-            if extension in acrobat_types:
-                return DiscordUtils.file_attachment_acrobat
-            elif extension in webcode_types:
-                return DiscordUtils.file_attachment_webcode
-            elif extension in code_types:
-                return DiscordUtils.file_attachment_code
-            elif extension in document_types:
-                return DiscordUtils.file_attachment_document
-            elif extension in archive_types:
-                return DiscordUtils.file_attachment_archive
-        
+        content_type = (content_type or "").lower()
+        if content_type.startswith("audio/"):
+            return DiscordUtils.file_attachment_audio
+
+        def _extension_from(value: str) -> str:
+            if not value:
+                return ""
+            cleaned = str(value).split("?", 1)[0].split("#", 1)[0]
+            if "." not in cleaned:
+                return ""
+            return cleaned.rsplit(".", 1)[-1].lower()
+
+        extension = ""
+        for candidate in (name, url):
+            extension = _extension_from(candidate)
+            if extension:
+                break
+
+        if not extension and content_type:
+            if "html" in content_type:
+                extension = "html"
+            elif "pdf" in content_type:
+                extension = "pdf"
+
+        if extension in acrobat_types:
+            return DiscordUtils.file_attachment_acrobat
+        elif extension in webcode_types:
+            return DiscordUtils.file_attachment_webcode
+        elif extension in code_types:
+            return DiscordUtils.file_attachment_code
+        elif extension in document_types:
+            return DiscordUtils.file_attachment_document
+        elif extension in archive_types:
+            return DiscordUtils.file_attachment_archive
+
         return DiscordUtils.file_attachment_unknown
 
-    @staticmethod
-    def _is_spoiler(attachment) -> bool:
+    def _is_spoiler(self) -> bool:
         """Check if an attachment is marked as a spoiler."""
+        attachment = self.attachments
         spoiler_attr = getattr(attachment, "spoiler", None)
         if callable(spoiler_attr):
             try:
@@ -145,13 +173,12 @@ class Attachment:
         if not isinstance(self.attachments, str):
             return
 
-        target = '<div class=chatlog__attachment>'
-        replacement = '<div class="chatlog__attachment chatlog__attachment-spoiler">'
-        if target in self.attachments:
-            self.attachments = self.attachments.replace(target, replacement, 1)
-        elif 'class="chatlog__attachment"' in self.attachments:
-            self.attachments = self.attachments.replace(
-                'class="chatlog__attachment"',
-                'class="chatlog__attachment chatlog__attachment-spoiler"',
-                1,
-            )
+        replacements = (
+            ('<div class=chatlog__attachment>', '<div class="chatlog__attachment chatlog__attachment-spoiler">'),
+            ('class="chatlog__attachment"', 'class="chatlog__attachment chatlog__attachment-spoiler"'),
+        )
+
+        for target, replacement in replacements:
+            if target in self.attachments:
+                self.attachments = self.attachments.replace(target, replacement, 1)
+                break
