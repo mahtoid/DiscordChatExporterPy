@@ -165,23 +165,18 @@ class MessageConstruct:
         if self.message_edited_at:
             self.message_edited_at = _set_edit_at(self.message_edited_at)
 
-        self.message.content = html.escape(self.message.content)
-        self.message.content = await fill_out(self.guild, message_content, [
-            ("MESSAGE_CONTENT", self.message.content, PARSE_MODE_MARKDOWN),
-            ("EDIT", self.message_edited_at, PARSE_MODE_NONE)
-        ])
-
         snapshots = self.get_message_snapshots()
         if snapshots:
-            self.message.content = f"{self.message.content} {' '.join(s.content for s in snapshots if hasattr(s, 'content'))}"
+            combined = f"{self.message.content} {' '.join(s.content for s in snapshots if hasattr(s, 'content'))}"
             self.forwarded = True
-            
-        self.message.content = await fill_out(
-                self.guild, message_content, [
-                    ("MESSAGE_CONTENT", self.message.content, PARSE_MODE_MARKDOWN),
-                    ("EDIT", self.message_edited_at, PARSE_MODE_NONE),
-                ],
-            )
+        else:
+            combined = self.message.content
+
+        combined = html.escape(combined or "")
+        self.message.content = await fill_out(self.guild, message_content, [
+            ("MESSAGE_CONTENT", combined, PARSE_MODE_MARKDOWN),
+            ("EDIT", self.message_edited_at, PARSE_MODE_NONE),
+        ])
 
     async def build_reference(self):
         if not self.message.reference:
