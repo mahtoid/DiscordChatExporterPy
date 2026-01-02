@@ -164,8 +164,6 @@ cython_debug/
 
 # Project specific ignores
 bot.py
-discord.builders
-discohook
 chat_exporter/config.py
 *.fs*
 *.sqlite
