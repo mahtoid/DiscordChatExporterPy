@@ -10,14 +10,7 @@ class ParseMarkdown:
 
 
     async def standard_message_flow(self):
-        self.parse_code_block_markdown()
-        self.https_http_links()
-        self.parse_embed_markdown()
-        self.parse_normal_markdown()
-
-        await self.parse_emoji()
-        self.reverse_code_block_markdown()
-        return self.content
+        return await self.standard_embed_flow()
 
     async def link_embed_flow(self):
         self.parse_embed_markdown()

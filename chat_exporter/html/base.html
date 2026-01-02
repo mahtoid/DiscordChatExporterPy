@@ -1539,6 +1539,10 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             width: min(100%, 560px);
             max-width: 560px;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            -webkit-flex-direction: column;
+            gap: 8px;
         }
 
         .chatlog__component-container::before {
@@ -1635,6 +1639,14 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             padding: 0;
             background: none;
             border: none;
+        }
+
+        .chatlog__component-text-display h1,
+        .chatlog__component-text-display h2,
+        .chatlog__component-text-display h3,
+        .chatlog__component-text-display h4,
+        .chatlog__component-text-display h5 {
+            margin: 0 0 6px 0;
         }
 
         .chatlog__component-thumbnail {
@@ -1750,15 +1762,12 @@ If you have any issues or suggestions - open an issue on the Github Repository o
         }
 
         .chatlog__component-separator {
-            margin: 8px 0;
-        }
-
-        .chatlog__component-separator.chatlog__separator-small {
-            height: 20px;
+            margin: unset;
+            height: 1px;
         }
 
         .chatlog__component-separator.chatlog__separator-large {
-            height: 50px;
+            margin: 8px 0;
         }
 
         .chatlog__separator-line {

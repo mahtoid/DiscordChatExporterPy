@@ -6,6 +6,7 @@ from chat_exporter.ext.discord_utils import DiscordUtils
 from chat_exporter.ext.html_generator import (
     PARSE_MODE_EMOJI,
     PARSE_MODE_MARKDOWN,
+    PARSE_MODE_EMBED,
     PARSE_MODE_NONE,
     component_button,
     component_container,
@@ -384,7 +385,7 @@ class Component:
         content = getattr(c, 'content', '')
         
         return await fill_out(self.guild, component_text_display, [
-            ("CONTENT", str(content), PARSE_MODE_MARKDOWN),
+            ("CONTENT", str(content), PARSE_MODE_EMBED),
         ])
 
     async def build_thumbnail(self, c):
@@ -494,6 +495,8 @@ class Component:
         """Build a separator component"""
         divider = self._get_attr(c, 'divider', True)
         spacing = self._get_attr(c, 'spacing', 1)
+        if not isinstance(spacing, int) and hasattr(spacing, "value"):
+            spacing = spacing.value
         
         # Spacing: 1 = SMALL, 2 = LARGE
         spacing_class = "chatlog__separator-large" if spacing == 2 else "chatlog__separator-small"
