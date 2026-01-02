@@ -183,12 +183,29 @@ class ParseMention:
             match = re.search(regex, self.content)
             while match is not None:
                 timestamp = int(match.group(1)) - 1
-                time_stamp = time.gmtime(timestamp)
-                datetime_stamp = datetime.datetime(2010, *time_stamp[1:6], tzinfo=pytz.utc)
-                ui_time = datetime_stamp.strftime(strf)
-                ui_time = ui_time.replace(str(datetime_stamp.year), str(time_stamp[0]))
-                tooltip_time = datetime_stamp.strftime("%A, %e %B %Y at %H:%M")
-                tooltip_time = tooltip_time.replace(str(datetime_stamp.year), str(time_stamp[0]))
+                try:
+                    time_stamp = time.gmtime(timestamp)
+                    datetime_stamp = datetime.datetime(2010, *time_stamp[1:6], tzinfo=pytz.utc)
+                    ui_time = datetime_stamp.strftime(strf)
+                    ui_time = ui_time.replace(str(datetime_stamp.year), str(time_stamp[0]))
+                    tooltip_time = datetime_stamp.strftime("%A, %e %B %Y at %H:%M")
+                    tooltip_time = tooltip_time.replace(str(datetime_stamp.year), str(time_stamp[0]))
+                except (OSError, OverflowError, ValueError):
+                    # overflow error occurs when timestamp is too large, manual parsing
+                    CYCLE_SECONDS = 12_622_780_800  # Exactly 400 years in seconds
+                    # Project the timestamp into a safe range that doesn't cause issues with system or python limitations
+                    # Strip out 400-year chunks until the timestamp fits in Python's logic
+                    safe_ts = timestamp % CYCLE_SECONDS
+                    years_shifted = (timestamp // CYCLE_SECONDS) * 400
+                    # Create the datetime object using the safe timestamp
+                    dt = datetime.datetime.fromtimestamp(safe_ts, pytz.utc)
+                    # Format normally, but inject the real year calculation
+                    final_year = dt.year + years_shifted
+                    ui_time = dt.strftime(strf)
+                    ui_time = ui_time.replace(str(dt.year), str(final_year))
+                    tooltip_time = dt.strftime("%A, %e %B %Y at %H:%M")
+                    tooltip_time = tooltip_time.replace(str(dt.year), str(final_year))
+
                 original = match.group().replace("&lt;", "<").replace("&gt;", ">")
                 replacement = (
                     f'<span class="unix-timestamp" data-timestamp="{tooltip_time}" raw-content="{original}">'
