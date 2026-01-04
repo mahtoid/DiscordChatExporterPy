@@ -173,6 +173,10 @@ class MessageConstruct:
             combined = self.message.content
 
         combined = html.escape(combined or "")
+
+        if self.forwarded:
+            combined = f'<div class="quote">{combined}</div>'
+
         self.message.content = await fill_out(self.guild, message_content, [
             ("MESSAGE_CONTENT", combined, PARSE_MODE_MARKDOWN),
             ("EDIT", self.message_edited_at, PARSE_MODE_NONE),
