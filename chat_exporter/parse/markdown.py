@@ -324,15 +324,16 @@ class ParseMarkdown:
                 quote_buffer.append(match.group(1))
             else:
                 if quote_buffer:
-                    merged_content.append(f'<div class="quote">{"\n".join(quote_buffer)}</div>')
+                    quote_text = "\n".join(quote_buffer)
+                    merged_content.append(f'<div class="quote">{quote_text}</div>')
                     quote_buffer = []
                 merged_content.append(line)
 
         if quote_buffer:
-            merged_content.append(f'<div class="quote">{"\n".join(quote_buffer)}</div>')
+            quote_text = "\n".join(quote_buffer)
+            merged_content.append(f'<div class="quote">{quote_text}</div>')
 
         merged = "\n".join(merged_content)
-        # Remove a single trailing newline after a quote block; the block element already provides separation.
         merged = re.sub(r"</div>[ \t]*\n(?!\n)", "</div>", merged)
         return merged
 
