@@ -331,7 +331,7 @@ class MessageConstruct:
                     self.message.reference = message_reference_forwarded
 
         for c in self.message.components:
-            self.components += await Component(c, self.guild).flow()
+            self.components += await Component(c, self.guild, self.message.attachments).flow()
 
         for snapshot in self.get_message_snapshots():
             if hasattr(snapshot, "components"):

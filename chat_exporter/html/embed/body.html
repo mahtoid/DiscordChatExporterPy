@@ -1,29 +1,18 @@
-<div class=chatlog__embed>
-    <div class="chatlog__embed-color-pill" style="background-color:rgba({{EMBED_R}}, {{EMBED_G}}, {{EMBED_B}}, 1)"></div>
-    <div class=chatlog__embed-content-container>
-        <div class=chatlog__embed-content>
-            <div class=chatlog__embed-text>
-                {{EMBED_AUTHOR}}
-                {{EMBED_TITLE}}
+<div class="chatlog__embed" style="--embed-color: rgba({{EMBED_R}}, {{EMBED_G}}, {{EMBED_B}}, 1)">
+    <div class="chatlog__embed-content">
+        <div class="chatlog__embed-text">
+            {{EMBED_AUTHOR}}
+            {{EMBED_TITLE}}
 
-                {{EMBED_DESC}}
-                <div class="chatlog__embed-fields">
-                    {{EMBED_FIELDS}}
-                </div>
-
-
-                {{EMBED_IMAGE}}
-
+            {{EMBED_DESC}}
+            <div class="chatlog__embed-fields">
+                {{EMBED_FIELDS}}
             </div>
-
-
-
-            {{EMBED_THUMBNAIL}}
-
         </div>
-
-        {{EMBED_FOOTER}}
-
+        {{EMBED_THUMBNAIL}}
     </div>
-</div>
 
+    {{EMBED_IMAGE}}
+
+    {{EMBED_FOOTER}}
+</div>

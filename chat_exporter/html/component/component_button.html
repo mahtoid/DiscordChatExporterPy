@@ -1,5 +1,7 @@
-<div class="chatlog__component-button {{DISABLED}}" style=background-color:{{STYLE}}>
-   <a href="{{URL}}" style=text-decoration:none{{TARGET}}>
-    <span class="chatlog__button-label">{{EMOJI}}{{LABEL}}{{ICON}}</span>
-    </a>
-</div>
+<a class="chatlog__component-button {{BUTTON_VARIANT}} {{DISABLED}}" style="--button-color: {{STYLE}}" href="{{URL}}" {{TARGET}} aria-disabled="{{ARIA_DISABLED}}">
+  <span class="chatlog__button-inner">
+    <span class="chatlog__button-emoji">{{EMOJI}}</span>
+    <span class="chatlog__button-label">{{LABEL}}</span>
+    <span class="chatlog__button-icon">{{ICON}}</span>
+  </span>
+</a>

@@ -170,3 +170,6 @@ chat_exporter/config.py
 
 .idea/*
 .idea\*
+
+# macOS
+.DS_Store

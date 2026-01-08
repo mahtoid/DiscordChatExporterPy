@@ -65,7 +65,7 @@ class Embed:
     def build_colour(self):
         self.r, self.g, self.b = (
             (self.embed.colour.r, self.embed.colour.g, self.embed.colour.b)
-            if self.embed.colour != self.check_against else (0x20, 0x22, 0x25)  # default colour
+            if self.embed.colour != self.check_against else (0x4A, 0x4A, 0x50)
         )
 
     async def build_title(self):

@@ -1,6 +1,9 @@
 <div class="chatlog__component-dropdown {{DISABLED}}">
-  <button onclick="showDropdown({{ID}})" class="dropdownButton" id="dropdownButton{{ID}}">{{PLACEHOLDER}} {{ICON}}</button>
-  <div id="dropdownMenuContent{{ID}}">
+  <button onclick="showDropdown({{ID}})" class="dropdownButton" id="dropdownButton{{ID}}" aria-haspopup="listbox" aria-expanded="false" title="{{PLACEHOLDER_TITLE}}">
+    <span class="dropdownButtonLabel">{{PLACEHOLDER}}</span>
+    {{ICON}}
+  </button>
+  <div id="dropdownMenuContent{{ID}}" class="dropdownMenuContent">
     {{CONTENT}}
   </div>
 </div>

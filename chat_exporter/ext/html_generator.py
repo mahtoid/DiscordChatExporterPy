@@ -77,6 +77,16 @@ component_menu = read_file(dir_path + "/html/component/component_menu.html")
 component_menu_options = read_file(dir_path + "/html/component/component_menu_options.html")
 component_menu_options_emoji = read_file(dir_path + "/html/component/component_menu_options_emoji.html")
 
+# COMPONENTS V2
+component_container = read_file(dir_path + "/html/component/component_container.html")
+component_section = read_file(dir_path + "/html/component/component_section.html")
+component_text_display = read_file(dir_path + "/html/component/component_text_display.html")
+component_thumbnail = read_file(dir_path + "/html/component/component_thumbnail.html")
+component_media_gallery = read_file(dir_path + "/html/component/component_media_gallery.html")
+component_media_gallery_item = read_file(dir_path + "/html/component/component_media_gallery_item.html")
+component_separator = read_file(dir_path + "/html/component/component_separator.html")
+component_file = read_file(dir_path + "/html/component/component_file.html")
+
 # EMBED
 embed_body = read_file(dir_path + "/html/embed/body.html")
 embed_title = read_file(dir_path + "/html/embed/title.html")
