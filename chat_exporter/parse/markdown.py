@@ -136,10 +136,12 @@ class ParseMarkdown:
             [r"__(.*?)__", '<span style="text-decoration: underline">%s</span>'],
             [r"\*\*(.*?)\*\*", '<strong>%s</strong>'],
             [r"\*(.*?)\*", '<em>%s</em>'],
+            [r"(?<!\w)_(.*?)_(?!\w)", '<em>%s</em>'],
             [r"~~(.*?)~~", '<span style="text-decoration: line-through">%s</span>'],
             [r"^###\s(.*?)\n", '<h3>%s</h1>'],
             [r"^##\s(.*?)\n", '<h2>%s</h1>'],
             [r"^#\s(.*?)\n", '<h1>%s</h1>'],
+            [r"^-#\s(.*?)\n", '<small>%s</small>'],
             [r"\|\|(.*?)\|\|", '<span class="spoiler spoiler--hidden" onclick="showSpoiler(event, this)"> <span '
                                'class="spoiler-text">%s</span></span>'],
         )
