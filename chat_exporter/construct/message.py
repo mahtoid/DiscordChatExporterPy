@@ -24,6 +24,7 @@ from chat_exporter.ext.html_generator import (
     message_content,
     message_reference,
     message_reference_unknown,
+    message_reference_forwarded,
     message_interaction,
     img_attachment,
     start_message,
@@ -84,6 +85,14 @@ class MessageConstruct:
 
         self.message_created_at, self.message_edited_at = self.set_time()
         self.meta_data = meta_data
+        self.forwarded = False
+
+    def get_message_snapshots(self):
+        if hasattr(self.message, "message_snapshots"):
+            return self.message.message_snapshots
+        elif hasattr(self.message, "snapshots"):
+            return self.message.snapshots
+        return []
 
     @staticmethod
     def _collect_attachment_urls(attachment):
@@ -191,17 +200,28 @@ class MessageConstruct:
             ]
 
     async def build_content(self):
-        if not self.message.content:
+        if not self.message.content and not self.get_message_snapshots():
             self.message.content = ""
             return
 
         if self.message_edited_at:
             self.message_edited_at = _set_edit_at(self.message_edited_at)
 
-        self.message.content = html.escape(self.message.content)
+        snapshots = self.get_message_snapshots()
+        if snapshots:
+            combined = f"{self.message.content} {' '.join(s.content for s in snapshots if hasattr(s, 'content'))}"
+            self.forwarded = True
+        else:
+            combined = self.message.content
+
+        combined = html.escape(combined or "")
+
+        if self.forwarded:
+            combined = f'<div class="quote">{combined}</div>'
+
         self.message.content = await fill_out(self.guild, message_content, [
-            ("MESSAGE_CONTENT", self.message.content, PARSE_MODE_MARKDOWN),
-            ("EDIT", self.message_edited_at, PARSE_MODE_NONE)
+            ("MESSAGE_CONTENT", combined, PARSE_MODE_MARKDOWN),
+            ("EDIT", self.message_edited_at, PARSE_MODE_NONE),
         ])
 
     async def build_reference(self):
@@ -216,6 +236,9 @@ class MessageConstruct:
                 message: discord.Message = await self.message.channel.fetch_message(self.message.reference.message_id)
             except (discord.NotFound, discord.HTTPException) as e:
                 self.message.reference = ""
+                if self.forwarded:
+                    self.message.reference = message_reference_forwarded
+                    return
                 if isinstance(e, discord.NotFound):
                     self.message.reference = message_reference_unknown
                 return
@@ -293,13 +316,30 @@ class MessageConstruct:
         ])
 
     async def build_sticker(self):
-        if not self.message.stickers or not hasattr(self.message.stickers[0], "url"):
-            return
+        sticker = None
+        sticker_image_url = None
+        
+        if self.message.stickers and hasattr(self.message.stickers[0], "url"):
+            sticker_image_url = self.message.stickers[0].url
+        if not sticker_image_url:
+            for snapshot in self.get_message_snapshots():
+                if hasattr(snapshot, "stickers") and snapshot.stickers and hasattr(snapshot.stickers[0], "url"):
+                    sticker_image_url = snapshot.stickers[0].url
+                    self.message.reference = message_reference_forwarded
+                    break
 
-        sticker_image_url = self.message.stickers[0].url
+        if not sticker_image_url:
+            return
+            
 
         if sticker_image_url.endswith(".json"):
-            sticker = await self.message.stickers[0].fetch()
+            try:
+                sticker = await self.message.stickers[0].fetch()
+            except:
+                for snapshot in self.get_message_snapshots():
+                    if hasattr(snapshot, "stickers") and snapshot.stickers and hasattr(snapshot.stickers[0], "url"):
+                        sticker = await snapshot.stickers[0].fetch()
+                        break
             sticker_image_url = (
                 f"https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/stickers/{sticker.pack_id}/{sticker.id}.gif"
             )
@@ -312,6 +352,12 @@ class MessageConstruct:
     async def build_assets(self):
         processed_attachments = []
         attachment_urls = set()
+
+        for snapshot in self.get_message_snapshots():
+            if hasattr(snapshot, "embeds"):
+                for se in snapshot.embeds:
+                    self.embeds += await Embed(se, self.guild).flow()
+                    self.message.reference = message_reference_forwarded
 
         for a in self.message.attachments:
             if self.attachment_handler and isinstance(self.attachment_handler, AttachmentHandler):
@@ -326,9 +372,23 @@ class MessageConstruct:
 
         for a in processed_attachments:
             self.attachments += await Attachment(a, self.guild).flow()
+        
+        for snapshot in self.get_message_snapshots():
+            if hasattr(snapshot, "attachments"):
+                for sa in snapshot.attachments:
+                    if self.attachment_handler:
+                        sa = await self.attachment_handler.process_asset(sa)
+                    self.attachments += await Attachment(sa,self.guild).flow()
+                    self.message.reference = message_reference_forwarded
 
         for c in self.message.components:
             self.components += await Component(c, self.guild, self.message.attachments).flow()
+
+        for snapshot in self.get_message_snapshots():
+            if hasattr(snapshot, "components"):
+                for ac in snapshot.components:
+                    self.components += await Component(ac,self.guild).flow()
+                    self.message.reference = message_reference_forwarded
 
         for r in self.message.reactions:
             self.reactions += await Reaction(r, self.guild).flow()

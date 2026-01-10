@@ -4,6 +4,8 @@ import pathlib
 from typing import Union
 import urllib.parse
 
+import asyncio
+import os
 
 import aiohttp
 from chat_exporter.ext.discord_import import discord
@@ -68,3 +70,37 @@ class AttachmentToDiscordChannelHandler(AttachmentHandler):
 		except discord.errors.HTTPException as e:
 			# discords http errors, including missing permissions
 			raise e
+		
+class AttachmentToWebhookHandler(AttachmentHandler):
+	"""Save the attachment to a discord channel using webhook and embed the assets in the transcript from there."""
+
+	def __init__(self, webhook_link: str) -> None:
+		self.webhook_link = webhook_link
+		self.size_limit = 8 * 1024 * 1024 # 8 MB = 8 * 1024 KB * 1024 B
+		self.placeholder_path = os.path.join(os.path.dirname(__file__), "too_large.png")
+
+	async def process_asset(self, attachment: discord.Attachment) -> discord.Attachment:
+		"""Implement this to process the asset and return a url to the stored attachment.
+		:param attachment: discord.Attachment
+		:return: str"""
+		try:  
+			if attachment.size > self.size_limit:
+				file = discord.File(self.placeholder_path, filename="too_large.png")
+			else:
+				file = await attachment.to_file()
+				
+			async with aiohttp.ClientSession() as session:
+				webhook = discord.Webhook.from_url(self.webhook_link, session=session)
+				for i in range(3):
+					try:
+						message = await webhook.send(file=file, wait=True)
+						break
+					except aiohttp.ClientConnectionError:
+						print(f"Retry {i+1}/3 | Error - Webhook connection failed.")
+						await asyncio.sleep(3) # to prevent frequent retries on connection error
+
+		except discord.errors.HTTPException as e:
+			# discords http errors, including missing permissions
+			raise e
+		else:
+			return message.attachments[0]
