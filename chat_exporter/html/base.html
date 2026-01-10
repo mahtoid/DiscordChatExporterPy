@@ -474,6 +474,9 @@ If you have any issues or suggestions - open an issue on the Github Repository o
 
         .chatlog__attachment.chatlog__attachment-spoiler {
             overflow: hidden;
+            position: relative;
+            display: block;
+            width: fit-content;
         }
 
         .chatlog__attachment.chatlog__attachment-spoiler::before {
@@ -554,7 +557,7 @@ If you have any issues or suggestions - open an issue on the Github Repository o
 
         .chatlog__embed {
             --embed-color: rgba(74, 74, 80, 1);
-            display: inline-grid;
+            display: grid;
             grid-template-columns: minmax(0, 1fr) auto;
             column-gap: 1rem;
             margin-top: 0.35em;

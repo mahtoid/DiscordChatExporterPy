@@ -1,5 +1,7 @@
 import html
 
+from pytz import timezone
+
 from chat_exporter.ext.discord_import import discord
 
 from chat_exporter.ext.html_generator import (
@@ -44,9 +46,11 @@ class Embed:
 
     check_against = None
 
-    def __init__(self, embed, guild):
+    def __init__(self, embed, guild, pytz_timezone=None, military_time=True):
         self.embed: discord.Embed = embed
         self.guild: discord.Guild = guild
+        self.pytz_timezone = pytz_timezone
+        self.military_time = military_time
 
     async def flow(self):
         self.check_against = _gather_checker()
@@ -68,13 +72,45 @@ class Embed:
             if self.embed.colour != self.check_against else (0x4A, 0x4A, 0x50)
         )
 
-    async def build_title(self):
-        self.title = html.escape(self.embed.title) if self.embed.title != self.check_against else ""
+    def _format_embed_timestamp(self) -> str:
+        timestamp = getattr(self.embed, "timestamp", None)
+        if not timestamp or timestamp == self.check_against:
+            return ""
 
-        if self.title:
-            self.title = await fill_out(self.guild, embed_title, [
-                ("EMBED_TITLE", self.title, PARSE_MODE_MARKDOWN)
-            ])
+        time_value = timestamp
+        if not getattr(time_value, "tzinfo", None):
+            time_value = timezone("UTC").localize(time_value)
+
+        tz_name = self.pytz_timezone or getattr(self.guild, "timezone", "UTC") or "UTC"
+        try:
+            tz = timezone(tz_name)
+        except Exception:
+            tz = timezone("UTC")
+
+        local_time = time_value.astimezone(tz)
+        if self.military_time:
+            return local_time.strftime("%d-%m-%Y %H:%M")
+        return local_time.strftime("%d-%m-%Y %I:%M %p")
+
+    async def build_title(self):
+        raw_title = html.escape(self.embed.title) if self.embed.title != self.check_against else ""
+
+        if not raw_title:
+            self.title = ""
+            return
+
+        title_html = await fill_out(self.guild, "{{EMBED_TITLE}}", [
+            ("EMBED_TITLE", raw_title, PARSE_MODE_MARKDOWN)
+        ])
+
+        url_value = getattr(self.embed, "url", self.check_against)
+        if url_value and url_value != self.check_against:
+            safe_url = html.escape(str(url_value), quote=True)
+            title_html = f'<a href="{safe_url}">{title_html}</a>'
+
+        self.title = await fill_out(self.guild, embed_title, [
+            ("EMBED_TITLE", title_html, PARSE_MODE_NONE)
+        ])
 
     async def build_description(self):
         self.description = html.escape(self.embed.description) if self.embed.description != self.check_against else ""
@@ -136,7 +172,7 @@ class Embed:
             if self.embed.thumbnail and self.embed.thumbnail.url != self.check_against else ""
 
     async def build_footer(self):
-        self.footer = html.escape(self.embed.footer.text) if (
+        footer_text = html.escape(self.embed.footer.text) if (
                 self.embed.footer and self.embed.footer.text != self.check_against
         ) else ""
 
@@ -144,17 +180,24 @@ class Embed:
                 self.embed.footer and self.embed.footer.icon_url != self.check_against
         ) else None
 
-        if not self.footer:
+        timestamp_text = self._format_embed_timestamp()
+        if footer_text and timestamp_text:
+            footer_text = f"{footer_text} | {timestamp_text}"
+        elif not footer_text and timestamp_text:
+            footer_text = timestamp_text
+
+        if not footer_text:
+            self.footer = ""
             return
 
         if footer_icon is not None:
             self.footer = await fill_out(self.guild, embed_footer_icon, [
-                ("EMBED_FOOTER", self.footer, PARSE_MODE_NONE),
+                ("EMBED_FOOTER", footer_text, PARSE_MODE_NONE),
                 ("EMBED_FOOTER_ICON", footer_icon, PARSE_MODE_NONE)
             ])
         else:
             self.footer = await fill_out(self.guild, embed_footer, [
-                ("EMBED_FOOTER", self.footer, PARSE_MODE_NONE)])
+                ("EMBED_FOOTER", footer_text, PARSE_MODE_NONE)])
 
     async def build_embed(self):
         self.embed = await fill_out(self.guild, embed_body, [
