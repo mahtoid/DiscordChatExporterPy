@@ -85,6 +85,48 @@ class MessageConstruct:
         self.message_created_at, self.message_edited_at = self.set_time()
         self.meta_data = meta_data
 
+    @staticmethod
+    def _collect_attachment_urls(attachment):
+        urls = set()
+        for attr in ("url", "proxy_url"):
+            value = getattr(attachment, attr, None)
+            if value:
+                urls.add(str(value))
+        return urls
+
+    @staticmethod
+    def _embed_has_non_image_content(embed) -> bool:
+        if getattr(embed, "title", None):
+            return True
+        if getattr(embed, "description", None):
+            return True
+        if getattr(embed, "fields", None):
+            if len(embed.fields) > 0:
+                return True
+        author = getattr(embed, "author", None)
+        if author and getattr(author, "name", None):
+            return True
+        footer = getattr(embed, "footer", None)
+        if footer and getattr(footer, "text", None):
+            return True
+        thumbnail = getattr(embed, "thumbnail", None)
+        if thumbnail and getattr(thumbnail, "url", None):
+            return True
+        return False
+
+    def _is_duplicate_image_embed(self, embed, attachment_urls) -> bool:
+        if not attachment_urls:
+            return False
+        image = getattr(embed, "image", None)
+        if not image:
+            return False
+        image_url = getattr(image, "proxy_url", None) or getattr(image, "url", None)
+        if not image_url or str(image_url) not in attachment_urls:
+            return False
+        if self._embed_has_non_image_content(embed):
+            return False
+        return True
+
     async def construct_message(
         self,
     ) -> (str, dict):
@@ -268,12 +310,21 @@ class MessageConstruct:
         ])
 
     async def build_assets(self):
-        for e in self.message.embeds:
-            self.embeds += await Embed(e, self.guild).flow()
+        processed_attachments = []
+        attachment_urls = set()
 
         for a in self.message.attachments:
             if self.attachment_handler and isinstance(self.attachment_handler, AttachmentHandler):
                 a = await self.attachment_handler.process_asset(a)
+            processed_attachments.append(a)
+            attachment_urls.update(self._collect_attachment_urls(a))
+
+        for e in self.message.embeds:
+            if self._is_duplicate_image_embed(e, attachment_urls):
+                continue
+            self.embeds += await Embed(e, self.guild, self.pytz_timezone, self.military_time).flow()
+
+        for a in processed_attachments:
             self.attachments += await Attachment(a, self.guild).flow()
 
         for c in self.message.components:
