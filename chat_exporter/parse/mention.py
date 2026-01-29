@@ -68,25 +68,44 @@ class ParseMention:
 
 
     async def escape_mentions(self):
+        content = ""
+        previous_match_end = 0
         for match in re.finditer("(%s|%s|%s|%s|%s|%s|%s|%s)"
                                  % (self.REGEX_ROLES, self.REGEX_MEMBERS, self.REGEX_CHANNELS, self.REGEX_EMOJIS,
                                     self.REGEX_ROLES_2, self.REGEX_MEMBERS_2, self.REGEX_CHANNELS_2,
                                     self.REGEX_EMOJIS_2), self.content):
-            pre_content = self.content[:match.start()]
+            pre_content = self.content[previous_match_end:match.start()]
             post_content = self.content[match.end():]
             match_content = self.content[match.start():match.end()]
+            match_content = await self.escape_mention_starters(match_content)
 
-            match_content = match_content.replace("<", self.ESCAPE_LT)
-            match_content = match_content.replace(">", self.ESCAPE_GT)
-            match_content = match_content.replace("&", self.ESCAPE_AMP)
+            content += pre_content + match_content
+            previous_match_end = match.end()
+        if previous_match_end < len(self.content) - 1:
+            content += self.content[previous_match_end:]
+        self.content = content
 
-            self.content = pre_content + match_content + post_content
-
-    async def unescape_mentions(self):
-        self.content = self.content.replace(self.ESCAPE_LT, "<")
-        self.content = self.content.replace(self.ESCAPE_GT, ">")
-        self.content = self.content.replace(self.ESCAPE_AMP, "&")
-        pass
+    async def unescape_mentions(self, content: str = None):
+        had_content = content is not None
+        if content is None:
+            content = self.content
+        content = content.replace(self.ESCAPE_LT, "<")
+        content = content.replace(self.ESCAPE_GT, ">")
+        content = content.replace(self.ESCAPE_AMP, "&")
+        if not had_content:
+            self.content = content
+        return content
+    
+    async def escape_mention_starters(self, content: str = None):
+        had_content = content is not None
+        if content is None:
+            content = self.content
+        content = content.replace("<", self.ESCAPE_LT)
+        content = content.replace(">", self.ESCAPE_GT)
+        content = content.replace("&", self.ESCAPE_AMP)
+        if not had_content:
+            self.content = content
+        return content
 
     async def channel_mention(self):
         holder = self.REGEX_CHANNELS, self.REGEX_CHANNELS_2
@@ -159,7 +178,7 @@ class ParseMention:
                     member_name = member.display_name
                 except AttributeError:
                     member_name = member
-
+                member_name = await self.escape_mention_starters(member_name)
                 if member is not None:
                     replacement = '<span class="mention" title="%s">@%s</span>' \
                                   % (str(member_id), str(member_name))
@@ -170,13 +189,11 @@ class ParseMention:
                                                     replacement)
 
                 match = re.search(regex, self.content)
+                
+        await self.unescape_mentions()
 
     async def time_mention(self):
         holder = self.REGEX_TIME_HOLDER
-        timezone = pytz.timezone("UTC")
-
-        if hasattr(self.guild, "timezone"):
-            timezone = pytz.timezone(self.guild.timezone)
 
         for p in holder:
             regex, strf = p
@@ -204,11 +221,6 @@ class ParseMention:
                     ui_time = ui_time.replace(str(dt.year), str(final_year))
                     tooltip_time = dt.strftime("%A, %e %B %Y at %H:%M")
                     tooltip_time = tooltip_time.replace(str(dt.year), str(final_year))
-                datetime_stamp = datetime.datetime(2010, *time_stamp[1:6], tzinfo=pytz.utc)
-                ui_time = datetime_stamp.strftime(strf)
-                ui_time = ui_time.replace(str(datetime_stamp.year), str(time_stamp[0]))
-                tooltip_time = datetime_stamp.strftime("%A, %e %B %Y at %H:%M")
-                tooltip_time = tooltip_time.replace(str(datetime_stamp.year), str(time_stamp[0]))
                 original = match.group().replace("&lt;", "<").replace("&gt;", ">")
                 replacement = (
                     f'<span class="unix-timestamp" data-timestamp="{tooltip_time}" raw-content="{original}">'
