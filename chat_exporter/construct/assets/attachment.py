@@ -6,6 +6,8 @@ from chat_exporter.ext.html_generator import (
     audio_attachment,
     fill_out,
     img_attachment,
+    img_grid,
+    img_grid_item,
     msg_attachment,
     video_attachment,
 )
@@ -43,6 +45,25 @@ class Attachment:
         await self.file()
         if is_spoiler:
             self._mark_spoiler()
+
+    async def get_data(self):
+        is_spoiler = self._is_spoiler()
+        if self.attachments.content_type is not None:
+            if "image" in self.attachments.content_type:
+                return {
+                    "type": "image",
+                    "url": self.attachments.proxy_url,
+                    "is_spoiler": is_spoiler,
+                    "filename": self.attachments.filename,
+                }
+            elif "video" in self.attachments.content_type:
+                return {
+                    "type": "video",
+                    "url": self.attachments.proxy_url,
+                    "is_spoiler": is_spoiler,
+                    "filename": self.attachments.filename,
+                }
+        return None
 
     async def image(self):
         self.attachments = await fill_out(
@@ -222,10 +243,62 @@ class Attachment:
 
         replacements = (
             ("<div class='chatlog__attachment'>", "<div class='chatlog__attachment chatlog__attachment-spoiler'>"),
+            ("<div class=\"chatlog__attachment\">", "<div class=\"chatlog__attachment chatlog__attachment-spoiler\">"),
+            ("<div class=chatlog__attachment>", "<div class=\"chatlog__attachment chatlog__attachment-spoiler\">"),
             ("class='chatlog__attachment'", "class='chatlog__attachment chatlog__attachment-spoiler'"),
+            ("class=\"chatlog__attachment\"", "class=\"chatlog__attachment chatlog__attachment-spoiler\""),
+            ("class=chatlog__attachment", "class=\"chatlog__attachment chatlog__attachment-spoiler\""),
         )
 
         for target, replacement in replacements:
             if target in self.attachments:
                 self.attachments = self.attachments.replace(target, replacement, 1)
                 break
+
+
+class AttachmentGrid:
+    def __init__(self, attachments, guild, splitIndex):
+        self.attachments = attachments
+        self.guild = guild
+        self.splitIndex = splitIndex
+
+    async def flow(self):
+        grid_items_html = ""
+        for a in self.attachments:
+            item_content = await Attachment(a, self.guild).flow()
+            
+            grid_items_html += await fill_out(
+                self.guild,
+                img_grid_item,
+                [
+                    ("ITEM_CLASS", "", PARSE_MODE_NONE),
+                    ("ITEM_CONTENT", item_content, PARSE_MODE_NONE),
+                ],
+            )
+
+        grid_class = self._get_grid_class(len(self.attachments), self.splitIndex)
+
+        return await fill_out(
+            self.guild,
+            img_grid,
+            [
+                ("GRID_CLASS", grid_class, PARSE_MODE_NONE),
+                ("GRID_ITEMS", grid_items_html, PARSE_MODE_NONE),
+            ],
+        )
+
+    @staticmethod
+    def _get_grid_class(count, splitIndex):
+        if count == 1:
+            return "chatlog__attachment-grid--1x1"
+        elif count == 2:
+            return "chatlog__attachment-grid--1x2"
+        elif count == 3:
+            if splitIndex == 0:
+                return "chatlog__attachment-grid--1x3" # mosaic
+            else:
+                return "chatlog__attachment-grid--3x3"
+        elif count <= 4:
+            return "chatlog__attachment-grid--2x2"
+        else:
+            return "chatlog__attachment-grid--3x3"

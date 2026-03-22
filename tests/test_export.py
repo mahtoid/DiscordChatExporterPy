@@ -391,14 +391,14 @@ class TestRawExport(unittest.TestCase):
                 {"name": "Field 3", "value": "Value 3", "inline": False},
             ],
             author_name="Author Name",
-            author_icon="https://example.com/author.png",
-            author_url="https://example.com/author",
+            author_icon="https://mahto.id/assets/me.png",
+            author_url="https://mahto.id/assets/me.png",
             footer_text="Footer Text",
-            footer_icon="https://example.com/footer.png",
-            image_url="https://example.com/image.png",
-            thumbnail_url="https://example.com/thumbnail.png",
+            footer_icon="https://mahto.id/assets/me.png",
+            image_url="https://mahto.id/assets/me.png",
+            thumbnail_url="https://mahto.id/assets/me.png",
             timestamp=datetime(2024, 1, 1, 12, 0, 0, tzinfo=pytz.utc),
-            url="https://example.com/embed",
+            url="https://mahto.id/assets/me.png",
         )
 
         msg = _make_message("Message with complex embed", guild=guild)
@@ -411,8 +411,8 @@ class TestRawExport(unittest.TestCase):
         self.assertIn("Value 3", html)
         self.assertIn("Author Name", html)
         self.assertIn("Footer Text", html)
-        self.assertIn("https://example.com/image.png", html)
-        self.assertIn("https://example.com/thumbnail.png", html)
+        self.assertIn("https://mahto.id/assets/me.png", html)
+        self.assertIn("https://mahto.id/assets/me.png", html)
 
     def test_message_with_multiple_embeds_and_attachments(self):
         """Test a message that has multiple embeds and multiple attachments."""
@@ -422,16 +422,16 @@ class TestRawExport(unittest.TestCase):
         embed2 = _make_embed(title="Embed 2", description="Description 2")
         
         att1 = MagicMock(spec=discord.Attachment)
-        att1.url = "https://example.com/file1.png"
-        att1.proxy_url = "https://example.com/file1.png"
+        att1.url = "https://mahto.id/assets/me.png"
+        att1.proxy_url = "https://mahto.id/assets/me.png"
         att1.filename = "file1.png"
         att1.size = 1048576
         att1.content_type = "image/png"
         att1.is_spoiler.return_value = False
         
         att2 = MagicMock(spec=discord.Attachment)
-        att2.url = "https://example.com/file2.txt"
-        att2.proxy_url = "https://example.com/file2.txt"
+        att2.url = "https://mahto.id/assets/me.png"
+        att2.proxy_url = "https://mahto.id/assets/me.png"
         att2.filename = "file2.txt"
         att2.size = 1024
         att2.content_type = "text/plain"
@@ -445,5 +445,161 @@ class TestRawExport(unittest.TestCase):
         
         self.assertIn("Embed 1", html)
         self.assertIn("Embed 2", html)
-        self.assertIn("file1.png", html)
+        self.assertIn("https://mahto.id/assets/me.png", html)
         self.assertIn("file2.txt", html)
+
+    def test_image_spoiler(self):
+        """An image marked as a spoiler should have the spoiler CSS class."""
+        guild = _make_guild()
+        
+        att = MagicMock(spec=discord.Attachment)
+        att.url = "https://mahto.id/assets/me.png"
+        att.proxy_url = "https://mahto.id/assets/me.png"
+        att.filename = "SPOILER_file.png"
+        att.size = 100
+        att.content_type = "image/png"
+        att.is_spoiler.return_value = True
+        
+        msg = _make_message("", guild=guild)
+        msg.attachments = [att]
+        
+        html = self._export([msg], "image_spoiler.html", guild=guild)
+        
+        self.assertIn("chatlog__attachment-spoiler", html)
+        self.assertIn("SPOILER", html)
+
+    def test_image_grid_2(self):
+        """Two consecutive images should be rendered in a 1x2 grid."""
+        guild = _make_guild()
+        
+        att1 = MagicMock(spec=discord.Attachment)
+        att1.url = "https://mahto.id/assets/me.png"
+        att1.proxy_url = "https://mahto.id/assets/me.png"
+        att1.filename = "img1.png"
+        att1.size = 100
+        att1.content_type = "image/png"
+        att1.is_spoiler.return_value = False
+        
+        att2 = MagicMock(spec=discord.Attachment)
+        att2.url = "https://mahto.id/assets/me.png"
+        att2.proxy_url = "https://mahto.id/assets/me.png"
+        att2.filename = "img2.png"
+        att2.size = 100
+        att2.content_type = "image/png"
+        att2.is_spoiler.return_value = False
+        
+        msg = _make_message("", guild=guild)
+        msg.attachments = [att1, att2]
+        
+        html = self._export([msg], "image_grid_2.html", guild=guild)
+        
+        self.assertIn("chatlog__attachment-grid--1x2", html)
+        self.assertIn("https://mahto.id/assets/me.png", html)
+
+    def test_image_grid_3(self):
+        """Three consecutive images should be rendered in a 1x3 grid."""
+        guild = _make_guild()
+        attachments = []
+        for i in range(3):
+            att = MagicMock(spec=discord.Attachment)
+            att.url = "https://mahto.id/assets/me.png"
+            att.proxy_url = "https://mahto.id/assets/me.png"
+            att.filename = f"img{i}.png"
+            att.size = 100
+            att.content_type = "image/png"
+            att.is_spoiler.return_value = False
+            attachments.append(att)
+            
+        msg = _make_message("", guild=guild)
+        msg.attachments = attachments
+        
+        html = self._export([msg], "image_grid_3.html", guild=guild)
+        
+        self.assertIn("chatlog__attachment-grid--1x3", html)
+        self.assertIn("https://mahto.id/assets/me.png", html)
+
+    def test_image_grid_4(self):
+        """Four consecutive images should be rendered in a 2x2 grid."""
+        guild = _make_guild()
+        attachments = []
+        for i in range(4):
+            att = MagicMock(spec=discord.Attachment)
+            att.url = "https://mahto.id/assets/me.png"
+            att.proxy_url = "https://mahto.id/assets/me.png"
+            att.filename = f"img{i}.png"
+            att.size = 100
+            att.content_type = "image/png"
+            att.is_spoiler.return_value = False
+            attachments.append(att)
+            
+        msg = _make_message("", guild=guild)
+        msg.attachments = attachments
+        
+        html = self._export([msg], "image_grid_4.html", guild=guild)
+        
+        self.assertIn("chatlog__attachment-grid--2x2", html)
+        self.assertIn("https://mahto.id/assets/me.png", html)
+
+    def test_image_grid_5(self):
+        """Five consecutive images should be split into 1x2 and 1x3 grids."""
+        guild = _make_guild()
+        attachments = []
+        for i in range(5):
+            att = MagicMock(spec=discord.Attachment)
+            att.url = "https://mahto.id/assets/me.png"
+            att.proxy_url = "https://mahto.id/assets/me.png"
+            att.filename = f"img{i}.png"
+            att.size = 100
+            att.content_type = "image/png"
+            att.is_spoiler.return_value = False
+            attachments.append(att)
+
+        msg = _make_message("", guild=guild)
+        msg.attachments = attachments
+
+        html = self._export([msg], "image_grid_5.html", guild=guild)
+
+        self.assertIn("chatlog__attachment-grid--1x2", html)
+        self.assertIn("chatlog__attachment-grid--1x3", html)
+        self.assertIn("https://mahto.id/assets/me.png", html)
+
+    def test_image_grid_10(self):
+        """Ten consecutive images should be split into 1x1 and 3x3 grids."""
+        guild = _make_guild()
+        attachments = []
+        for i in range(10):
+            att = MagicMock(spec=discord.Attachment)
+            att.url = "https://mahto.id/assets/me.png"
+            att.proxy_url = "https://mahto.id/assets/me.png"
+            att.filename = f"img{i}.png"
+            att.size = 100
+            att.content_type = "image/png"
+            att.is_spoiler.return_value = False
+            attachments.append(att)
+
+        msg = _make_message("", guild=guild)
+        msg.attachments = attachments
+
+        html = self._export([msg], "image_grid_10.html", guild=guild)
+
+        self.assertIn("chatlog__attachment-grid--1x1", html)
+        self.assertIn("chatlog__attachment-grid--3x3", html)
+        self.assertIn("https://mahto.id/assets/me.png", html)
+
+    def test_grid_width_restriction(self):
+        """The grid should have a max-width restriction."""
+        guild = _make_guild()
+        att = MagicMock(spec=discord.Attachment)
+        att.url = "https://mahto.id/assets/me.png"
+        att.proxy_url = "https://mahto.id/assets/me.png"
+        att.filename = "img1.png"
+        att.size = 100
+        att.content_type = "image/png"
+        att.is_spoiler.return_value = False
+
+        msg = _make_message("", guild=guild)
+        msg.attachments = [att, att] # 2 images for a grid
+
+        html = self._export([msg], "grid_width.html", guild=guild)
+
+        self.assertIn("max-width: 550px", html)

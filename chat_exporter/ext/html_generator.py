@@ -113,6 +113,8 @@ custom_emoji = read_file(dir_path + "/html/reaction/custom_emoji.html")
 
 # ATTACHMENT
 img_attachment = read_file(dir_path + "/html/attachment/image.html")
+img_grid = read_file(dir_path + "/html/attachment/image_grid.html")
+img_grid_item = read_file(dir_path + "/html/attachment/image_grid_item.html")
 msg_attachment = read_file(dir_path + "/html/attachment/message.html")
 audio_attachment = read_file(dir_path + "/html/attachment/audio.html")
 video_attachment = read_file(dir_path + "/html/attachment/video.html")

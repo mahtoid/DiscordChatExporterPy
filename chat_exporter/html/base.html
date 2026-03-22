@@ -546,6 +546,71 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             filter: blur(0);
         }
 
+        .chatlog__attachment-grid {
+            display: grid;
+            gap: 4px;
+            margin-top: 0.3em;
+            width: fit-content;
+            max-width: 550px;
+        }
+
+        .chatlog__attachment-grid-item,
+        .chatlog__attachment,
+        .chatlog__attachment-spoiler,
+        .chatlog__attachment-spoiler a {
+            max-height: inherit;
+        }
+
+        .chatlog__attachment-thumbnail {
+            display: block;
+            max-height: inherit;
+            width: auto;
+        }
+
+        .chatlog__attachment-grid--1x1 {
+            grid-template-columns: 1fr;
+            max-height: 280px;
+        }
+
+        .chatlog__attachment-grid--1x2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .chatlog__attachment-grid--1x3 {
+            grid-template-columns: 2fr 1fr;
+            grid-template-rows: repeat(2, 1fr);
+        }
+
+        .chatlog__attachment-grid--1x3 .chatlog__attachment-grid-item:first-child {
+            grid-row: span 2;
+        }
+
+        .chatlog__attachment-grid--2x2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .chatlog__attachment-grid--3x3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .chatlog__attachment-grid-item {
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+        }
+
+        .chatlog__attachment-grid-item .chatlog__attachment {
+            margin-top: 0;
+        }
+
+        .chatlog__attachment-grid-item .chatlog__attachment-thumbnail {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: cover;
+            width: 100%;
+            height: 100%;
+        }
+
         .chatlog__attachment-audio-container audio {
             padding-top: 0.5em;
             width: 100%;

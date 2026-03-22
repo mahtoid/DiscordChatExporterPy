@@ -4,7 +4,7 @@ from typing import List, Optional
 
 from pytz import timezone
 
-from chat_exporter.construct.assets import Attachment, Component, Embed, Reaction
+from chat_exporter.construct.assets import Attachment, AttachmentGrid, Component, Embed, Reaction
 from chat_exporter.construct.attachment_handler import AttachmentHandler
 from chat_exporter.ext.cache import cache
 from chat_exporter.ext.discord_import import discord
@@ -359,6 +359,29 @@ class MessageConstruct:
             ],
         )
 
+    @staticmethod
+    def calculate_grid_splits(n):
+        if n <= 4:
+            return [n]
+        if n == 9:
+            return [9]
+        if n == 5:
+            return [2, 3]
+        if n == 6:
+            return [3, 3]
+        if n == 7:
+            return [3, 4]
+        if n == 8:
+            return [4, 4]
+        if n == 10:
+            return [1, 9]
+
+        if n > 9:
+            res = MessageConstruct.calculate_grid_splits(n - 9)
+            res.append(9)
+            return res
+        return [n]
+
     async def build_assets(self):
         processed_attachments = []
         attachment_urls = set()
@@ -380,8 +403,30 @@ class MessageConstruct:
                 continue
             self.embeds += await Embed(e, self.guild, self.pytz_timezone, self.military_time).flow()
 
+        media_group = []
+
+        async def flush_media_group(group):
+            if not group:
+                return ""
+            html_output = ""
+            splits = self.calculate_grid_splits(len(group))
+            start = 0
+            for i, s in enumerate(splits):
+                html_output += await AttachmentGrid(group[start : start + s], self.guild, i).flow()
+                start += s
+            return html_output
+
         for a in processed_attachments:
-            self.attachments += await Attachment(a, self.guild).flow()
+            if a.content_type and ("image" in a.content_type or "video" in a.content_type):
+                media_group.append(a)
+            else:
+                if media_group:
+                    self.attachments += await flush_media_group(media_group)
+                    media_group = []
+                self.attachments += await Attachment(a, self.guild).flow()
+
+        if media_group:
+            self.attachments += await flush_media_group(media_group)
 
         for snapshot in self.get_message_snapshots():
             if hasattr(snapshot, "attachments"):
