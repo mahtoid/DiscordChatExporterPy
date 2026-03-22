@@ -558,11 +558,11 @@ If you have any issues or suggestions - open an issue on the Github Repository o
         .chatlog__embed {
             --embed-color: rgba(74, 74, 80, 1);
             display: grid;
-            grid-template-columns: minmax(0, 1fr) auto;
-            column-gap: 1rem;
+            grid-template-columns: auto;
+            grid-template-rows: auto;
+            overflow: hidden;
             margin-top: 0.35em;
-            max-width: 520px;
-            padding: 2px 1rem 1rem 0.75rem;
+            max-width: 516px;
             background-color: #37373d;
             color: #f3f3f4;
             border: 1px solid #434349;
@@ -570,6 +570,9 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             border-radius: 4px;
             box-sizing: border-box;
             font-size: 16px;
+            padding-block: .5rem 1rem;
+            padding-inline: .75rem 1rem;
+            padding-top: .125rem;
         }
 
         .chatlog__embed-content {
@@ -622,17 +625,15 @@ If you have any issues or suggestions - open an issue on the Github Repository o
         .chatlog__embed-description {
             margin-top: 0.5rem;
             font-weight: 400;
-            font-size: 0.95rem;
-            line-height: 1.375;
+            font-size: 0.875rem;
+            line-height: 1.125rem;
             color: inherit;
         }
 
         .chatlog__embed-fields {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-            gap: 0.5rem;
-            margin-top: 0.5rem;
-            width: 100%;
+            margin-top: 8px;
+            grid-gap: 8px;
         }
 
         .chatlog__embed-fields:empty {
@@ -640,17 +641,9 @@ If you have any issues or suggestions - open an issue on the Github Repository o
         }
 
         .chatlog__embed-field {
-            padding-top: 0;
+            line-height: 1.125rem;
             font-size: 0.875em;
             min-width: 0;
-        }
-
-        .chatlog__embed-field--inline {
-            grid-column: span 1;
-        }
-
-        .chatlog__embed-field:not(.chatlog__embed-field--inline) {
-            grid-column: 1 / -1;
         }
 
         .chatlog__embed-field-name {
@@ -734,8 +727,8 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 6px;
             box-shadow: 0 1px 0 rgba(0, 0, 0, 0.15);
-            min-height: 38px;
-            padding: 0 12px;
+            min-height: 24px;
+            padding: 3px 11px 3px 11px;
             cursor: pointer;
             transition: background-color 0.12s ease, transform 0.12s ease;
             text-decoration: none;
@@ -1651,6 +1644,21 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             padding: 0;
             background: none;
             border: none;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin: 16px 0 8px;
+        }
+
+        h2 {
+            font-size: 1.25rem;
+            margin: 16px 0 8px;
+        }
+
+        h3 {
+            font-size: 1.125rem;
+            margin: 16px 0 8px;
         }
 
         .chatlog__component-text-display h1,

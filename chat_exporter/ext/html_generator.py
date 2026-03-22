@@ -1,9 +1,9 @@
 import html
 import json
 import os
+import re
 
-from chat_exporter.parse.mention import ParseMention
-from chat_exporter.parse.markdown import ParseMarkdown
+from chat_exporter.parse.markdown import ParseMarkdown, bot as mention_bot
 
 dir_path = os.path.abspath(os.path.join((os.path.dirname(os.path.realpath(__file__))), ".."))
 
@@ -18,34 +18,41 @@ PARSE_MODE_HTML_SAFE = 7
 
 
 async def fill_out(guild, base, replacements):
+    resolved = {}
     for r in replacements:
         if len(r) == 2:  # default case
             k, v = r
-            r = (k, v, PARSE_MODE_MARKDOWN)
+            mode = PARSE_MODE_MARKDOWN
+        else:
+            k, v, mode = r
 
-        k, v, mode = r
-
-        if mode != PARSE_MODE_NONE:
-            v = await ParseMention(v, guild).flow()
         if mode == PARSE_MODE_MARKDOWN:
-            v = await ParseMarkdown(v).standard_message_flow()
+            v = await ParseMarkdown(v, guild, mention_bot).standard_message_flow()
         elif mode == PARSE_MODE_EMBED:
-            v = await ParseMarkdown(v).standard_embed_flow()
+            v = await ParseMarkdown(v, guild, mention_bot).standard_embed_flow()
         elif mode == PARSE_MODE_SPECIAL_EMBED:
-            v = await ParseMarkdown(v).special_embed_flow()
+            v = await ParseMarkdown(v, guild, mention_bot).special_embed_flow()
         elif mode == PARSE_MODE_REFERENCE:
-            v = await ParseMarkdown(v).message_reference_flow()
+            v = await ParseMarkdown(v, guild, mention_bot).message_reference_flow()
         elif mode == PARSE_MODE_EMOJI:
-            v = await ParseMarkdown(v).special_emoji_flow()
+            v = await ParseMarkdown(v, guild, mention_bot).special_emoji_flow()
         elif mode == PARSE_MODE_HTML_SAFE:
+            if mode != PARSE_MODE_NONE:
+                v = await ParseMarkdown(v, guild, mention_bot).standard_embed_flow()
             # escape html characters
             v = html.escape(v, quote=True)
             # escape characters that could be used for xss
             v = json.dumps(v, ensure_ascii=False)[1:-1]
+        elif mode != PARSE_MODE_NONE:
+            v = await ParseMarkdown(v, guild, mention_bot).standard_embed_flow()
 
-        base = base.replace("{{" + k + "}}", str(v or "").strip())
+        resolved[k] = str(v or "").strip()
 
-    return base
+    def repl(match):
+        key = match.group(1)
+        return resolved.get(key, match.group(0))
+
+    return re.sub(r"\{\{([A-Z0-9_]+)\}\}", repl, base)
 
 
 def read_file(filename):

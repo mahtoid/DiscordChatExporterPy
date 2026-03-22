@@ -1,13 +1,14 @@
 from chat_exporter.chat_exporter import (
-    export,
-    raw_export,
-    quick_export,
     AttachmentHandler,
+    AttachmentToDiscordChannelHandler,
     AttachmentToLocalFileHostHandler,
     AttachmentToWebhookHandler,
-    AttachmentToDiscordChannelHandler)
+    export,
+    quick_export,
+    raw_export,
+)
 
-__version__ = "3.0.1"
+__version__ = "3.1.0"
 
 __all__ = (
     export,

@@ -4,9 +4,9 @@ from chat_exporter.construct.assets.attachment import Attachment
 from chat_exporter.ext.discord_import import discord
 from chat_exporter.ext.discord_utils import DiscordUtils
 from chat_exporter.ext.html_generator import (
+    PARSE_MODE_EMBED,
     PARSE_MODE_EMOJI,
     PARSE_MODE_MARKDOWN,
-    PARSE_MODE_EMBED,
     PARSE_MODE_NONE,
     component_button,
     component_container,
@@ -136,8 +136,8 @@ class Component:
 
     async def build_component(self, c):
         # Check for component type attribute
-        component_type = getattr(c, 'type', None)
-        
+        component_type = getattr(c, "type", None)
+
         # Handle legacy components (v1)
         if isinstance(c, discord.Button):
             return await self.build_button(c)
@@ -145,13 +145,13 @@ class Component:
             menu_html = await self.build_menu(c)
             Component.menu_div_id += 1
             return menu_html
-        
+
         # Handle components v2 based on type
         if component_type is None:
             return ""
-        
-        type_value = component_type.value if hasattr(component_type, 'value') else component_type
-        
+
+        type_value = component_type.value if hasattr(component_type, "value") else component_type
+
         # ActionRow (type 1) - contains buttons/selects
         if type_value == 1:
             return await self.build_action_row(c)
@@ -184,23 +184,23 @@ class Component:
         # Container (type 17)
         elif type_value == 17:
             return await self.build_container(c)
-        
+
         return ""
 
     async def build_action_row(self, c):
         """Build an action row containing buttons or select menus"""
         result = ""
         items_html = ""
-        
-        children = getattr(c, 'children', []) or getattr(c, 'components', [])
+
+        children = getattr(c, "children", []) or getattr(c, "components", [])
         for child in children:
             child_html = await self.build_component(child)
             if child_html:
                 items_html += child_html
-        
+
         if items_html:
             result = f'<div class="chatlog__components">{items_html}</div>'
-        
+
         return result
 
     async def build_button(self, c):
@@ -231,20 +231,26 @@ class Component:
             raw_style_str = str(raw_style)
             style_key = raw_style_str.split(".")[-1].lower()
         style = self.styles.get(style_key, "#4F545C")
-        button_variant = "chatlog__component-button--link" if style_key == "link" else "chatlog__component-button--filled"
+        button_variant = (
+            "chatlog__component-button--link" if style_key == "link" else "chatlog__component-button--filled"
+        )
         emoji = self._stringify_emoji(self._get_attr(c, "emoji", None))
 
-        return await fill_out(self.guild, component_button, [
-            ("DISABLED", "chatlog__component-disabled" if disabled else "", PARSE_MODE_NONE),
-            ("URL", url, PARSE_MODE_NONE),
-            ("BUTTON_VARIANT", button_variant, PARSE_MODE_NONE),
-            ("ARIA_DISABLED", "true" if disabled else "false", PARSE_MODE_NONE),
-            ("LABEL", label, PARSE_MODE_MARKDOWN),
-            ("EMOJI", emoji, PARSE_MODE_EMOJI),
-            ("ICON", icon, PARSE_MODE_NONE),
-            ("TARGET", target, PARSE_MODE_NONE),
-            ("STYLE", style, PARSE_MODE_NONE)
-        ])
+        return await fill_out(
+            self.guild,
+            component_button,
+            [
+                ("DISABLED", "chatlog__component-disabled" if disabled else "", PARSE_MODE_NONE),
+                ("URL", url, PARSE_MODE_NONE),
+                ("BUTTON_VARIANT", button_variant, PARSE_MODE_NONE),
+                ("ARIA_DISABLED", "true" if disabled else "false", PARSE_MODE_NONE),
+                ("LABEL", label, PARSE_MODE_MARKDOWN),
+                ("EMOJI", emoji, PARSE_MODE_EMOJI),
+                ("ICON", icon, PARSE_MODE_NONE),
+                ("TARGET", target, PARSE_MODE_NONE),
+                ("STYLE", style, PARSE_MODE_NONE),
+            ],
+        )
 
     async def build_menu(self, c):
         placeholder = self._get_attr(c, "placeholder", "") or ""
@@ -268,14 +274,18 @@ class Component:
         if not disabled:
             content = await self.build_menu_options(options)
 
-        menu_html = await fill_out(self.guild, component_menu, [
-            ("DISABLED", "chatlog__component-disabled" if disabled else "", PARSE_MODE_NONE),
-            ("ID", str(self.menu_div_id), PARSE_MODE_NONE),
-            ("PLACEHOLDER", str(selected_label), PARSE_MODE_MARKDOWN),
-            ("PLACEHOLDER_TITLE", str(placeholder), PARSE_MODE_MARKDOWN),
-            ("CONTENT", str(content), PARSE_MODE_NONE),
-            ("ICON", DiscordUtils.interaction_dropdown_icon, PARSE_MODE_NONE),
-        ])
+        menu_html = await fill_out(
+            self.guild,
+            component_menu,
+            [
+                ("DISABLED", "chatlog__component-disabled" if disabled else "", PARSE_MODE_NONE),
+                ("ID", str(self.menu_div_id), PARSE_MODE_NONE),
+                ("PLACEHOLDER", str(selected_label), PARSE_MODE_MARKDOWN),
+                ("PLACEHOLDER_TITLE", str(placeholder), PARSE_MODE_MARKDOWN),
+                ("CONTENT", str(content), PARSE_MODE_NONE),
+                ("ICON", DiscordUtils.interaction_dropdown_icon, PARSE_MODE_NONE),
+            ],
+        )
         return menu_html
 
     async def build_menu_options(self, options):
@@ -289,20 +299,32 @@ class Component:
             check_mark = "✓" if is_default else ""
 
             if option_emoji:
-                content.append(await fill_out(self.guild, component_menu_options_emoji, [
-                    ("EMOJI", str(option_emoji), PARSE_MODE_EMOJI),
-                    ("TITLE", str(label), PARSE_MODE_MARKDOWN),
-                    ("DESCRIPTION", str(description) if description else "", PARSE_MODE_MARKDOWN),
-                    ("DEFAULT_CLASS", default_class, PARSE_MODE_NONE),
-                    ("CHECK", check_mark, PARSE_MODE_NONE),
-                ]))
+                content.append(
+                    await fill_out(
+                        self.guild,
+                        component_menu_options_emoji,
+                        [
+                            ("EMOJI", str(option_emoji), PARSE_MODE_EMOJI),
+                            ("TITLE", str(label), PARSE_MODE_MARKDOWN),
+                            ("DESCRIPTION", str(description) if description else "", PARSE_MODE_MARKDOWN),
+                            ("DEFAULT_CLASS", default_class, PARSE_MODE_NONE),
+                            ("CHECK", check_mark, PARSE_MODE_NONE),
+                        ],
+                    )
+                )
             else:
-                content.append(await fill_out(self.guild, component_menu_options, [
-                    ("TITLE", str(label), PARSE_MODE_MARKDOWN),
-                    ("DESCRIPTION", str(description) if description else "", PARSE_MODE_MARKDOWN),
-                    ("DEFAULT_CLASS", default_class, PARSE_MODE_NONE),
-                    ("CHECK", check_mark, PARSE_MODE_NONE),
-                ]))
+                content.append(
+                    await fill_out(
+                        self.guild,
+                        component_menu_options,
+                        [
+                            ("TITLE", str(label), PARSE_MODE_MARKDOWN),
+                            ("DESCRIPTION", str(description) if description else "", PARSE_MODE_MARKDOWN),
+                            ("DEFAULT_CLASS", default_class, PARSE_MODE_NONE),
+                            ("CHECK", check_mark, PARSE_MODE_NONE),
+                        ],
+                    )
+                )
 
         if content:
             content = f'<div id="dropdownMenu{self.menu_div_id}" class="dropdownContent">{"".join(content)}</div>'
@@ -311,17 +333,17 @@ class Component:
 
     async def build_container(self, c):
         """Build a container component (like an embed)"""
-        accent_color = getattr(c, 'accent_color', None) or getattr(c, 'accent_colour', None)
-        spoiler = getattr(c, 'spoiler', False)
-        components = getattr(c, 'components', []) or getattr(c, 'children', [])
-        
+        accent_color = getattr(c, "accent_color", None) or getattr(c, "accent_colour", None)
+        spoiler = getattr(c, "spoiler", False)
+        components = getattr(c, "components", []) or getattr(c, "children", [])
+
         # Build nested components
         content_html = ""
         for child in components:
             child_html = await self.build_component(child)
             if child_html:
                 content_html += child_html
-        
+
         # Handle accent color
         accent_style = ""
         accent_class = ""
@@ -340,60 +362,76 @@ class Component:
                 else:
                     color_value = int(accent_color)
                 color_hex = f"#{color_value:06x}"
-                accent_style = f'--component-accent:{color_hex};'
+                accent_style = f"--component-accent:{color_hex};"
                 accent_class = "chatlog__component-container--accent"
             except (TypeError, ValueError):
                 accent_style = ""
-        
+
         spoiler_class = "chatlog__component-spoiler" if spoiler else ""
         spoiler_label = '<div class="chatlog__component-spoiler-label">SPOILER</div>' if spoiler else ""
-        
-        return await fill_out(self.guild, component_container, [
-            ("SPOILER_CLASS", spoiler_class, PARSE_MODE_NONE),
-            ("SPOILER_TAG", spoiler_label, PARSE_MODE_NONE),
-            ("ACCENT_CLASS", accent_class, PARSE_MODE_NONE),
-            ("ACCENT_COLOR_STYLE", accent_style, PARSE_MODE_NONE),
-            ("CONTENT", content_html, PARSE_MODE_NONE),
-        ])
+
+        return await fill_out(
+            self.guild,
+            component_container,
+            [
+                ("SPOILER_CLASS", spoiler_class, PARSE_MODE_NONE),
+                ("SPOILER_TAG", spoiler_label, PARSE_MODE_NONE),
+                ("ACCENT_CLASS", accent_class, PARSE_MODE_NONE),
+                ("ACCENT_COLOR_STYLE", accent_style, PARSE_MODE_NONE),
+                ("CONTENT", content_html, PARSE_MODE_NONE),
+            ],
+        )
 
     async def build_section(self, c):
         """Build a section component with content and accessory"""
-        components = getattr(c, 'components', []) or getattr(c, 'children', [])
-        accessory = getattr(c, 'accessory', None)
+        components = getattr(c, "components", []) or getattr(c, "children", [])
+        accessory = getattr(c, "accessory", None)
         has_accessory = accessory is not None
-        
+
         # Build content (text displays)
         content_html = ""
         for child in components:
             child_html = await self.build_component(child)
             if child_html:
                 content_html += child_html
-        
+
         # Build accessory (thumbnail or button)
         accessory_html = ""
         if accessory:
             accessory_html = await self.build_component(accessory)
-        
-        return await fill_out(self.guild, component_section, [
-            ("CONTENT", content_html, PARSE_MODE_NONE),
-            ("ACCESSORY", accessory_html, PARSE_MODE_NONE),
-            ("HAS_ACCESSORY_CLASS", "chatlog__component-section--has-accessory" if has_accessory else "", PARSE_MODE_NONE),
-        ])
+
+        return await fill_out(
+            self.guild,
+            component_section,
+            [
+                ("CONTENT", content_html, PARSE_MODE_NONE),
+                ("ACCESSORY", accessory_html, PARSE_MODE_NONE),
+                (
+                    "HAS_ACCESSORY_CLASS",
+                    "chatlog__component-section--has-accessory" if has_accessory else "",
+                    PARSE_MODE_NONE,
+                ),
+            ],
+        )
 
     async def build_text_display(self, c):
         """Build a text display component"""
-        content = getattr(c, 'content', '')
-        
-        return await fill_out(self.guild, component_text_display, [
-            ("CONTENT", str(content), PARSE_MODE_EMBED),
-        ])
+        content = getattr(c, "content", "")
+
+        return await fill_out(
+            self.guild,
+            component_text_display,
+            [
+                ("CONTENT", str(content), PARSE_MODE_EMBED),
+            ],
+        )
 
     async def build_thumbnail(self, c):
         """Build a thumbnail component"""
-        media = self._get_attr(c, 'media', None)
-        description = self._get_attr(c, 'description', None)
-        spoiler = bool(self._get_attr(c, 'spoiler', False))
-        
+        media = self._get_attr(c, "media", None)
+        description = self._get_attr(c, "description", None)
+        spoiler = bool(self._get_attr(c, "spoiler", False))
+
         url = self._get_media_url(media)
         if not url:
             return ""
@@ -408,7 +446,7 @@ class Component:
         spoiler_label = ""
         title_text = description_text
         alt_text = description_text or file_name
-        
+
         if spoiler:
             spoiler_label = '<div class="chatlog__component-spoiler-label">SPOILER</div>'
             title_text = "Spoiler"
@@ -416,25 +454,29 @@ class Component:
             description_overlay = ""
         elif description:
             description_overlay = f'<div class="chatlog__component-thumbnail-description">{description}</div>'
-        
-        return await fill_out(self.guild, component_thumbnail, [
-            ("URL", str(url), PARSE_MODE_NONE),
-            ("TITLE", title_text, PARSE_MODE_MARKDOWN),
-            ("ALT", alt_text, PARSE_MODE_MARKDOWN),
-            ("DESCRIPTION", description_text, PARSE_MODE_MARKDOWN),
-            ("SPOILER_CLASS", spoiler_class, PARSE_MODE_NONE),
-            ("SPOILER_TAG", spoiler_label, PARSE_MODE_NONE),
-            ("DESCRIPTION_OVERLAY", description_overlay, PARSE_MODE_NONE),
-        ])
+
+        return await fill_out(
+            self.guild,
+            component_thumbnail,
+            [
+                ("URL", str(url), PARSE_MODE_NONE),
+                ("TITLE", title_text, PARSE_MODE_MARKDOWN),
+                ("ALT", alt_text, PARSE_MODE_MARKDOWN),
+                ("DESCRIPTION", description_text, PARSE_MODE_MARKDOWN),
+                ("SPOILER_CLASS", spoiler_class, PARSE_MODE_NONE),
+                ("SPOILER_TAG", spoiler_label, PARSE_MODE_NONE),
+                ("DESCRIPTION_OVERLAY", description_overlay, PARSE_MODE_NONE),
+            ],
+        )
 
     async def build_media_gallery(self, c):
         """Build a media gallery component"""
-        items = getattr(c, 'items', []) or getattr(c, 'components', []) or getattr(c, 'children', [])
-        
+        items = getattr(c, "items", []) or getattr(c, "components", []) or getattr(c, "children", [])
+
         items_html = ""
         for item in items:
             items_html += await self.build_media_gallery_item(item)
-        
+
         # Determine gallery class based on item count
         item_count = len(items)
         gallery_class = ""
@@ -446,18 +488,22 @@ class Component:
             gallery_class = "chatlog__media-gallery-triple"
         elif item_count >= 4:
             gallery_class = "chatlog__media-gallery-grid"
-        
-        return await fill_out(self.guild, component_media_gallery, [
-            ("ITEMS", items_html, PARSE_MODE_NONE),
-            ("GALLERY_CLASS", gallery_class, PARSE_MODE_NONE),
-        ])
+
+        return await fill_out(
+            self.guild,
+            component_media_gallery,
+            [
+                ("ITEMS", items_html, PARSE_MODE_NONE),
+                ("GALLERY_CLASS", gallery_class, PARSE_MODE_NONE),
+            ],
+        )
 
     async def build_media_gallery_item(self, item):
         """Build a single media gallery item"""
-        media = self._get_attr(item, 'media', None)
-        description = self._get_attr(item, 'description', None)
-        spoiler = bool(self._get_attr(item, 'spoiler', False))
-        
+        media = self._get_attr(item, "media", None)
+        description = self._get_attr(item, "description", None)
+        spoiler = bool(self._get_attr(item, "spoiler", False))
+
         url = self._get_media_url(media)
         if not url:
             return ""
@@ -473,45 +519,53 @@ class Component:
         spoiler_label = ""
         title_text = description_text
         alt_text = description_text or file_name
-        
+
         if spoiler:
             spoiler_label = '<div class="chatlog__component-spoiler-label">SPOILER</div>'
             title_text = "Spoiler"
             alt_text = "Spoiler"
         elif description:
             description_overlay = f'<div class="chatlog__component-media-description">{description}</div>'
-        
-        return await fill_out(self.guild, component_media_gallery_item, [
-            ("URL", str(url), PARSE_MODE_NONE),
-            ("TITLE", title_text, PARSE_MODE_MARKDOWN),
-            ("ALT", alt_text, PARSE_MODE_MARKDOWN),
-            ("DESCRIPTION", description_text, PARSE_MODE_MARKDOWN),
-            ("SPOILER_CLASS", spoiler_class, PARSE_MODE_NONE),
-            ("SPOILER_TAG", spoiler_label, PARSE_MODE_NONE),
-            ("DESCRIPTION_OVERLAY", description_overlay, PARSE_MODE_NONE),
-        ])
+
+        return await fill_out(
+            self.guild,
+            component_media_gallery_item,
+            [
+                ("URL", str(url), PARSE_MODE_NONE),
+                ("TITLE", title_text, PARSE_MODE_MARKDOWN),
+                ("ALT", alt_text, PARSE_MODE_MARKDOWN),
+                ("DESCRIPTION", description_text, PARSE_MODE_MARKDOWN),
+                ("SPOILER_CLASS", spoiler_class, PARSE_MODE_NONE),
+                ("SPOILER_TAG", spoiler_label, PARSE_MODE_NONE),
+                ("DESCRIPTION_OVERLAY", description_overlay, PARSE_MODE_NONE),
+            ],
+        )
 
     async def build_separator(self, c):
         """Build a separator component"""
-        divider = self._get_attr(c, 'divider', True)
-        spacing = self._get_attr(c, 'spacing', 1)
+        divider = self._get_attr(c, "divider", True)
+        spacing = self._get_attr(c, "spacing", 1)
         if not isinstance(spacing, int) and hasattr(spacing, "value"):
             spacing = spacing.value
-        
+
         # Spacing: 1 = SMALL, 2 = LARGE
         spacing_class = "chatlog__separator-large" if spacing == 2 else "chatlog__separator-small"
         divider_html = '<div class="chatlog__separator-line"></div>' if divider else ""
-        
-        return await fill_out(self.guild, component_separator, [
-            ("SPACING_CLASS", spacing_class, PARSE_MODE_NONE),
-            ("DIVIDER", divider_html, PARSE_MODE_NONE),
-        ])
+
+        return await fill_out(
+            self.guild,
+            component_separator,
+            [
+                ("SPACING_CLASS", spacing_class, PARSE_MODE_NONE),
+                ("DIVIDER", divider_html, PARSE_MODE_NONE),
+            ],
+        )
 
     async def build_file(self, c):
         """Build a file component"""
-        file = self._get_attr(c, 'file', None) or self._get_attr(c, 'media', None)
-        spoiler = bool(self._get_attr(c, 'spoiler', False))
-        
+        file = self._get_attr(c, "file", None) or self._get_attr(c, "media", None)
+        spoiler = bool(self._get_attr(c, "spoiler", False))
+
         url = self._get_media_url(file)
         if not url:
             return ""
@@ -536,16 +590,20 @@ class Component:
         if related_attachment and not content_type:
             content_type = getattr(related_attachment, "content_type", None)
         file_icon = self._get_file_icon(file_name, content_type, url)
-        
+
         spoiler_class = "chatlog__component-spoiler" if spoiler else ""
-        
-        return await fill_out(self.guild, component_file, [
-            ("FILE_NAME", str(file_name), PARSE_MODE_NONE),
-            ("FILE_URL", str(url), PARSE_MODE_NONE),
-            ("FILE_ICON", str(file_icon), PARSE_MODE_NONE),
-            ("FILE_SIZE", str(file_size), PARSE_MODE_NONE),
-            ("SPOILER_CLASS", spoiler_class, PARSE_MODE_NONE),
-        ])
+
+        return await fill_out(
+            self.guild,
+            component_file,
+            [
+                ("FILE_NAME", str(file_name), PARSE_MODE_NONE),
+                ("FILE_URL", str(url), PARSE_MODE_NONE),
+                ("FILE_ICON", str(file_icon), PARSE_MODE_NONE),
+                ("FILE_SIZE", str(file_size), PARSE_MODE_NONE),
+                ("SPOILER_CLASS", spoiler_class, PARSE_MODE_NONE),
+            ],
+        )
 
     async def flow(self):
         # Try to handle the component directly
@@ -554,7 +612,7 @@ class Component:
             self.components += component_html
         else:
             # Fallback to legacy flow for action rows with children
-            children = getattr(self.component, 'children', []) or getattr(self.component, 'components', [])
+            children = getattr(self.component, "children", []) or getattr(self.component, "components", [])
             for c in children:
                 child_html = await self.build_component(c)
                 if child_html:
