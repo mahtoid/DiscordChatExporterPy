@@ -3,7 +3,8 @@ import json
 import os
 import re
 
-from chat_exporter.parse.markdown import ParseMarkdown, bot as mention_bot
+from chat_exporter.parse.markdown import ParseMarkdown
+from chat_exporter.parse.markdown import bot as mention_bot
 
 dir_path = os.path.abspath(os.path.join((os.path.dirname(os.path.realpath(__file__))), ".."))
 

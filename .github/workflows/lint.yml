@@ -11,5 +11,5 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/ruff-action@v1
         with:
-          args: "check --select S,E,F,I --exit-zero"
+          args: "check --select S,E,F,I"
 

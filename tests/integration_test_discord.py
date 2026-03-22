@@ -1,8 +1,9 @@
 import os
-import asyncio
-import discord
-import chat_exporter
 import sys
+
+import discord
+
+import chat_exporter
 
 # Configuration from environment variables
 TOKEN = os.getenv("DISCORD_TOKEN")
