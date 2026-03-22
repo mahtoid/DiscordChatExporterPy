@@ -1,11 +1,10 @@
-name: test
+name: integration-test
 
 on:
-  push:
-    branches: [ "**" ]
+  workflow_dispatch
 
 jobs:
-  test:
+  integration-test:
     runs-on: ubuntu-latest
 
     steps:
@@ -21,13 +20,15 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
 
-      - name: Run AST unit tests
-        run: python -m unittest discover -s tests -p "test_*.py" -v
+      - name: Run Discord Integration Test
+        env:
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+        run: python tests/integration_test_discord.py
 
-      - name: Upload export artifacts
+      - name: Upload integration artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: export-artifacts
-          path: tests/artifacts/
-          if-no-files-found: ignore
+          name: integration-transcript
+          path: tests/artifacts/integration_transcript.html
+          if-no-files-found: error
