@@ -1,7 +1,8 @@
 name: integration-test
 
 on:
-  workflow_dispatch
+  push:
+    branches: [ "**" ]
 
 jobs:
   integration-test:
