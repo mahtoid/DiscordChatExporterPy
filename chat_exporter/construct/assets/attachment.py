@@ -221,8 +221,8 @@ class Attachment:
             return
 
         replacements = (
-            ("<div class=chatlog__attachment>", '<div class="chatlog__attachment chatlog__attachment-spoiler">'),
-            ('class="chatlog__attachment"', 'class="chatlog__attachment chatlog__attachment-spoiler"'),
+            ("<div class='chatlog__attachment'>", "<div class='chatlog__attachment chatlog__attachment-spoiler'>"),
+            ("class='chatlog__attachment'", "class='chatlog__attachment chatlog__attachment-spoiler'"),
         )
 
         for target, replacement in replacements:

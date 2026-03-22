@@ -24,7 +24,7 @@ from chat_exporter.ext.html_generator import (
     message_interaction,
     message_pin,
     message_reference,
-    message_reference_forwarded,
+    message_forwarded,
     message_reference_unknown,
     message_thread,
     message_thread_add,
@@ -50,6 +50,7 @@ class MessageConstruct:
 
     # Asset Types
     embeds: str = ""
+    forwarded_embeds: str = ""
     reactions: str = ""
     components: str = ""
     attachments: str = ""
@@ -144,6 +145,7 @@ class MessageConstruct:
         await self.build_interaction()
         await self.build_sticker()
         await self.build_assets()
+        await self.wrap_forwarded()
         await self.build_message_template()
         await self.build_meta_data()
 
@@ -210,8 +212,6 @@ class MessageConstruct:
 
         combined = html.escape(combined or "")
 
-        if self.forwarded:
-            combined = f'<div class="quote">{combined}</div>'
 
         self.message.content = await fill_out(
             self.guild,
@@ -235,7 +235,7 @@ class MessageConstruct:
             except (discord.NotFound, discord.HTTPException) as e:
                 self.message.reference = ""
                 if self.forwarded:
-                    self.message.reference = message_reference_forwarded
+                    self.message.reference = ""
                     return
                 if isinstance(e, discord.NotFound):
                     self.message.reference = message_reference_unknown
@@ -332,7 +332,7 @@ class MessageConstruct:
             for snapshot in self.get_message_snapshots():
                 if hasattr(snapshot, "stickers") and snapshot.stickers and hasattr(snapshot.stickers[0], "url"):
                     sticker_image_url = snapshot.stickers[0].url
-                    self.message.reference = message_reference_forwarded
+                    self.message.reference = ""
                     break
 
         if not sticker_image_url:
@@ -366,8 +366,8 @@ class MessageConstruct:
         for snapshot in self.get_message_snapshots():
             if hasattr(snapshot, "embeds"):
                 for se in snapshot.embeds:
-                    self.embeds += await Embed(se, self.guild).flow()
-                    self.message.reference = message_reference_forwarded
+                    self.forwarded_embeds += await Embed(se, self.guild).flow()
+                    self.message.reference = ""
 
         for a in self.message.attachments:
             if self.attachment_handler and isinstance(self.attachment_handler, AttachmentHandler):
@@ -389,7 +389,7 @@ class MessageConstruct:
                     if self.attachment_handler:
                         sa = await self.attachment_handler.process_asset(sa)
                     self.attachments += await Attachment(sa, self.guild).flow()
-                    self.message.reference = message_reference_forwarded
+                    self.message.reference = ""
 
         for c in self.message.components:
             self.components += await Component(c, self.guild, self.message.attachments).flow()
@@ -398,13 +398,26 @@ class MessageConstruct:
             if hasattr(snapshot, "components"):
                 for ac in snapshot.components:
                     self.components += await Component(ac, self.guild).flow()
-                    self.message.reference = message_reference_forwarded
+                    self.message.reference = ""
 
         for r in self.message.reactions:
             self.reactions += await Reaction(r, self.guild).flow()
 
         if self.reactions:
             self.reactions = f'<div class="chatlog__reactions">{self.reactions}</div>'
+
+    async def wrap_forwarded(self):
+        if not self.forwarded:
+            return
+
+        self.message.content = (
+            f'<div class="quote"><div>{message_forwarded}{self.message.content}'
+            f"{self.attachments}{self.forwarded_embeds}{self.components}</div></div>"
+        )
+
+        self.attachments = ""
+        self.forwarded_embeds = ""
+        self.components = ""
 
     async def build_message_template(self):
         started = await self.generate_message_divider()

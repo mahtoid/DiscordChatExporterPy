@@ -163,7 +163,7 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             --quote-bar-color: #4e5058;
             display: flex;
             align-items: flex-start;
-            max-width: 90%;
+            max-width: 610px;
             margin: 0;
             padding: 0.05em 0;
             color: #dbdee1;
@@ -180,6 +180,25 @@ If you have any issues or suggestions - open an issue on the Github Repository o
             border-radius: 4px;
             background: var(--quote-bar-color);
             align-self: stretch;
+        }
+
+        .chatlog__forwarded-header {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-bottom: 4px;
+            color: #b5b6b8;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            user-select: none;
+        }
+
+        .chatlog__forwarded-icon {
+            flex-shrink: 0;
+        }
+
+        .chatlog__forwarded-text {
+            color: #b5b6b8;
         }
 
         .pre {
