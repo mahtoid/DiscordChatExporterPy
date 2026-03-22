@@ -37,6 +37,7 @@ dev = [
     "ruff",
     "pytest",
     "pytest-asyncio",
+    "discord.py",
 ]
 
 [tool.ruff]
