@@ -210,7 +210,7 @@ class Embed:
 
     async def build_image(self):
         self.image = (
-            await fill_out(self.guild, embed_image, [("EMBED_IMAGE", str(self.embed.image.proxy_url), PARSE_MODE_NONE)])
+            await fill_out(self.guild, embed_image, [("EMBED_IMAGE", str(self.embed.image.url), PARSE_MODE_NONE)])
             if self.embed.image and self.embed.image.url != self.check_against
             else ""
         )

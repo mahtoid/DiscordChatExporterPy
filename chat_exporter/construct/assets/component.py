@@ -1,3 +1,4 @@
+import html
 from urllib.parse import urlparse
 
 from chat_exporter.construct.assets.attachment import Attachment
@@ -23,6 +24,14 @@ from chat_exporter.ext.html_generator import (
     fill_out,
 )
 
+modules_which_use_none = ["nextcord", "disnake"]
+
+
+def _gather_checker():
+    if discord.module not in modules_which_use_none and hasattr(discord.Embed, "Empty"):
+        return discord.Embed.Empty
+    return None
+
 
 class Component:
     styles = {
@@ -38,10 +47,24 @@ class Component:
         "link": "#4F545C",
     }
 
+    _type_map = {
+        1: "build_action_row",
+        2: "build_button",
+        3: "build_menu",
+        9: "build_section",
+        10: "build_text_display",
+        11: "build_thumbnail",
+        12: "build_media_gallery",
+        13: "build_file",
+        14: "build_separator",
+        17: "build_container",
+    }
+
     components: str = ""
     menus: str = ""
     buttons: str = ""
     menu_div_id: int = 0
+    check_against = None
 
     def __init__(self, component, guild, attachments=None):
         self.component = component
@@ -58,90 +81,38 @@ class Component:
         self.components = ""
         self.menus = ""
         self.buttons = ""
+        self.check_against = _gather_checker()
 
-    @staticmethod
-    def _get_media_url(media):
-        """Return a best-effort URL string from a media/file object, dict, or raw string."""
-        if not media:
-            return ""
-        if isinstance(media, str):
-            return media
-        if isinstance(media, dict):
-            return str(media.get("url", ""))
-        return str(getattr(media, "url", ""))
+    # --- Core Builders ---
 
-    @staticmethod
-    def _get_attr(obj, key, default=None):
-        if isinstance(obj, dict):
-            return obj.get(key, default)
-        return getattr(obj, key, default)
+    async def flow(self):
+        # Try to handle the component directly
+        component_html = await self.build_component(self.component)
+        if component_html:
+            self.components += component_html
+        else:
+            # Fallback to legacy flow for action rows with children
+            children = getattr(self.component, "children", []) or getattr(self.component, "components", [])
+            for c in children:
+                child_html = await self.build_component(c)
+                if child_html:
+                    self.buttons += child_html
 
-    @staticmethod
-    def _stringify_emoji(emoji_obj):
-        """Return a displayable emoji string from dict/emoji."""
-        if not emoji_obj:
-            return ""
-        if isinstance(emoji_obj, dict):
-            emoji_id = emoji_obj.get("id")
-            emoji_name = emoji_obj.get("name") or ""
-            if emoji_id:
-                return f"<:{emoji_name}:{emoji_id}>"
-            return emoji_name
-        return str(emoji_obj)
+            if self.menus:
+                self.components += f'<div class="chatlog__components">{self.menus}</div>'
 
-    @staticmethod
-    def _file_display_name(url: str) -> str:
-        """Return a clean filename without query/fragment."""
-        if not url:
-            return ""
-        if url.startswith("attachment://"):
-            return url.replace("attachment://", "")
+            if self.buttons:
+                self.components += f'<div class="chatlog__components">{self.buttons}</div>'
 
-        parsed = urlparse(url)
-        path_name = parsed.path.rsplit("/", 1)[-1] if parsed.path else url
-        return path_name or url
-
-    def _find_related_attachment(self, media, file_name: str):
-        """Attempt to match a component media item to a real attachment for metadata."""
-        if not self.attachments:
-            return None
-
-        attachment_id = getattr(media, "attachment_id", None) if media else None
-        if attachment_id is not None:
-            for attachment in self.attachments:
-                if getattr(attachment, "id", None) == attachment_id:
-                    return attachment
-
-        for attachment in self.attachments:
-            if file_name and str(getattr(attachment, "filename", "")) == file_name:
-                return attachment
-
-        media_url = self._get_media_url(media)
-        if media_url:
-            for attachment in self.attachments:
-                if getattr(attachment, "url", None) == media_url or getattr(attachment, "proxy_url", None) == media_url:
-                    return attachment
-
-        return None
-
-    @staticmethod
-    def _get_file_extension(name: str) -> str:
-        if not name or "." not in name:
-            return ""
-        return name.rsplit(".", 1)[-1].lower()
-
-    def _get_file_icon(self, file_name: str, content_type: str = "", media_url: str = "") -> str:
-        """Return the most appropriate file icon for the given name or content type."""
-        return Attachment.resolve_file_icon(file_name, content_type, media_url)
+        return self.components
 
     async def build_component(self, c):
-        # Check for component type attribute
         component_type = getattr(c, "type", None)
 
         # Handle legacy components (v1)
         if isinstance(c, discord.Button):
             return await self.build_button(c)
-        elif isinstance(c, discord.SelectMenu):
+        if isinstance(c, discord.SelectMenu):
             menu_html = await self.build_menu(c)
             Component.menu_div_id += 1
             return menu_html
@@ -151,40 +122,15 @@ class Component:
             return ""
 
         type_value = component_type.value if hasattr(component_type, "value") else component_type
-
-        # ActionRow (type 1) - contains buttons/selects
-        if type_value == 1:
-            return await self.build_action_row(c)
-        # Button (type 2)
-        elif type_value == 2:
-            return await self.build_button(c)
-        # StringSelect (type 3)
-        elif type_value == 3:
-            menu_html = await self.build_menu(c)
-            Component.menu_div_id += 1
-            return menu_html
-        # Section (type 9)
-        elif type_value == 9:
-            return await self.build_section(c)
-        # TextDisplay (type 10)
-        elif type_value == 10:
-            return await self.build_text_display(c)
-        # Thumbnail (type 11)
-        elif type_value == 11:
-            return await self.build_thumbnail(c)
-        # MediaGallery (type 12)
-        elif type_value == 12:
-            return await self.build_media_gallery(c)
-        # File (type 13)
-        elif type_value == 13:
-            return await self.build_file(c)
-        # Separator (type 14)
-        elif type_value == 14:
-            return await self.build_separator(c)
-        # Container (type 17)
-        elif type_value == 17:
-            return await self.build_container(c)
-
+        
+        method_name = self._type_map.get(type_value)
+        if method_name:
+            method = getattr(self, method_name)
+            result = await method(c)
+            if type_value == 3:  # StringSelect
+                Component.menu_div_id += 1
+            return result
+            
         return ""
 
     async def build_action_row(self, c):
@@ -216,7 +162,8 @@ class Component:
             target = ""
             icon = ""
 
-        label = str(self._get_attr(c, "label", "") or "")
+        label = self._get_attr(c, "label", "") or ""
+        label = html.escape(str(label)) if label else ""
         raw_style = self._get_attr(c, "style", None)
         style_key = ""
         if isinstance(raw_style, int):
@@ -274,6 +221,9 @@ class Component:
         if not disabled:
             content = await self.build_menu_options(options)
 
+        selected_label = html.escape(selected_label) if selected_label else ""
+        placeholder = html.escape(placeholder) if placeholder else ""
+
         menu_html = await fill_out(
             self.guild,
             component_menu,
@@ -298,6 +248,9 @@ class Component:
             default_class = "dropdownContentSelected" if is_default else ""
             check_mark = "✓" if is_default else ""
 
+            label_escaped = html.escape(str(label)) if label else ""
+            description_escaped = html.escape(str(description)) if description else ""
+
             if option_emoji:
                 content.append(
                     await fill_out(
@@ -305,8 +258,8 @@ class Component:
                         component_menu_options_emoji,
                         [
                             ("EMOJI", str(option_emoji), PARSE_MODE_EMOJI),
-                            ("TITLE", str(label), PARSE_MODE_MARKDOWN),
-                            ("DESCRIPTION", str(description) if description else "", PARSE_MODE_MARKDOWN),
+                            ("TITLE", label_escaped, PARSE_MODE_MARKDOWN),
+                            ("DESCRIPTION", description_escaped, PARSE_MODE_MARKDOWN),
                             ("DEFAULT_CLASS", default_class, PARSE_MODE_NONE),
                             ("CHECK", check_mark, PARSE_MODE_NONE),
                         ],
@@ -318,8 +271,8 @@ class Component:
                         self.guild,
                         component_menu_options,
                         [
-                            ("TITLE", str(label), PARSE_MODE_MARKDOWN),
-                            ("DESCRIPTION", str(description) if description else "", PARSE_MODE_MARKDOWN),
+                            ("TITLE", label_escaped, PARSE_MODE_MARKDOWN),
+                            ("DESCRIPTION", description_escaped, PARSE_MODE_MARKDOWN),
                             ("DEFAULT_CLASS", default_class, PARSE_MODE_NONE),
                             ("CHECK", check_mark, PARSE_MODE_NONE),
                         ],
@@ -416,13 +369,14 @@ class Component:
 
     async def build_text_display(self, c):
         """Build a text display component"""
-        content = getattr(c, "content", "")
+        content = self._get_attr(c, "content", "")
+        content = html.escape(str(content)) if content else ""
 
         return await fill_out(
             self.guild,
             component_text_display,
             [
-                ("CONTENT", str(content), PARSE_MODE_EMBED),
+                ("CONTENT", content, PARSE_MODE_EMBED),
             ],
         )
 
@@ -432,40 +386,21 @@ class Component:
         description = self._get_attr(c, "description", None)
         spoiler = bool(self._get_attr(c, "spoiler", False))
 
-        url = self._get_media_url(media)
-        if not url:
+        props = self._build_media_properties(media, description, spoiler, "thumbnail")
+        if not props:
             return ""
-
-        file_name = self._file_display_name(url)
-        related_attachment = self._find_related_attachment(media, file_name)
-        if not description and related_attachment:
-            description = getattr(related_attachment, "description", None)
-        spoiler_class = "chatlog__component-spoiler" if spoiler else ""
-        description_text = description if description else ""
-        description_overlay = ""
-        spoiler_label = ""
-        title_text = description_text
-        alt_text = description_text or file_name
-
-        if spoiler:
-            spoiler_label = '<div class="chatlog__component-spoiler-label">SPOILER</div>'
-            title_text = "Spoiler"
-            alt_text = "Spoiler"
-            description_overlay = ""
-        elif description:
-            description_overlay = f'<div class="chatlog__component-thumbnail-description">{description}</div>'
 
         return await fill_out(
             self.guild,
             component_thumbnail,
             [
-                ("URL", str(url), PARSE_MODE_NONE),
-                ("TITLE", title_text, PARSE_MODE_MARKDOWN),
-                ("ALT", alt_text, PARSE_MODE_MARKDOWN),
-                ("DESCRIPTION", description_text, PARSE_MODE_MARKDOWN),
-                ("SPOILER_CLASS", spoiler_class, PARSE_MODE_NONE),
-                ("SPOILER_TAG", spoiler_label, PARSE_MODE_NONE),
-                ("DESCRIPTION_OVERLAY", description_overlay, PARSE_MODE_NONE),
+                ("URL", props["URL"], PARSE_MODE_NONE),
+                ("TITLE", props["TITLE"], PARSE_MODE_MARKDOWN),
+                ("ALT", props["ALT"], PARSE_MODE_MARKDOWN),
+                ("DESCRIPTION", props["DESCRIPTION"], PARSE_MODE_MARKDOWN),
+                ("SPOILER_CLASS", props["SPOILER_CLASS"], PARSE_MODE_NONE),
+                ("SPOILER_TAG", props["SPOILER_TAG"], PARSE_MODE_NONE),
+                ("DESCRIPTION_OVERLAY", props["DESCRIPTION_OVERLAY"], PARSE_MODE_NONE),
             ],
         )
 
@@ -504,40 +439,21 @@ class Component:
         description = self._get_attr(item, "description", None)
         spoiler = bool(self._get_attr(item, "spoiler", False))
 
-        url = self._get_media_url(media)
-        if not url:
+        props = self._build_media_properties(media, description, spoiler, "media")
+        if not props:
             return ""
-
-        file_name = self._file_display_name(url)
-        related_attachment = self._find_related_attachment(media, file_name)
-        if not description and related_attachment:
-            description = getattr(related_attachment, "description", None)
-
-        spoiler_class = "chatlog__component-spoiler" if spoiler else ""
-        description_text = description if description else ""
-        description_overlay = ""
-        spoiler_label = ""
-        title_text = description_text
-        alt_text = description_text or file_name
-
-        if spoiler:
-            spoiler_label = '<div class="chatlog__component-spoiler-label">SPOILER</div>'
-            title_text = "Spoiler"
-            alt_text = "Spoiler"
-        elif description:
-            description_overlay = f'<div class="chatlog__component-media-description">{description}</div>'
 
         return await fill_out(
             self.guild,
             component_media_gallery_item,
             [
-                ("URL", str(url), PARSE_MODE_NONE),
-                ("TITLE", title_text, PARSE_MODE_MARKDOWN),
-                ("ALT", alt_text, PARSE_MODE_MARKDOWN),
-                ("DESCRIPTION", description_text, PARSE_MODE_MARKDOWN),
-                ("SPOILER_CLASS", spoiler_class, PARSE_MODE_NONE),
-                ("SPOILER_TAG", spoiler_label, PARSE_MODE_NONE),
-                ("DESCRIPTION_OVERLAY", description_overlay, PARSE_MODE_NONE),
+                ("URL", props["URL"], PARSE_MODE_NONE),
+                ("TITLE", props["TITLE"], PARSE_MODE_MARKDOWN),
+                ("ALT", props["ALT"], PARSE_MODE_MARKDOWN),
+                ("DESCRIPTION", props["DESCRIPTION"], PARSE_MODE_MARKDOWN),
+                ("SPOILER_CLASS", props["SPOILER_CLASS"], PARSE_MODE_NONE),
+                ("SPOILER_TAG", props["SPOILER_TAG"], PARSE_MODE_NONE),
+                ("DESCRIPTION_OVERLAY", props["DESCRIPTION_OVERLAY"], PARSE_MODE_NONE),
             ],
         )
 
@@ -605,23 +521,111 @@ class Component:
             ],
         )
 
-    async def flow(self):
-        # Try to handle the component directly
-        component_html = await self.build_component(self.component)
-        if component_html:
-            self.components += component_html
+    # --- Utility Helpers ---
+
+    def _get_attr(self, obj, key, default=None):
+        if isinstance(obj, dict):
+            val = obj.get(key, default)
         else:
-            # Fallback to legacy flow for action rows with children
-            children = getattr(self.component, "children", []) or getattr(self.component, "components", [])
-            for c in children:
-                child_html = await self.build_component(c)
-                if child_html:
-                    self.buttons += child_html
+            val = getattr(obj, key, default)
+        return val if val != self.check_against else default
 
-            if self.menus:
-                self.components += f'<div class="chatlog__components">{self.menus}</div>'
+    def _build_media_properties(self, media, description, spoiler, css_class_prefix="thumbnail"):
+        url = self._get_media_url(media)
+        if not url:
+            return None
+        
+        file_name = self._file_display_name(url)
+        related_attachment = self._find_related_attachment(media, file_name)
+        if not description and related_attachment:
+            description = getattr(related_attachment, "description", None)
 
-            if self.buttons:
-                self.components += f'<div class="chatlog__components">{self.buttons}</div>'
+        spoiler_class = "chatlog__component-spoiler" if spoiler else ""
+        spoiler_label = '<div class="chatlog__component-spoiler-label">SPOILER</div>' if spoiler else ""
+        
+        title_text = "Spoiler" if spoiler else description
+        alt_text = "Spoiler" if spoiler else (description or file_name)
+        description_text = description
+        
+        description_overlay = ""
+        if not spoiler and description:
+            description_overlay = f'<div class="chatlog__component-{css_class_prefix}-description">{{html.escape(str(description))}}</div>'
 
-        return self.components
+        return {
+            "URL": str(url),
+            "TITLE": html.escape(str(title_text)) if title_text else "",
+            "ALT": html.escape(str(alt_text)) if alt_text else "",
+            "DESCRIPTION": html.escape(str(description_text)) if description_text else "",
+            "SPOILER_CLASS": spoiler_class,
+            "SPOILER_TAG": spoiler_label,
+            "DESCRIPTION_OVERLAY": description_overlay,
+        }
+
+    @staticmethod
+    def _get_media_url(media):
+        """Return a best-effort URL string from a media/file object, dict, or raw string."""
+        if not media:
+            return ""
+        if isinstance(media, str):
+            return media
+        if isinstance(media, dict):
+            return str(media.get("url", ""))
+        return str(getattr(media, "url", ""))
+
+    @staticmethod
+    def _stringify_emoji(emoji_obj):
+        """Return a displayable emoji string from dict/emoji."""
+        if not emoji_obj:
+            return ""
+        if isinstance(emoji_obj, dict):
+            emoji_id = emoji_obj.get("id")
+            emoji_name = emoji_obj.get("name") or ""
+            if emoji_id:
+                return f"<:{emoji_name}:{emoji_id}>"
+            return emoji_name
+        return str(emoji_obj)
+
+    @staticmethod
+    def _file_display_name(url: str) -> str:
+        """Return a clean filename without query/fragment."""
+        if not url:
+            return ""
+        if url.startswith("attachment://"):
+            return url.replace("attachment://", "")
+
+        parsed = urlparse(url)
+        path_name = parsed.path.rsplit("/", 1)[-1] if parsed.path else url
+        return path_name or url
+
+    def _find_related_attachment(self, media, file_name: str):
+        """Attempt to match a component media item to a real attachment for metadata."""
+        if not self.attachments:
+            return None
+
+        attachment_id = getattr(media, "attachment_id", None) if media else None
+        if attachment_id is not None:
+            for attachment in self.attachments:
+                if getattr(attachment, "id", None) == attachment_id:
+                    return attachment
+
+        for attachment in self.attachments:
+            if file_name and str(getattr(attachment, "filename", "")) == file_name:
+                return attachment
+
+        media_url = self._get_media_url(media)
+        if media_url:
+            for attachment in self.attachments:
+                if getattr(attachment, "url", None) == media_url or getattr(attachment, "proxy_url", None) == media_url:
+                    return attachment
+
+        return None
+
+    @staticmethod
+    def _get_file_extension(name: str) -> str:
+        if not name or "." not in name:
+            return ""
+        return name.rsplit(".", 1)[-1].lower()
+
+    def _get_file_icon(self, file_name: str, content_type: str = "", media_url: str = "") -> str:
+        """Return the most appropriate file icon for the given name or content type."""
+        return Attachment.resolve_file_icon(file_name, content_type, media_url)

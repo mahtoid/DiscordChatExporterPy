@@ -70,6 +70,7 @@ class MessageConstruct:
         attachment_handler: Optional[AttachmentHandler],
     ):
         self.message = message
+        self.rendered_content = ""
         self.previous_message = previous_message
         self.pytz_timezone = pytz_timezone
         self.military_time = military_time
@@ -197,7 +198,7 @@ class MessageConstruct:
 
     async def build_content(self):
         if not self.message.content and not self.get_message_snapshots():
-            self.message.content = ""
+            self.rendered_content = ""
             return
 
         if self.message_edited_at:
@@ -213,7 +214,7 @@ class MessageConstruct:
         combined = html.escape(combined or "")
 
 
-        self.message.content = await fill_out(
+        self.rendered_content = await fill_out(
             self.guild,
             message_content,
             [
@@ -350,7 +351,7 @@ class MessageConstruct:
                 f"https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/stickers/{sticker.pack_id}/{sticker.id}.gif"
             )
 
-        self.message.content = await fill_out(
+        self.rendered_content = await fill_out(
             self.guild,
             img_attachment,
             [
@@ -370,9 +371,9 @@ class MessageConstruct:
         if n == 6:
             return [3, 3]
         if n == 7:
-            return [3, 4]
+            return [1, 3, 3]
         if n == 8:
-            return [4, 4]
+            return [2, 3, 3]
         if n == 10:
             return [1, 9]
 
@@ -411,8 +412,8 @@ class MessageConstruct:
             html_output = ""
             splits = self.calculate_grid_splits(len(group))
             start = 0
-            for i, s in enumerate(splits):
-                html_output += await AttachmentGrid(group[start : start + s], self.guild, i).flow()
+            for s in splits:
+                html_output += await AttachmentGrid(group[start : start + s], self.guild, len(group)).flow()
                 start += s
             return html_output
 
@@ -455,8 +456,8 @@ class MessageConstruct:
         if not self.forwarded:
             return
 
-        self.message.content = (
-            f'<div class="quote"><div>{message_forwarded}{self.message.content}'
+        self.rendered_content = (
+            f'<div class="quote"><div>{message_forwarded}{self.rendered_content}'
             f"{self.attachments}{self.forwarded_embeds}{self.components}</div></div>"
         )
 
@@ -475,7 +476,7 @@ class MessageConstruct:
             message_body,
             [
                 ("MESSAGE_ID", str(self.message.id)),
-                ("MESSAGE_CONTENT", self.message.content, PARSE_MODE_NONE),
+                ("MESSAGE_CONTENT", self.rendered_content, PARSE_MODE_NONE),
                 ("EMBEDS", self.embeds, PARSE_MODE_NONE),
                 ("ATTACHMENTS", self.attachments, PARSE_MODE_NONE),
                 ("COMPONENTS", self.components, PARSE_MODE_NONE),
@@ -549,7 +550,7 @@ class MessageConstruct:
                     ("TIMESTAMP", str(self.message_created_at)),
                     ("DEFAULT_TIMESTAMP", str(default_timestamp), PARSE_MODE_NONE),
                     ("MESSAGE_ID", str(self.message.id)),
-                    ("MESSAGE_CONTENT", self.message.content, PARSE_MODE_NONE),
+                    ("MESSAGE_CONTENT", self.rendered_content, PARSE_MODE_NONE),
                     ("EMBEDS", self.embeds, PARSE_MODE_NONE),
                     ("ATTACHMENTS", self.attachments, PARSE_MODE_NONE),
                     ("COMPONENTS", self.components, PARSE_MODE_NONE),

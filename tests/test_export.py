@@ -129,11 +129,11 @@ def _make_embed(
 
     embed.image = MagicMock()
     embed.image.url = image_url
-    embed.image.proxy_url = image_url
+    embed.image.url = image_url
 
     embed.thumbnail = MagicMock()
     embed.thumbnail.url = thumbnail_url
-    embed.thumbnail.proxy_url = thumbnail_url
+    embed.thumbnail.url = thumbnail_url
 
     embed.timestamp = timestamp
     embed.url = url
@@ -423,7 +423,7 @@ class TestRawExport(unittest.TestCase):
         
         att1 = MagicMock(spec=discord.Attachment)
         att1.url = "https://mahto.id/assets/me.png"
-        att1.proxy_url = "https://mahto.id/assets/me.png"
+        att1.url = "https://mahto.id/assets/me.png"
         att1.filename = "file1.png"
         att1.size = 1048576
         att1.content_type = "image/png"
@@ -431,7 +431,7 @@ class TestRawExport(unittest.TestCase):
         
         att2 = MagicMock(spec=discord.Attachment)
         att2.url = "https://mahto.id/assets/me.png"
-        att2.proxy_url = "https://mahto.id/assets/me.png"
+        att2.url = "https://mahto.id/assets/me.png"
         att2.filename = "file2.txt"
         att2.size = 1024
         att2.content_type = "text/plain"
@@ -454,7 +454,7 @@ class TestRawExport(unittest.TestCase):
         
         att = MagicMock(spec=discord.Attachment)
         att.url = "https://mahto.id/assets/me.png"
-        att.proxy_url = "https://mahto.id/assets/me.png"
+        att.url = "https://mahto.id/assets/me.png"
         att.filename = "SPOILER_file.png"
         att.size = 100
         att.content_type = "image/png"
@@ -474,7 +474,7 @@ class TestRawExport(unittest.TestCase):
         
         att1 = MagicMock(spec=discord.Attachment)
         att1.url = "https://mahto.id/assets/me.png"
-        att1.proxy_url = "https://mahto.id/assets/me.png"
+        att1.url = "https://mahto.id/assets/me.png"
         att1.filename = "img1.png"
         att1.size = 100
         att1.content_type = "image/png"
@@ -482,7 +482,7 @@ class TestRawExport(unittest.TestCase):
         
         att2 = MagicMock(spec=discord.Attachment)
         att2.url = "https://mahto.id/assets/me.png"
-        att2.proxy_url = "https://mahto.id/assets/me.png"
+        att2.url = "https://mahto.id/assets/me.png"
         att2.filename = "img2.png"
         att2.size = 100
         att2.content_type = "image/png"
@@ -503,7 +503,7 @@ class TestRawExport(unittest.TestCase):
         for i in range(3):
             att = MagicMock(spec=discord.Attachment)
             att.url = "https://mahto.id/assets/me.png"
-            att.proxy_url = "https://mahto.id/assets/me.png"
+            att.url = "https://mahto.id/assets/me.png"
             att.filename = f"img{i}.png"
             att.size = 100
             att.content_type = "image/png"
@@ -525,7 +525,7 @@ class TestRawExport(unittest.TestCase):
         for i in range(4):
             att = MagicMock(spec=discord.Attachment)
             att.url = "https://mahto.id/assets/me.png"
-            att.proxy_url = "https://mahto.id/assets/me.png"
+            att.url = "https://mahto.id/assets/me.png"
             att.filename = f"img{i}.png"
             att.size = 100
             att.content_type = "image/png"
@@ -547,7 +547,7 @@ class TestRawExport(unittest.TestCase):
         for i in range(5):
             att = MagicMock(spec=discord.Attachment)
             att.url = "https://mahto.id/assets/me.png"
-            att.proxy_url = "https://mahto.id/assets/me.png"
+            att.url = "https://mahto.id/assets/me.png"
             att.filename = f"img{i}.png"
             att.size = 100
             att.content_type = "image/png"
@@ -570,7 +570,7 @@ class TestRawExport(unittest.TestCase):
         for i in range(10):
             att = MagicMock(spec=discord.Attachment)
             att.url = "https://mahto.id/assets/me.png"
-            att.proxy_url = "https://mahto.id/assets/me.png"
+            att.url = "https://mahto.id/assets/me.png"
             att.filename = f"img{i}.png"
             att.size = 100
             att.content_type = "image/png"
@@ -591,7 +591,7 @@ class TestRawExport(unittest.TestCase):
         guild = _make_guild()
         att = MagicMock(spec=discord.Attachment)
         att.url = "https://mahto.id/assets/me.png"
-        att.proxy_url = "https://mahto.id/assets/me.png"
+        att.url = "https://mahto.id/assets/me.png"
         att.filename = "img1.png"
         att.size = 100
         att.content_type = "image/png"

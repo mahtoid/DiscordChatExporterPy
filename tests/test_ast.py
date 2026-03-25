@@ -53,6 +53,15 @@ class TestAST(unittest.TestCase):
             '<div class="quote"><div style="min-width: 0; flex: 1;">Multiline<br>Quote<br>Block</div></div>',
         )
 
+    def test_invalid_quotes_rendered_as_text(self):
+        text = "&gt;&gt; Quote 1\n&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt; Quote 2"
+        nodes = self.parser.parse(text)
+        out = "".join(n.render() for n in nodes)
+        self.assertEqual(
+            out,
+            "&gt;&gt; Quote 1<br>&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt; Quote 2",
+        )
+
     def test_heading_newline_stripping(self):
         text = "# Heading\n\n\n\nTest"
         nodes = self.parser.parse(text)

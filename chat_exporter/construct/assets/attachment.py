@@ -52,14 +52,14 @@ class Attachment:
             if "image" in self.attachments.content_type:
                 return {
                     "type": "image",
-                    "url": self.attachments.proxy_url,
+                    "url": self.attachments.url,
                     "is_spoiler": is_spoiler,
                     "filename": self.attachments.filename,
                 }
             elif "video" in self.attachments.content_type:
                 return {
                     "type": "video",
-                    "url": self.attachments.proxy_url,
+                    "url": self.attachments.url,
                     "is_spoiler": is_spoiler,
                     "filename": self.attachments.filename,
                 }
@@ -70,14 +70,20 @@ class Attachment:
             self.guild,
             img_attachment,
             [
-                ("ATTACH_URL", self.attachments.proxy_url, PARSE_MODE_NONE),
-                ("ATTACH_URL_THUMB", self.attachments.proxy_url, PARSE_MODE_NONE),
+                ("ATTACH_URL", self.attachments.url, PARSE_MODE_NONE),
+                ("ATTACH_URL_THUMB", self.attachments.url, PARSE_MODE_NONE),
             ],
         )
 
     async def video(self):
+        width_str = f'width="{self.attachments.width}"' if getattr(self.attachments, "width", None) else ""
+        height_str = f'height="{self.attachments.height}"' if getattr(self.attachments, "height", None) else ""
         self.attachments = await fill_out(
-            self.guild, video_attachment, [("ATTACH_URL", self.attachments.proxy_url, PARSE_MODE_NONE)]
+            self.guild, video_attachment, [
+                ("ATTACH_URL", self.attachments.url, PARSE_MODE_NONE),
+                ("ATTACH_WIDTH", width_str, PARSE_MODE_NONE),
+                ("ATTACH_HEIGHT", height_str, PARSE_MODE_NONE),
+            ]
         )
 
     async def audio(self):
@@ -89,9 +95,9 @@ class Attachment:
             audio_attachment,
             [
                 ("ATTACH_ICON", file_icon, PARSE_MODE_NONE),
-                ("ATTACH_URL", self.attachments.proxy_url, PARSE_MODE_NONE),
+                ("ATTACH_URL", self.attachments.url, PARSE_MODE_NONE),
                 ("ATTACH_BYTES", str(file_size), PARSE_MODE_NONE),
-                ("ATTACH_AUDIO", self.attachments.proxy_url, PARSE_MODE_NONE),
+                ("ATTACH_AUDIO", self.attachments.url, PARSE_MODE_NONE),
                 ("ATTACH_FILE", str(self.attachments.filename), PARSE_MODE_NONE),
             ],
         )
@@ -106,7 +112,7 @@ class Attachment:
             msg_attachment,
             [
                 ("ATTACH_ICON", file_icon, PARSE_MODE_NONE),
-                ("ATTACH_URL", self.attachments.proxy_url, PARSE_MODE_NONE),
+                ("ATTACH_URL", self.attachments.url, PARSE_MODE_NONE),
                 ("ATTACH_BYTES", str(file_size), PARSE_MODE_NONE),
                 ("ATTACH_FILE", str(self.attachments.filename), PARSE_MODE_NONE),
             ],
@@ -126,7 +132,7 @@ class Attachment:
         return self.resolve_file_icon(
             name=str(getattr(self.attachments, "filename", "") or ""),
             content_type=str(getattr(self.attachments, "content_type", "") or ""),
-            url=str(getattr(self.attachments, "proxy_url", "") or ""),
+            url=str(getattr(self.attachments, "url", "") or ""),
         )
 
     @staticmethod
@@ -257,10 +263,10 @@ class Attachment:
 
 
 class AttachmentGrid:
-    def __init__(self, attachments, guild, splitIndex):
+    def __init__(self, attachments, guild, attachmentCount):
         self.attachments = attachments
         self.guild = guild
-        self.splitIndex = splitIndex
+        self.attachmentCount = attachmentCount
 
     async def flow(self):
         grid_items_html = ""
@@ -276,7 +282,7 @@ class AttachmentGrid:
                 ],
             )
 
-        grid_class = self._get_grid_class(len(self.attachments), self.splitIndex)
+        grid_class = self._get_grid_class(len(self.attachments), self.attachmentCount)
 
         return await fill_out(
             self.guild,
@@ -288,17 +294,18 @@ class AttachmentGrid:
         )
 
     @staticmethod
-    def _get_grid_class(count, splitIndex):
-        if count == 1:
+    def _get_grid_class(chunk_size, total_count):
+        if chunk_size == 1:
+            if total_count == 1:
+                return "chatlog__attachment-grid--single"
             return "chatlog__attachment-grid--1x1"
-        elif count == 2:
+        elif chunk_size == 2:
             return "chatlog__attachment-grid--1x2"
-        elif count == 3:
-            if splitIndex == 0:
+        elif chunk_size == 3:
+            if total_count == 3:
                 return "chatlog__attachment-grid--1x3" # mosaic
-            else:
-                return "chatlog__attachment-grid--3x3"
-        elif count <= 4:
+            return "chatlog__attachment-grid--3x3"
+        elif chunk_size == 4:
             return "chatlog__attachment-grid--2x2"
         else:
             return "chatlog__attachment-grid--3x3"

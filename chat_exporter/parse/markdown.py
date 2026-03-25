@@ -42,7 +42,11 @@ class ParseMarkdown:
             self.content = self.content.replace(f"{{{{CODE_BLOCK_{i}}}}}", block)
 
     async def standard_message_flow(self):
-        return await self.standard_embed_flow()
+        ast = AstParser()
+        nodes = ast.parse(self.content)
+        self.content = "".join(n.render(self.guild, self.bot) for n in nodes)
+        await self.parse_emoji()
+        return self.content
 
     async def link_embed_flow(self):
         ast = AstParser()
@@ -81,6 +85,13 @@ class ParseMarkdown:
             [r"<a:.*?:(\d*)>", '<img class="emoji emoji--small" src="https://cdn.discordapp.com/emojis/%s.gif">'],
         )
 
+        shield_blocks = []
+        def repl(match):
+            shield_blocks.append(match.group(0))
+            return f"{{{{SHIELD_{len(shield_blocks) - 1}}}}}"
+        self.content = re.sub(r'<div class="pre pre--multiline.*?</div>', repl, self.content, flags=re.DOTALL)
+        self.content = re.sub(r'<span class="pre pre-inline">.*?</span>', repl, self.content, flags=re.DOTALL)
+
         self.content = await convert_emoji([word for word in self.content])
 
         for p, r in holder:
@@ -92,3 +103,6 @@ class ParseMarkdown:
                 return repl
 
             self.content = re.sub(p, make_repl(r), self.content)
+
+        for i, block in enumerate(shield_blocks):
+            self.content = self.content.replace(f"{{{{SHIELD_{i}}}}}", block)

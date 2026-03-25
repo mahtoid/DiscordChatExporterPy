@@ -491,13 +491,15 @@ class AstParser:
                 continue
 
             # Blockquote (>>>)
-            if (i == 0 or text[i - 1] == "\n") and text[i : i + 13] == "&gt;&gt;&gt; ":
-                nodes.append(QuoteNode(self._parse_inline(text[i + 13 :])))
-                break
+            if (i == 0 or text[i - 1] == "\n") and (text[i : i + 13] == "&gt;&gt;&gt; " or text[i : i + 12] == "&gt;&gt;&gt;"):
+                prefix_len = 13 if text[i : i + 13] == "&gt;&gt;&gt; " else 12
+                if text[i + prefix_len : i + prefix_len + 4] != "&gt;":
+                    nodes.append(QuoteNode(self._parse_inline(text[i + prefix_len :])))
+                    break
 
             # Single line quote (>)
-            if (i == 0 or text[i - 1] == "\n") and (text[i : i + 5] == "&gt; " or text[i : i + 4] == "&gt;"):
-                prefix_len = 5 if text[i : i + 5] == "&gt; " else 4
+            if (i == 0 or text[i - 1] == "\n") and text[i : i + 5] == "&gt; ":
+                prefix_len = 5
                 endtag = text.find("\n", i + prefix_len)
                 if endtag == -1:
                     endtag = n
