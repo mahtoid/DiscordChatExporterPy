@@ -549,7 +549,10 @@ class Component:
         
         description_overlay = ""
         if not spoiler and description:
-            description_overlay = f'<div class="chatlog__component-{css_class_prefix}-description">{{html.escape(str(description))}}</div>'
+            description_overlay = (
+                f'<div class="chatlog__component-{css_class_prefix}-description">'
+                f'{{html.escape(str(description))}}</div>'
+            )
 
         return {
             "URL": str(url),
