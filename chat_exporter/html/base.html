@@ -599,11 +599,12 @@ If you have any issues or suggestions - open an issue on the Github Repository o
         width: auto;
       }
 
-      /* Single image (1 total) - natural size */
+      /* Single image (1 total) - natural size, scales with viewport */
       .chatlog__attachment-grid--single {
         display: inline-block;
         width: fit-content;
         width: -moz-fit-content;
+        max-width: 100%;
       }
 
       .chatlog__attachment-grid--single .chatlog__attachment-grid-item {
@@ -618,7 +619,7 @@ If you have any issues or suggestions - open an issue on the Github Repository o
         display: block;
         width: auto;
         height: auto;
-        max-width: 400px;
+        max-width: min(400px, 100%);
         max-height: 350px;
         object-fit: contain;
       }
@@ -629,8 +630,9 @@ If you have any issues or suggestions - open an issue on the Github Repository o
         width: 100%;
       }
 
+      /* aspect-ratio keeps shape as width shrinks */
       .chatlog__attachment-grid--1x1 .chatlog__attachment-grid-item {
-        height: 280px;
+        aspect-ratio: 16 / 9;
       }
 
       .chatlog__attachment-grid--1x1
@@ -650,32 +652,36 @@ If you have any issues or suggestions - open an issue on the Github Repository o
         grid-template-columns: repeat(2, 1fr);
       }
 
+      /* aspect-ratio keeps square-ish cells proportional as width shrinks */
       .chatlog__attachment-grid--1x2 .chatlog__attachment-grid-item {
-        height: 275px;
+        aspect-ratio: 1 / 1;
       }
 
       /* 3-image mosaic layout (1 large left + 2 stacked right) */
       .chatlog__attachment-grid--1x3 {
         grid-template-columns: 2fr 1fr;
-        grid-template-rows: repeat(2, 1fr);
+        /* rows are driven by the first child's aspect-ratio */
       }
 
       .chatlog__attachment-grid--1x3
         .chatlog__attachment-grid-item:first-child {
         grid-row: span 2;
+        aspect-ratio: 1 / 1;
+      }
+
+      /* The two right-column cells share the same height as the left cell */
+      .chatlog__attachment-grid--1x3
+        .chatlog__attachment-grid-item:not(:first-child) {
+        aspect-ratio: 1 / 1;
       }
 
       /* 4-image 2x2 grid */
       .chatlog__attachment-grid--2x2 {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        grid-template-rows: repeat(2, minmax(0, 1fr));
-        max-height: 350px;
       }
 
       .chatlog__attachment-grid--2x2 .chatlog__attachment-grid-item {
-        /* Remove explicit height to let grid-template-rows and max-height control it */
-        height: auto;
-        min-height: 150px; /* Sensible minimum to prevent collapse if content missing */
+        aspect-ratio: 1 / 1;
       }
 
       /* 9-image (or chunk of 3) 3x3 grid */
@@ -684,9 +690,9 @@ If you have any issues or suggestions - open an issue on the Github Repository o
         width: 100%;
       }
 
+      /* Square cells that scale with the grid width */
       .chatlog__attachment-grid--3x3 .chatlog__attachment-grid-item {
-        /* Each cell is approx 550px / 3 cols = 183px, keep square */
-        height: 183px;
+        aspect-ratio: 1 / 1;
       }
 
       .chatlog__attachment-grid-item {
@@ -2127,7 +2133,7 @@ If you have any issues or suggestions - open an issue on the Github Repository o
     <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.5/plugin/isBetween.js"></script>
 
     <script>
-          <!--  Scroll to Message (References)  -->
+          // Scroll to Message (References)
           function scrollToMessage(event, id) {
               var element = document.getElementById('chatlog__message-container-' + id);
 
@@ -2147,7 +2153,7 @@ If you have any issues or suggestions - open an issue on the Github Repository o
               }
           }
 
-      < !--Spoiler(|| Spoiler ||) -->
+      // Spoiler (|| Spoiler ||)
               function showSpoiler(event, element) {
                   if (element && element.classList.contains('spoiler--hidden')) {
                       event.preventDefault();
@@ -2155,7 +2161,7 @@ If you have any issues or suggestions - open an issue on the Github Repository o
                   }
               }
 
-              < !--Menu Dropdown(Selectmenu)-- >
+              // Menu Dropdown (Selectmenu)
                   function showDropdown(dropdownID) {
                       const button = document.getElementById("dropdownButton" + dropdownID);
                       const menuContent = document.getElementById("dropdownMenuContent" + dropdownID);
@@ -2171,7 +2177,7 @@ If you have any issues or suggestions - open an issue on the Github Repository o
                       }
                   }
 
-                  < !--Component Spoiler(click to reveal thumbnails / media)-- >
+                  // Component Spoiler (click to reveal thumbnails / media)
                       document.addEventListener('DOMContentLoaded', () => {
                           const spoilerTargets = document.querySelectorAll(
                               '.chatlog__component-thumbnail.chatlog__component-spoiler, ' +
@@ -2192,7 +2198,7 @@ If you have any issues or suggestions - open an issue on the Github Repository o
                           });
                       });
 
-                  < !--Code Block Markdown(```lang```)-- >
+                  // Code Block Markdown (```lang```)
               document.addEventListener('DOMContentLoaded', () => {
                   document.querySelectorAll('.pre--multiline').forEach((block) => {
                       hljs.highlightBlock(block);
@@ -2273,7 +2279,7 @@ If you have any issues or suggestions - open an issue on the Github Repository o
     {{META_DATA}}
 
     <script>
-      <!-- Right Click - Copy ID -->
+      // Right Click - Copy ID
       let metaPopout = undefined
       const contextMenu = document.getElementById("context-menu");
       const scope = document.querySelector("body");
@@ -2292,9 +2298,11 @@ If you have any issues or suggestions - open an issue on the Github Repository o
               left: scopeOffsetX,
               top: scopeOffsetY,
           } = scope.getBoundingClientRect()
-          scopeOffsetX = scopeOffsetX < 0 ? 0 : scopeOffsetX; scopeOffsetY = scopeOffsetY < 0 ? 0 : scopeOffsetY const
-              scopeX = mouseX - scopeOffsetX; const scopeY = mouseY - scopeOffsetY const outOfBoundsOnX = scopeX + maxWidth >
-                  scope.clientWidth
+          scopeOffsetX = scopeOffsetX < 0 ? 0 : scopeOffsetX;
+          scopeOffsetY = scopeOffsetY < 0 ? 0 : scopeOffsetY;
+          const scopeX = mouseX - scopeOffsetX;
+          const scopeY = mouseY - scopeOffsetY;
+          const outOfBoundsOnX = scopeX + maxWidth > scope.clientWidth;
           const outOfBoundsOnY = scopeY + maxHeight > scope.clientHeight
           let normalizedX = mouseX;
           let normalizedY = mouseY
@@ -2363,8 +2371,8 @@ If you have any issues or suggestions - open an issue on the Github Repository o
           }
       });
 
-          < !--User Dialog-- >
-              const summaryPopout = document.getElementById('summary-popout')
+      // User Dialog
+      const summaryPopout = document.getElementById('summary-popout')
 
       window.onload = function () {
           var author_name = document.getElementsByClassName('chatlog__author-name');
@@ -2376,14 +2384,19 @@ If you have any issues or suggestions - open an issue on the Github Repository o
           for (var i = 0; i < element_select.length; i++) {
               var element = element_select[i];
               element.onclick = function () {
-                  authorID = this.getAttribute("data-user-id"); if (metaPopout) {
+                  authorID = this.getAttribute("data-user-id");
+                  if (metaPopout) {
                       metaPopout.classList.remove('mounted');
-                  } metaPopout = document.getElementById('meta-popout-' +
-                      authorID); const subtractX = document.querySelector('.main').scrollLeft const
-                          subtractY = document.querySelector('.main').scrollTop const elementX = this.offsetLeft +
-                              this.offsetWidth + 10 - subtractX const elementY = this.offsetTop - subtractY const { normalizedX,
-                                  normalizedY } = normalisePosition(elementX, elementY, "user")
-                  metaPopout.style.left = `${normalizedX}px`; metaPopout.style.top = `${normalizedY}px`; setTimeout(() => {
+                  }
+                  metaPopout = document.getElementById('meta-popout-' + authorID);
+                  const subtractX = document.querySelector('.main').scrollLeft;
+                  const subtractY = document.querySelector('.main').scrollTop;
+                  const elementX = this.offsetLeft + this.offsetWidth + 10 - subtractX;
+                  const elementY = this.offsetTop - subtractY;
+                  const { normalizedX, normalizedY } = normalisePosition(elementX, elementY, "user");
+                  metaPopout.style.left = `${normalizedX}px`;
+                  metaPopout.style.top = `${normalizedY}px`;
+                  setTimeout(() => {
                       metaPopout.classList.add("mounted")
                   });
               }
@@ -2403,13 +2416,13 @@ If you have any issues or suggestions - open an issue on the Github Repository o
           }
       }
 
-          < !--Timestamps: Tooltips-- >
-              tippy('.chatlog__timestamp', {
-                  placement: 'top',
-                  animation: 'fade',
-                  content: (reference) => reference.getAttribute('data-timestamp'),
-                  theme: 'disc',
-              });
+      // Timestamps: Tooltips
+      tippy('.chatlog__timestamp', {
+          placement: 'top',
+          animation: 'fade',
+          content: (reference) => reference.getAttribute('data-timestamp'),
+          theme: 'disc',
+      });
 
       tippy('.chatlog__short-timestamp', {
           placement: 'top',
@@ -2425,7 +2438,7 @@ If you have any issues or suggestions - open an issue on the Github Repository o
           theme: 'disc',
       });
 
-                      < !--Timestamps: Tooltips-- >
+           // Timestamps: Tooltips
           tippy('.unix-timestamp', {
               placement: 'top',
               animation: 'fade',
