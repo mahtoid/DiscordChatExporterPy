@@ -168,8 +168,11 @@ chat_exporter/config.py
 *.fs*
 *.sqlite
 
-.idea/*
-.idea\*
+# Tests
+tests/artifacts
+
+# Bloat
+.ruff_cache/
 
 # macOS
 .DS_Store

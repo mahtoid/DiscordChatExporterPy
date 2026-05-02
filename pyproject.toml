@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "chat_exporter"
 description = "A simple Discord chat exporter for Python Discord bots."
-version = "3.0.1"
+version = "3.1.0"
 readme = "README.md"
 authors = [
     { name="mahtoid", email="info@mahto.id" }
@@ -31,6 +31,37 @@ classifiers = [
 ]
 dependencies = ["aiohttp", "pytz", "grapheme", "emoji"]
 keywords = ["chat exporter", "discord chat exporter", "discord", "discordpy", "disnake", "pycord", "nextcord"]
+
+[project.optional-dependencies]
+dev = [
+    "ruff",
+    "pytest",
+    "pytest-asyncio",
+    "discord.py",
+]
+
+[tool.ruff]
+# Target version for the generated code.
+target-version = "py311"
+line-length = 120
+
+[tool.ruff.lint]
+
+# Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
+# Also enable security rules (`S`) and isort (`I`).
+select = ["E4", "E7", "E9", "F", "S", "I"]
+ignore = []
+
+# Allow fix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = []
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
 
 [project.urls]
 Homepage = "https://github.com/mahtoid/DiscordChatExporterPy"

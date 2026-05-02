@@ -39,6 +39,14 @@ body:
 
 - type: textarea
   attributes:
+    label: Reproduction
+    description: How to reproduce the bug.
+    placeholder: Either provide a minimal reproducible example or a set of steps to reproduce the bug.
+  validations:
+    required: true
+
+- type: textarea
+  attributes:
     label: Bug Traceback
     description: If necessary, paste the console logs here
     placeholder: Copy Pasta of the errors printed in to your console.

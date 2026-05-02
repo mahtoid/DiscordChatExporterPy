@@ -1,39 +1,35 @@
 import html
-import io
-import traceback
-from typing import List, Optional, Union
-
-import aiohttp
-from pytz import timezone
 from datetime import timedelta
+from typing import List, Optional
 
+from pytz import timezone
+
+from chat_exporter.construct.assets import Attachment, AttachmentGrid, Component, Embed, Reaction
 from chat_exporter.construct.attachment_handler import AttachmentHandler
+from chat_exporter.ext.cache import cache
 from chat_exporter.ext.discord_import import discord
-
-from chat_exporter.construct.assets import Attachment, Component, Embed, Reaction
 from chat_exporter.ext.discord_utils import DiscordUtils
 from chat_exporter.ext.discriminator import discriminator
-from chat_exporter.ext.cache import cache
 from chat_exporter.ext.html_generator import (
-    fill_out,
+    PARSE_MODE_MARKDOWN,
+    PARSE_MODE_NONE,
+    PARSE_MODE_REFERENCE,
     bot_tag,
     bot_tag_verified,
+    end_message,
+    fill_out,
+    img_attachment,
     message_body,
-    message_pin,
-    message_thread,
     message_content,
+    message_forwarded,
+    message_interaction,
+    message_pin,
     message_reference,
     message_reference_unknown,
-    message_reference_forwarded,
-    message_interaction,
-    img_attachment,
-    start_message,
-    end_message,
-    PARSE_MODE_NONE,
-    PARSE_MODE_MARKDOWN,
-    PARSE_MODE_REFERENCE,
-    message_thread_remove,
+    message_thread,
     message_thread_add,
+    message_thread_remove,
+    start_message,
 )
 
 
@@ -54,6 +50,7 @@ class MessageConstruct:
 
     # Asset Types
     embeds: str = ""
+    forwarded_embeds: str = ""
     reactions: str = ""
     components: str = ""
     attachments: str = ""
@@ -70,9 +67,10 @@ class MessageConstruct:
         guild: discord.Guild,
         meta_data: dict,
         message_dict: dict,
-        attachment_handler: Optional[AttachmentHandler]
+        attachment_handler: Optional[AttachmentHandler],
     ):
         self.message = message
+        self.rendered_content = ""
         self.previous_message = previous_message
         self.pytz_timezone = pytz_timezone
         self.military_time = military_time
@@ -105,23 +103,14 @@ class MessageConstruct:
 
     @staticmethod
     def _embed_has_non_image_content(embed) -> bool:
-        if getattr(embed, "title", None):
-            return True
-        if getattr(embed, "description", None):
-            return True
-        if getattr(embed, "fields", None):
-            if len(embed.fields) > 0:
-                return True
-        author = getattr(embed, "author", None)
-        if author and getattr(author, "name", None):
-            return True
-        footer = getattr(embed, "footer", None)
-        if footer and getattr(footer, "text", None):
-            return True
-        thumbnail = getattr(embed, "thumbnail", None)
-        if thumbnail and getattr(thumbnail, "url", None):
-            return True
-        return False
+        return bool(
+            getattr(embed, "title", None)
+            or getattr(embed, "description", None)
+            or (getattr(embed, "fields", None) and len(embed.fields) > 0)
+            or (getattr(embed, "author", None) and getattr(embed.author, "name", None))
+            or (getattr(embed, "footer", None) and getattr(embed.footer, "text", None))
+            or (getattr(embed, "thumbnail", None) and getattr(embed.thumbnail, "url", None))
+        )
 
     def _is_duplicate_image_embed(self, embed, attachment_urls) -> bool:
         if not attachment_urls:
@@ -157,6 +146,7 @@ class MessageConstruct:
         await self.build_interaction()
         await self.build_sticker()
         await self.build_assets()
+        await self.wrap_forwarded()
         await self.build_message_template()
         await self.build_meta_data()
 
@@ -186,7 +176,8 @@ class MessageConstruct:
             user_created_at = self.message.author.created_at
             user_bot = _gather_user_bot(self.message.author)
             user_avatar = (
-                self.message.author.display_avatar if self.message.author.display_avatar
+                self.message.author.display_avatar
+                if self.message.author.display_avatar
                 else DiscordUtils.default_avatar
             )
             user_joined_at = self.message.author.joined_at if hasattr(self.message.author, "joined_at") else None
@@ -196,12 +187,18 @@ class MessageConstruct:
                 else ""
             )
             self.meta_data[user_id] = [
-                user_name_discriminator, user_created_at, user_bot, user_avatar, 1, user_joined_at, user_display_name
+                user_name_discriminator,
+                user_created_at,
+                user_bot,
+                user_avatar,
+                1,
+                user_joined_at,
+                user_display_name,
             ]
 
     async def build_content(self):
         if not self.message.content and not self.get_message_snapshots():
-            self.message.content = ""
+            self.rendered_content = ""
             return
 
         if self.message_edited_at:
@@ -216,13 +213,15 @@ class MessageConstruct:
 
         combined = html.escape(combined or "")
 
-        if self.forwarded:
-            combined = f'<div class="quote">{combined}</div>'
 
-        self.message.content = await fill_out(self.guild, message_content, [
-            ("MESSAGE_CONTENT", combined, PARSE_MODE_MARKDOWN),
-            ("EDIT", self.message_edited_at, PARSE_MODE_NONE),
-        ])
+        self.rendered_content = await fill_out(
+            self.guild,
+            message_content,
+            [
+                ("MESSAGE_CONTENT", combined, PARSE_MODE_MARKDOWN),
+                ("EDIT", self.message_edited_at, PARSE_MODE_NONE),
+            ],
+        )
 
     async def build_reference(self):
         if not self.message.reference:
@@ -237,7 +236,7 @@ class MessageConstruct:
             except (discord.NotFound, discord.HTTPException) as e:
                 self.message.reference = ""
                 if self.forwarded:
-                    self.message.reference = message_reference_forwarded
+                    self.message.reference = ""
                     return
                 if isinstance(e, discord.NotFound):
                     self.message.reference = message_reference_unknown
@@ -248,8 +247,9 @@ class MessageConstruct:
 
         icon = ""
         dummy = ""
+
         def get_interaction_status(interaction_message):
-            if hasattr(interaction_message, 'interaction_metadata'):
+            if hasattr(interaction_message, "interaction_metadata"):
                 return interaction_message.interaction_metadata
             return interaction_message.interaction
 
@@ -270,21 +270,25 @@ class MessageConstruct:
             message_edited_at = _set_edit_at(message_edited_at)
 
         avatar_url = message.author.display_avatar if message.author.display_avatar else DiscordUtils.default_avatar
-        self.message.reference = await fill_out(self.guild, message_reference, [
-            ("AVATAR_URL", str(avatar_url), PARSE_MODE_NONE),
-            ("BOT_TAG", is_bot, PARSE_MODE_NONE),
-            ("NAME_TAG", await discriminator(message.author.name, message.author.discriminator), PARSE_MODE_NONE),
-            ("NAME", str(html.escape(message.author.display_name))),
-            ("USER_COLOUR", user_colour, PARSE_MODE_NONE),
-            ("CONTENT", message.content.replace("\n", "").replace("<br>", ""), PARSE_MODE_REFERENCE),
-            ("EDIT", message_edited_at, PARSE_MODE_NONE),
-            ("ICON", icon, PARSE_MODE_NONE),
-            ("USER_ID", str(message.author.id), PARSE_MODE_NONE),
-            ("MESSAGE_ID", str(self.message.reference.message_id), PARSE_MODE_NONE),
-        ])
+        self.message.reference = await fill_out(
+            self.guild,
+            message_reference,
+            [
+                ("AVATAR_URL", str(avatar_url), PARSE_MODE_NONE),
+                ("BOT_TAG", is_bot, PARSE_MODE_NONE),
+                ("NAME_TAG", await discriminator(message.author.name, message.author.discriminator), PARSE_MODE_NONE),
+                ("NAME", str(html.escape(message.author.display_name))),
+                ("USER_COLOUR", user_colour, PARSE_MODE_NONE),
+                ("CONTENT", message.content.replace("\n", "").replace("<br>", ""), PARSE_MODE_REFERENCE),
+                ("EDIT", message_edited_at, PARSE_MODE_NONE),
+                ("ICON", icon, PARSE_MODE_NONE),
+                ("USER_ID", str(message.author.id), PARSE_MODE_NONE),
+                ("MESSAGE_ID", str(self.message.reference.message_id), PARSE_MODE_NONE),
+            ],
+        )
 
     async def build_interaction(self):
-        if hasattr(self.message, 'interaction_metadata'):
+        if hasattr(self.message, "interaction_metadata"):
             if not self.message.interaction_metadata:
                 self.interaction = ""
                 return
@@ -303,39 +307,42 @@ class MessageConstruct:
         user_colour = await self._gather_user_colour(user)
         avatar_url = user.display_avatar if user.display_avatar else DiscordUtils.default_avatar
 
-        self.interaction = await fill_out(self.guild, message_interaction, [
-            ("AVATAR_URL", str(avatar_url), PARSE_MODE_NONE),
-            ("BOT_TAG", is_bot, PARSE_MODE_NONE),
-            ("NAME_TAG", await discriminator(user.name, user.discriminator), PARSE_MODE_NONE),
-            ("NAME", str(html.escape(user.display_name))),
-            ("COMMAND", str(command), PARSE_MODE_NONE),
-            ("USER_COLOUR", user_colour, PARSE_MODE_NONE),
-            ("FILLER", "used ", PARSE_MODE_NONE),
-            ("USER_ID", str(user.id), PARSE_MODE_NONE),
-            ("INTERACTION_ID", str(interaction_id), PARSE_MODE_NONE),
-        ])
+        self.interaction = await fill_out(
+            self.guild,
+            message_interaction,
+            [
+                ("AVATAR_URL", str(avatar_url), PARSE_MODE_NONE),
+                ("BOT_TAG", is_bot, PARSE_MODE_NONE),
+                ("NAME_TAG", await discriminator(user.name, user.discriminator), PARSE_MODE_NONE),
+                ("NAME", str(html.escape(user.display_name))),
+                ("COMMAND", str(command), PARSE_MODE_NONE),
+                ("USER_COLOUR", user_colour, PARSE_MODE_NONE),
+                ("FILLER", "used ", PARSE_MODE_NONE),
+                ("USER_ID", str(user.id), PARSE_MODE_NONE),
+                ("INTERACTION_ID", str(interaction_id), PARSE_MODE_NONE),
+            ],
+        )
 
     async def build_sticker(self):
         sticker = None
         sticker_image_url = None
-        
+
         if self.message.stickers and hasattr(self.message.stickers[0], "url"):
             sticker_image_url = self.message.stickers[0].url
         if not sticker_image_url:
             for snapshot in self.get_message_snapshots():
                 if hasattr(snapshot, "stickers") and snapshot.stickers and hasattr(snapshot.stickers[0], "url"):
                     sticker_image_url = snapshot.stickers[0].url
-                    self.message.reference = message_reference_forwarded
+                    self.message.reference = ""
                     break
 
         if not sticker_image_url:
             return
-            
 
         if sticker_image_url.endswith(".json"):
             try:
                 sticker = await self.message.stickers[0].fetch()
-            except:
+            except Exception:
                 for snapshot in self.get_message_snapshots():
                     if hasattr(snapshot, "stickers") and snapshot.stickers and hasattr(snapshot.stickers[0], "url"):
                         sticker = await snapshot.stickers[0].fetch()
@@ -344,10 +351,37 @@ class MessageConstruct:
                 f"https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/stickers/{sticker.pack_id}/{sticker.id}.gif"
             )
 
-        self.message.content = await fill_out(self.guild, img_attachment, [
-            ("ATTACH_URL", str(sticker_image_url), PARSE_MODE_NONE),
-            ("ATTACH_URL_THUMB", str(sticker_image_url), PARSE_MODE_NONE)
-        ])
+        self.rendered_content = await fill_out(
+            self.guild,
+            img_attachment,
+            [
+                ("ATTACH_URL", str(sticker_image_url), PARSE_MODE_NONE),
+                ("ATTACH_URL_THUMB", str(sticker_image_url), PARSE_MODE_NONE),
+            ],
+        )
+
+    @staticmethod
+    def calculate_grid_splits(n):
+        if n <= 4:
+            return [n]
+        if n == 9:
+            return [9]
+        if n == 5:
+            return [2, 3]
+        if n == 6:
+            return [3, 3]
+        if n == 7:
+            return [1, 3, 3]
+        if n == 8:
+            return [2, 3, 3]
+        if n == 10:
+            return [1, 9]
+
+        if n > 9:
+            res = MessageConstruct.calculate_grid_splits(n - 9)
+            res.append(9)
+            return res
+        return [n]
 
     async def build_assets(self):
         processed_attachments = []
@@ -356,8 +390,8 @@ class MessageConstruct:
         for snapshot in self.get_message_snapshots():
             if hasattr(snapshot, "embeds"):
                 for se in snapshot.embeds:
-                    self.embeds += await Embed(se, self.guild).flow()
-                    self.message.reference = message_reference_forwarded
+                    self.forwarded_embeds += await Embed(se, self.guild).flow()
+                    self.message.reference = ""
 
         for a in self.message.attachments:
             if self.attachment_handler and isinstance(self.attachment_handler, AttachmentHandler):
@@ -370,16 +404,38 @@ class MessageConstruct:
                 continue
             self.embeds += await Embed(e, self.guild, self.pytz_timezone, self.military_time).flow()
 
+        media_group = []
+
+        async def flush_media_group(group):
+            if not group:
+                return ""
+            html_output = ""
+            splits = self.calculate_grid_splits(len(group))
+            start = 0
+            for s in splits:
+                html_output += await AttachmentGrid(group[start : start + s], self.guild, len(group)).flow()
+                start += s
+            return html_output
+
         for a in processed_attachments:
-            self.attachments += await Attachment(a, self.guild).flow()
-        
+            if a.content_type and ("image" in a.content_type or "video" in a.content_type):
+                media_group.append(a)
+            else:
+                if media_group:
+                    self.attachments += await flush_media_group(media_group)
+                    media_group = []
+                self.attachments += await Attachment(a, self.guild).flow()
+
+        if media_group:
+            self.attachments += await flush_media_group(media_group)
+
         for snapshot in self.get_message_snapshots():
             if hasattr(snapshot, "attachments"):
                 for sa in snapshot.attachments:
                     if self.attachment_handler:
                         sa = await self.attachment_handler.process_asset(sa)
-                    self.attachments += await Attachment(sa,self.guild).flow()
-                    self.message.reference = message_reference_forwarded
+                    self.attachments += await Attachment(sa, self.guild).flow()
+                    self.message.reference = ""
 
         for c in self.message.components:
             self.components += await Component(c, self.guild, self.message.attachments).flow()
@@ -387,8 +443,8 @@ class MessageConstruct:
         for snapshot in self.get_message_snapshots():
             if hasattr(snapshot, "components"):
                 for ac in snapshot.components:
-                    self.components += await Component(ac,self.guild).flow()
-                    self.message.reference = message_reference_forwarded
+                    self.components += await Component(ac, self.guild).flow()
+                    self.message.reference = ""
 
         for r in self.message.reactions:
             self.reactions += await Reaction(r, self.guild).flow()
@@ -396,31 +452,51 @@ class MessageConstruct:
         if self.reactions:
             self.reactions = f'<div class="chatlog__reactions">{self.reactions}</div>'
 
+    async def wrap_forwarded(self):
+        if not self.forwarded:
+            return
+
+        self.rendered_content = (
+            f'<div class="quote"><div>{message_forwarded}{self.rendered_content}'
+            f"{self.attachments}{self.forwarded_embeds}{self.components}</div></div>"
+        )
+
+        self.attachments = ""
+        self.forwarded_embeds = ""
+        self.components = ""
+
     async def build_message_template(self):
         started = await self.generate_message_divider()
 
         if started:
             return self.message_html
 
-        self.message_html += await fill_out(self.guild, message_body, [
-            ("MESSAGE_ID", str(self.message.id)),
-            ("MESSAGE_CONTENT", self.message.content, PARSE_MODE_NONE),
-            ("EMBEDS", self.embeds, PARSE_MODE_NONE),
-            ("ATTACHMENTS", self.attachments, PARSE_MODE_NONE),
-            ("COMPONENTS", self.components, PARSE_MODE_NONE),
-            ("EMOJI", self.reactions, PARSE_MODE_NONE),
-            ("TIMESTAMP", self.message_created_at, PARSE_MODE_NONE),
-            ("TIME", self.message_created_at.split(maxsplit=4)[4], PARSE_MODE_NONE),
-        ])
+        self.message_html += await fill_out(
+            self.guild,
+            message_body,
+            [
+                ("MESSAGE_ID", str(self.message.id)),
+                ("MESSAGE_CONTENT", self.rendered_content, PARSE_MODE_NONE),
+                ("EMBEDS", self.embeds, PARSE_MODE_NONE),
+                ("ATTACHMENTS", self.attachments, PARSE_MODE_NONE),
+                ("COMPONENTS", self.components, PARSE_MODE_NONE),
+                ("EMOJI", self.reactions, PARSE_MODE_NONE),
+                ("TIMESTAMP", self.message_created_at, PARSE_MODE_NONE),
+                ("TIME", self.message_created_at.split(maxsplit=4)[4], PARSE_MODE_NONE),
+            ],
+        )
 
         return self.message_html
 
     def _generate_message_divider_check(self):
         return bool(
-            self.previous_message is None or self.message.reference != "" or
-            self.previous_message.type is not discord.MessageType.default or self.interaction != "" or
-            self.previous_message.author.id != self.message.author.id or self.message.webhook_id is not None or
-            self.message.created_at > (self.previous_message.created_at + timedelta(minutes=4))
+            self.previous_message is None
+            or self.message.reference != ""
+            or self.previous_message.type is not discord.MessageType.default
+            or self.interaction != ""
+            or self.previous_message.author.id != self.message.author.id
+            or self.message.webhook_id is not None
+            or self.message.created_at > (self.previous_message.created_at + timedelta(minutes=4))
         )
 
     async def generate_message_divider(self, channel_audit=False):
@@ -434,7 +510,9 @@ class MessageConstruct:
 
             followup_symbol = ""
             is_bot = _gather_user_bot(self.message.author)
-            avatar_url = self.message.author.display_avatar if self.message.author.display_avatar else DiscordUtils.default_avatar
+            avatar_url = self.message.author.display_avatar
+            if not avatar_url:
+                avatar_url = DiscordUtils.default_avatar
 
             if self.message.reference != "" or self.interaction:
                 followup_symbol = "<div class='chatlog__followup-symbol'></div>"
@@ -448,81 +526,129 @@ class MessageConstruct:
             else:
                 default_timestamp = time.astimezone(timezone(self.pytz_timezone)).strftime("%d-%m-%Y %I:%M %p")
 
-            self.message_html += await fill_out(self.guild, start_message, [
-                ("REFERENCE_SYMBOL", followup_symbol, PARSE_MODE_NONE),
-                ("REFERENCE", self.message.reference if self.message.reference else self.interaction,
-                 PARSE_MODE_NONE),
-                ("AVATAR_URL", str(avatar_url), PARSE_MODE_NONE),
-                ("NAME_TAG", await discriminator(self.message.author.name, self.message.author.discriminator), PARSE_MODE_NONE),
-                ("USER_ID", str(self.message.author.id)),
-                ("USER_COLOUR", await self._gather_user_colour(self.message.author)),
-                ("USER_ICON", await self._gather_user_icon(self.message.author), PARSE_MODE_NONE),
-                ("NAME", str(html.escape(self.message.author.display_name))),
-                ("BOT_TAG", str(is_bot), PARSE_MODE_NONE),
-                ("TIMESTAMP", str(self.message_created_at)),
-                ("DEFAULT_TIMESTAMP", str(default_timestamp), PARSE_MODE_NONE),
-                ("MESSAGE_ID", str(self.message.id)),
-                ("MESSAGE_CONTENT", self.message.content, PARSE_MODE_NONE),
-                ("EMBEDS", self.embeds, PARSE_MODE_NONE),
-                ("ATTACHMENTS", self.attachments, PARSE_MODE_NONE),
-                ("COMPONENTS", self.components, PARSE_MODE_NONE),
-                ("EMOJI", self.reactions, PARSE_MODE_NONE)
-            ])
+            self.message_html += await fill_out(
+                self.guild,
+                start_message,
+                [
+                    ("REFERENCE_SYMBOL", followup_symbol, PARSE_MODE_NONE),
+                    (
+                        "REFERENCE",
+                        self.message.reference if self.message.reference else self.interaction,
+                        PARSE_MODE_NONE,
+                    ),
+                    ("AVATAR_URL", str(avatar_url), PARSE_MODE_NONE),
+                    (
+                        "NAME_TAG",
+                        await discriminator(self.message.author.name, self.message.author.discriminator),
+                        PARSE_MODE_NONE,
+                    ),
+                    ("USER_ID", str(self.message.author.id)),
+                    ("USER_COLOUR", await self._gather_user_colour(self.message.author)),
+                    ("USER_ICON", await self._gather_user_icon(self.message.author), PARSE_MODE_NONE),
+                    ("NAME", str(html.escape(self.message.author.display_name))),
+                    ("BOT_TAG", str(is_bot), PARSE_MODE_NONE),
+                    ("TIMESTAMP", str(self.message_created_at)),
+                    ("DEFAULT_TIMESTAMP", str(default_timestamp), PARSE_MODE_NONE),
+                    ("MESSAGE_ID", str(self.message.id)),
+                    ("MESSAGE_CONTENT", self.rendered_content, PARSE_MODE_NONE),
+                    ("EMBEDS", self.embeds, PARSE_MODE_NONE),
+                    ("ATTACHMENTS", self.attachments, PARSE_MODE_NONE),
+                    ("COMPONENTS", self.components, PARSE_MODE_NONE),
+                    ("EMOJI", self.reactions, PARSE_MODE_NONE),
+                ],
+            )
 
             return True
 
     async def build_pin_template(self):
-        self.message_html += await fill_out(self.guild, message_pin, [
-            ("PIN_URL", DiscordUtils.pinned_message_icon, PARSE_MODE_NONE),
-            ("USER_COLOUR", await self._gather_user_colour(self.message.author)),
-            ("NAME", str(html.escape(self.message.author.display_name))),
-            ("NAME_TAG", await discriminator(self.message.author.name, self.message.author.discriminator), PARSE_MODE_NONE),
-            ("MESSAGE_ID", str(self.message.id), PARSE_MODE_NONE),
-            ("REF_MESSAGE_ID", str(self.message.reference.message_id) if self.message.reference else "", PARSE_MODE_NONE)
-        ])
+        self.message_html += await fill_out(
+            self.guild,
+            message_pin,
+            [
+                ("PIN_URL", DiscordUtils.pinned_message_icon, PARSE_MODE_NONE),
+                ("USER_COLOUR", await self._gather_user_colour(self.message.author)),
+                ("NAME", str(html.escape(self.message.author.display_name))),
+                (
+                    "NAME_TAG",
+                    await discriminator(self.message.author.name, self.message.author.discriminator),
+                    PARSE_MODE_NONE,
+                ),
+                ("MESSAGE_ID", str(self.message.id), PARSE_MODE_NONE),
+                (
+                    "REF_MESSAGE_ID",
+                    str(self.message.reference.message_id) if self.message.reference else "",
+                    PARSE_MODE_NONE,
+                ),
+            ],
+        )
 
     async def build_thread_template(self):
-        self.message_html += await fill_out(self.guild, message_thread, [
-            ("THREAD_URL", DiscordUtils.thread_channel_icon,
-             PARSE_MODE_NONE),
-            ("THREAD_NAME", self.message.content, PARSE_MODE_NONE),
-            ("USER_COLOUR", await self._gather_user_colour(self.message.author)),
-            ("NAME", str(html.escape(self.message.author.display_name))),
-            ("NAME_TAG", await discriminator(self.message.author.name, self.message.author.discriminator), PARSE_MODE_NONE),
-            ("MESSAGE_ID", str(self.message.id), PARSE_MODE_NONE),
-        ])
+        self.message_html += await fill_out(
+            self.guild,
+            message_thread,
+            [
+                ("THREAD_URL", DiscordUtils.thread_channel_icon, PARSE_MODE_NONE),
+                ("THREAD_NAME", self.message.content, PARSE_MODE_NONE),
+                ("USER_COLOUR", await self._gather_user_colour(self.message.author)),
+                ("NAME", str(html.escape(self.message.author.display_name))),
+                (
+                    "NAME_TAG",
+                    await discriminator(self.message.author.name, self.message.author.discriminator),
+                    PARSE_MODE_NONE,
+                ),
+                ("MESSAGE_ID", str(self.message.id), PARSE_MODE_NONE),
+            ],
+        )
 
     async def build_remove(self):
         removed_member: discord.Member = self.message.mentions[0]
-        self.message_html += await fill_out(self.guild, message_thread_remove, [
-            ("THREAD_URL", DiscordUtils.thread_remove_recipient,
-             PARSE_MODE_NONE),
-            ("USER_COLOUR", await self._gather_user_colour(self.message.author)),
-            ("NAME", str(html.escape(self.message.author.display_name))),
-            ("NAME_TAG", await discriminator(self.message.author.name, self.message.author.discriminator),
-             PARSE_MODE_NONE),
-            ("RECIPIENT_USER_COLOUR", await self._gather_user_colour(removed_member)),
-            ("RECIPIENT_NAME", str(html.escape(removed_member.display_name))),
-            ("RECIPIENT_NAME_TAG", await discriminator(removed_member.name, removed_member.discriminator),
-             PARSE_MODE_NONE),
-            ("MESSAGE_ID", str(self.message.id), PARSE_MODE_NONE),
-        ])
+        self.message_html += await fill_out(
+            self.guild,
+            message_thread_remove,
+            [
+                ("THREAD_URL", DiscordUtils.thread_remove_recipient, PARSE_MODE_NONE),
+                ("USER_COLOUR", await self._gather_user_colour(self.message.author)),
+                ("NAME", str(html.escape(self.message.author.display_name))),
+                (
+                    "NAME_TAG",
+                    await discriminator(self.message.author.name, self.message.author.discriminator),
+                    PARSE_MODE_NONE,
+                ),
+                ("RECIPIENT_USER_COLOUR", await self._gather_user_colour(removed_member)),
+                ("RECIPIENT_NAME", str(html.escape(removed_member.display_name))),
+                (
+                    "RECIPIENT_NAME_TAG",
+                    await discriminator(removed_member.name, removed_member.discriminator),
+                    PARSE_MODE_NONE,
+                ),
+                ("MESSAGE_ID", str(self.message.id), PARSE_MODE_NONE),
+            ],
+        )
 
     async def build_add(self):
         removed_member: discord.Member = self.message.mentions[0]
-        self.message_html += await fill_out(self.guild, message_thread_add, [
-            ("THREAD_URL", DiscordUtils.thread_add_recipient,
-             PARSE_MODE_NONE),
-            ("USER_COLOUR", await self._gather_user_colour(self.message.author)),
-            ("NAME", str(html.escape(self.message.author.display_name))),
-            ("NAME_TAG", await discriminator(self.message.author.name, self.message.author.discriminator),
-             PARSE_MODE_NONE),
-            ("RECIPIENT_USER_COLOUR", await self._gather_user_colour(removed_member)),
-            ("RECIPIENT_NAME", str(html.escape(removed_member.display_name))),
-            ("RECIPIENT_NAME_TAG", await discriminator(removed_member.name, removed_member.discriminator),
-             PARSE_MODE_NONE),
-            ("MESSAGE_ID", str(self.message.id), PARSE_MODE_NONE),
-        ])
+        self.message_html += await fill_out(
+            self.guild,
+            message_thread_add,
+            [
+                ("THREAD_URL", DiscordUtils.thread_add_recipient, PARSE_MODE_NONE),
+                ("USER_COLOUR", await self._gather_user_colour(self.message.author)),
+                ("NAME", str(html.escape(self.message.author.display_name))),
+                (
+                    "NAME_TAG",
+                    await discriminator(self.message.author.name, self.message.author.discriminator),
+                    PARSE_MODE_NONE,
+                ),
+                ("RECIPIENT_USER_COLOUR", await self._gather_user_colour(removed_member)),
+                ("RECIPIENT_NAME", str(html.escape(removed_member.display_name))),
+                (
+                    "RECIPIENT_NAME_TAG",
+                    await discriminator(removed_member.name, removed_member.discriminator),
+                    PARSE_MODE_NONE,
+                ),
+                ("MESSAGE_ID", str(self.message.id), PARSE_MODE_NONE),
+            ],
+        )
 
     @cache()
     async def _gather_member(self, author: discord.Member):
@@ -576,7 +702,7 @@ async def gather_messages(
     military_time,
     attachment_handler: Optional[AttachmentHandler],
 ) -> (str, dict):
-    message_html: str = ""
+    message_html_chunks: List[str] = []
     meta_data: dict = {}
     previous_message: Optional[discord.Message] = None
 
@@ -602,10 +728,10 @@ async def gather_messages(
             meta_data,
             message_dict,
             attachment_handler,
-            ).construct_message()
+        ).construct_message()
 
-        message_html += content_html
+        message_html_chunks.append(content_html)
         previous_message = message
 
-    message_html += "</div>"
-    return message_html, meta_data
+    message_html_chunks.append("</div>")
+    return "".join(message_html_chunks), meta_data

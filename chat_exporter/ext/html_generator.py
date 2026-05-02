@@ -1,9 +1,10 @@
 import html
 import json
 import os
+import re
 
-from chat_exporter.parse.mention import ParseMention
 from chat_exporter.parse.markdown import ParseMarkdown
+from chat_exporter.parse.markdown import bot as mention_bot
 
 dir_path = os.path.abspath(os.path.join((os.path.dirname(os.path.realpath(__file__))), ".."))
 
@@ -18,34 +19,41 @@ PARSE_MODE_HTML_SAFE = 7
 
 
 async def fill_out(guild, base, replacements):
+    resolved = {}
     for r in replacements:
         if len(r) == 2:  # default case
             k, v = r
-            r = (k, v, PARSE_MODE_MARKDOWN)
+            mode = PARSE_MODE_MARKDOWN
+        else:
+            k, v, mode = r
 
-        k, v, mode = r
-
-        if mode != PARSE_MODE_NONE:
-            v = await ParseMention(v, guild).flow()
         if mode == PARSE_MODE_MARKDOWN:
-            v = await ParseMarkdown(v).standard_message_flow()
+            v = await ParseMarkdown(v, guild, mention_bot).standard_message_flow()
         elif mode == PARSE_MODE_EMBED:
-            v = await ParseMarkdown(v).standard_embed_flow()
+            v = await ParseMarkdown(v, guild, mention_bot).standard_embed_flow()
         elif mode == PARSE_MODE_SPECIAL_EMBED:
-            v = await ParseMarkdown(v).special_embed_flow()
+            v = await ParseMarkdown(v, guild, mention_bot).special_embed_flow()
         elif mode == PARSE_MODE_REFERENCE:
-            v = await ParseMarkdown(v).message_reference_flow()
+            v = await ParseMarkdown(v, guild, mention_bot).message_reference_flow()
         elif mode == PARSE_MODE_EMOJI:
-            v = await ParseMarkdown(v).special_emoji_flow()
+            v = await ParseMarkdown(v, guild, mention_bot).special_emoji_flow()
         elif mode == PARSE_MODE_HTML_SAFE:
+            if mode != PARSE_MODE_NONE:
+                v = await ParseMarkdown(v, guild, mention_bot).standard_embed_flow()
             # escape html characters
             v = html.escape(v, quote=True)
             # escape characters that could be used for xss
             v = json.dumps(v, ensure_ascii=False)[1:-1]
+        elif mode != PARSE_MODE_NONE:
+            v = await ParseMarkdown(v, guild, mention_bot).standard_embed_flow()
 
-        base = base.replace("{{" + k + "}}", str(v or "").strip())
+        resolved[k] = str(v or "").strip()
 
-    return base
+    def repl(match):
+        key = match.group(1)
+        return resolved.get(key, match.group(0))
+
+    return re.sub(r"\{\{([A-Z0-9_]+)\}\}", repl, base)
 
 
 def read_file(filename):
@@ -66,7 +74,7 @@ message_thread = read_file(dir_path + "/html/message/thread.html")
 message_thread_remove = read_file(dir_path + "/html/message/thread_remove.html")
 message_thread_add = read_file(dir_path + "/html/message/thread_add.html")
 message_reference_unknown = read_file(dir_path + "/html/message/reference_unknown.html")
-message_reference_forwarded = read_file(dir_path + "/html/message/reference_forwarded.html")
+message_forwarded = read_file(dir_path + "/html/message/forwarded.html")
 message_body = read_file(dir_path + "/html/message/message.html")
 end_message = read_file(dir_path + "/html/message/end.html")
 meta_data_temp = read_file(dir_path + "/html/message/meta.html")
@@ -106,6 +114,8 @@ custom_emoji = read_file(dir_path + "/html/reaction/custom_emoji.html")
 
 # ATTACHMENT
 img_attachment = read_file(dir_path + "/html/attachment/image.html")
+img_grid = read_file(dir_path + "/html/attachment/image_grid.html")
+img_grid_item = read_file(dir_path + "/html/attachment/image_grid_item.html")
 msg_attachment = read_file(dir_path + "/html/attachment/message.html")
 audio_attachment = read_file(dir_path + "/html/attachment/audio.html")
 video_attachment = read_file(dir_path + "/html/attachment/video.html")
