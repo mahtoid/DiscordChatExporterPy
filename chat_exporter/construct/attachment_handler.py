@@ -38,7 +38,7 @@ class AttachmentToLocalFileHostHandler(AttachmentHandler):
         :param attachment: discord.Attachment
         :return: str
         """
-        file_name = urllib.parse.quote_plus(f"{datetime.datetime.utcnow().timestamp()}_{attachment.filename}")
+        file_name = urllib.parse.quote_plus(f"{datetime.datetime.now(datetime.timezone.utc).timestamp()}_{attachment.filename}")
         asset_path = self.base_path / file_name
         await attachment.save(asset_path)
         file_url = f"{self.url_base}/{file_name}"
@@ -85,6 +85,7 @@ class AttachmentToWebhookHandler(AttachmentHandler):
         """Implement this to process the asset and return a url to the stored attachment.
         :param attachment: discord.Attachment
         :return: str"""
+        message = None
         try:
             if attachment.size > self.size_limit:
                 file = discord.File(self.placeholder_path, filename="too_large.png")
@@ -105,4 +106,6 @@ class AttachmentToWebhookHandler(AttachmentHandler):
             # discords http errors, including missing permissions
             raise e
         else:
+            if message is None:
+                raise aiohttp.ClientConnectionError("Webhook connection failed after 3 retries.")
             return message.attachments[0]

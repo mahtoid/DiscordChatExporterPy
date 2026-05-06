@@ -270,6 +270,8 @@ class MessageConstruct:
             message_edited_at = _set_edit_at(message_edited_at)
 
         avatar_url = message.author.display_avatar if message.author.display_avatar else DiscordUtils.default_avatar
+        reference_content = message.content.replace("\r\n", "\n").replace("\r", "\n")
+        reference_content = reference_content.replace("\n", " ").replace("<br>", " ")
         self.message.reference = await fill_out(
             self.guild,
             message_reference,
@@ -279,7 +281,7 @@ class MessageConstruct:
                 ("NAME_TAG", await discriminator(message.author.name, message.author.discriminator), PARSE_MODE_NONE),
                 ("NAME", str(html.escape(message.author.display_name))),
                 ("USER_COLOUR", user_colour, PARSE_MODE_NONE),
-                ("CONTENT", message.content.replace("\n", "").replace("<br>", ""), PARSE_MODE_REFERENCE),
+                ("CONTENT", reference_content, PARSE_MODE_REFERENCE),
                 ("EDIT", message_edited_at, PARSE_MODE_NONE),
                 ("ICON", icon, PARSE_MODE_NONE),
                 ("USER_ID", str(message.author.id), PARSE_MODE_NONE),
@@ -351,7 +353,7 @@ class MessageConstruct:
                 f"https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/stickers/{sticker.pack_id}/{sticker.id}.gif"
             )
 
-        self.rendered_content = await fill_out(
+        sticker_html = await fill_out(
             self.guild,
             img_attachment,
             [
@@ -359,6 +361,7 @@ class MessageConstruct:
                 ("ATTACH_URL_THUMB", str(sticker_image_url), PARSE_MODE_NONE),
             ],
         )
+        self.rendered_content += sticker_html
 
     @staticmethod
     def calculate_grid_splits(n):
@@ -687,7 +690,7 @@ class MessageConstruct:
         return created_at_str, edited_at_str
 
     def to_local_time_str(self, time):
-        if not self.message.created_at.tzinfo:
+        if not time.tzinfo:
             time = timezone("UTC").localize(time)
 
         local_time = time.astimezone(timezone(self.pytz_timezone))
