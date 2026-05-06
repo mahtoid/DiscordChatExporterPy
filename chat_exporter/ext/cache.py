@@ -54,7 +54,7 @@ def cache():
                 return _wrap_new_coroutine(value)
 
         wrapper.cache = _internal_cache
-        wrapper.clear_cache = _internal_cache.clear()
+        wrapper.clear_cache = _internal_cache.clear
         return wrapper
 
     return decorator

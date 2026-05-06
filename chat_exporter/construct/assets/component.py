@@ -246,7 +246,7 @@ class Component:
             option_emoji = self._stringify_emoji(self._get_attr(option, "emoji", None))
             is_default = bool(self._get_attr(option, "default", False))
             default_class = "dropdownContentSelected" if is_default else ""
-            check_mark = "✓" if is_default else ""
+            check_mark = "&#10003;" if is_default else ""
 
             label_escaped = html.escape(str(label)) if label else ""
             description_escaped = html.escape(str(description)) if description else ""
@@ -551,7 +551,7 @@ class Component:
         if not spoiler and description:
             description_overlay = (
                 f'<div class="chatlog__component-{css_class_prefix}-description">'
-                f'{{html.escape(str(description))}}</div>'
+                f'{html.escape(str(description))}</div>'
             )
 
         return {

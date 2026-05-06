@@ -4,6 +4,7 @@ import time
 from typing import List
 
 import pytz
+import html
 
 
 class Node:
@@ -184,11 +185,7 @@ class UserMentionNode(Node):
 
         if member:
             member_name = member.display_name
-            escaped_name = (
-                member_name.replace("<", self.ESCAPE_LT)
-                .replace(">", self.ESCAPE_GT)
-                .replace("&", self.ESCAPE_AMP)
-            )
+            escaped_name = html.escape(member_name)
             return f'<span class="mention" title="{self.user_id}">@{escaped_name}</span>'
         else:
             return f'<span class="mention" title="{self.user_id}">&lt;@{self.user_id}&gt;</span>'
@@ -236,7 +233,7 @@ class TimeMentionNode(Node):
         self.original = original
 
     def render(self, guild=None, bot=None):
-        timestamp = self.timestamp - 1
+        timestamp = self.timestamp
         try:
             time_stamp = time.gmtime(timestamp)
             datetime_stamp = datetime.datetime(2010, *time_stamp[1:6], tzinfo=pytz.utc)
