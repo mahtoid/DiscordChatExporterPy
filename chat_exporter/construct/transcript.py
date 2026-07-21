@@ -138,7 +138,7 @@ class TranscriptDAO:
 
         limit = "start"
         if self.limit:
-            limit = f"latest {self.limit} messages"
+            limit = f"latest {len(self.messages)} messages"
 
         subject = await fill_out(
             self.channel.guild,
