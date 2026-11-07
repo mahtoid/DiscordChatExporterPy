@@ -476,6 +476,22 @@ If you have any issues or suggestions - open an issue on the Github Repository o
         unicode-bidi: bidi-override;
       }
 
+      .chatlog__avatar-wrapper {
+        position: relative;
+        display: inline-block;
+        width: 40px;
+        height: 40px;
+      }
+
+      .chatlog__avatar-decoration {
+        position: absolute;
+        top: -4px;
+        left: -4px;
+        width: 48px;
+        height: 48px;
+        pointer-events: none;
+      }
+
       .chatlog__avatar {
         width: 40px;
         height: 40px;
@@ -601,7 +617,7 @@ If you have any issues or suggestions - open an issue on the Github Repository o
 
       /* Single image (1 total) - natural size, scales with viewport */
       .chatlog__attachment-grid--single {
-        display: inline-block;
+        display: block;
         width: fit-content;
         width: -moz-fit-content;
         max-width: 100%;
@@ -918,7 +934,7 @@ If you have any issues or suggestions - open an issue on the Github Repository o
       .chatlog__component-button {
         display: inline-flex;
         align-items: center;
-        background-color: var(--button-color, #4f545c);
+        background-color: var(--button-color, rgb(79, 84, 92));
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 6px;
         box-shadow: 0 1px 0 rgba(0, 0, 0, 0.15);
@@ -1004,6 +1020,29 @@ If you have any issues or suggestions - open an issue on the Github Repository o
         background-color: rgba(255, 255, 255, 0.05);
         border: 1px solid rgba(255, 255, 255, 0.03);
         box-shadow: 0 1px 0 rgba(0, 0, 0, 0.12);
+        position: relative;
+      }
+
+      .chatlog__reaction > .chatlog__reactors {
+        display: none;
+      }
+
+      .chatlog__reaction:hover > .chatlog__reactors {
+        display: block;
+      }
+
+      .chatlog__reactors {
+        background-color: rgb(54, 57, 63);
+        position: absolute;
+        padding: 0.5rem;
+        left: 2em;
+        top: 1em;
+        border-radius: 0.5rem;
+        z-index: 6969;
+        border: 1px solid white;
+        width: max-content;
+        max-width: 200px;
+        overflow: scroll;
       }
 
       .chatlog__reaction-count {
@@ -1124,6 +1163,11 @@ If you have any issues or suggestions - open an issue on the Github Repository o
       .spoiler--hidden:hover .spoiler-text {
         background-color: #5c5f66;
         color: transparent;
+      }
+
+      /* Hide emojis inside hidden spoiler tags */
+      .spoiler--hidden .spoiler-text img.emoji {
+        opacity: 0;
       }
 
       .quote {
@@ -2446,7 +2490,7 @@ If you have any issues or suggestions - open an issue on the Github Repository o
               theme: 'disc',
           });
 
-      { { FANCY_TIME } }
+      {{FANCY_TIME}}
     </script>
   </body>
 </html>

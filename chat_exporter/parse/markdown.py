@@ -1,9 +1,11 @@
 import re
-from typing import Optional
+from typing import List, Optional
 
 from chat_exporter.ext.discord_import import discord
 from chat_exporter.ext.emoji_convert import convert_emoji
-from chat_exporter.parse.ast import AstParser
+from chat_exporter.ext.export_context import current
+from chat_exporter.ext.sanitize import normalise_text
+from chat_exporter.parse.ast import AstParser, ContainerNode, CustomEmojiNode, Node, TextNode
 
 bot: Optional[discord.Client] = None
 
@@ -15,94 +17,64 @@ def pass_bot(_bot):
     bot = _bot
 
 
+_CUSTOM_EMOJI = re.compile(CustomEmojiNode.PATTERN)
+
+
+async def render_text_with_emoji(text: str) -> str:
+    """Converts custom and unicode emoji in escaped text to images."""
+    parts = []
+    last = 0
+    for match in _CUSTOM_EMOJI.finditer(text):
+        parts.append(await convert_emoji(text[last : match.start()]))
+        parts.append(CustomEmojiNode.from_match(match).render())
+        last = match.end()
+    parts.append(await convert_emoji(text[last:]))
+    return "".join(parts)
+
+
+async def _convert_emoji_in(nodes: List[Node]) -> None:
+    for node in nodes:
+        if isinstance(node, TextNode):
+            node.text = await render_text_with_emoji(node.text)
+        elif isinstance(node, ContainerNode):
+            await _convert_emoji_in(node.children)
+
+
 class ParseMarkdown:
     def __init__(self, content, guild=None, _bot=None):
-        self.content = content
+        self.content = normalise_text(content)
         self.guild = guild
-        self.bot = _bot or bot
-        self.code_blocks = []
+        self.bot = _bot or current().bot or bot
 
-    def parse_code_block_markdown(self):
-        # Shield multiline code blocks
-        def repl_multiline(match):
-            self.code_blocks.append(match.group(0))
-            return f"{{{{CODE_BLOCK_{len(self.code_blocks) - 1}}}}}"
-
-        self.content = re.sub(r"```.*?```", repl_multiline, self.content, flags=re.DOTALL)
-
-        # Shield inline code
-        def repl_inline(match):
-            self.code_blocks.append(match.group(0))
-            return f"{{{{CODE_BLOCK_{len(self.code_blocks) - 1}}}}}"
-
-        self.content = re.sub(r"`.*?`", repl_inline, self.content, flags=re.DOTALL)
-
-    def reverse_code_block_markdown(self):
-        for i, block in enumerate(self.code_blocks):
-            self.content = self.content.replace(f"{{{{CODE_BLOCK_{i}}}}}", block)
+    async def _render(self) -> str:
+        nodes = AstParser().parse(self.content)
+        await _convert_emoji_in(nodes)
+        self.content = "".join(n.render(self.guild, self.bot) for n in nodes)
+        return self.content
 
     async def standard_message_flow(self):
-        ast = AstParser()
-        nodes = ast.parse(self.content)
-        self.content = "".join(n.render(self.guild, self.bot) for n in nodes)
-        await self.parse_emoji()
+        await self._render()
+
+        content_no_emojis = re.sub(r'<img class="emoji emoji--small"[^>]*>', "", self.content)
+        content_no_emojis = content_no_emojis.replace("<br>", "").strip()
+
+        if not content_no_emojis:
+            self.content = self.content.replace("emoji--small", "emoji--large")
+
         return self.content
 
     async def link_embed_flow(self):
-        ast = AstParser()
-        nodes = ast.parse(self.content)
-        self.content = "".join(n.render(self.guild, self.bot) for n in nodes)
-        await self.parse_emoji()
-        return self.content
+        return await self._render()
 
     async def standard_embed_flow(self):
-        ast = AstParser()
-        nodes = ast.parse(self.content)
-        self.content = "".join(n.render(self.guild, self.bot) for n in nodes)
-        await self.parse_emoji()
-        return self.content
+        return await self._render()
 
     async def special_embed_flow(self):
         return await self.standard_embed_flow()
 
     async def message_reference_flow(self):
-        self.strip_preserve()
         return await self.standard_embed_flow()
 
     async def special_emoji_flow(self):
-        await self.parse_emoji()
+        self.content = await render_text_with_emoji(self.content)
         return self.content
-
-    def strip_preserve(self):
-        p = r'<span class="chatlog__markdown-preserve">(.*?)</span>'
-        self.content = re.sub(p, r"\1", self.content)
-
-    async def parse_emoji(self):
-        holder = (
-            [r"&lt;:.*?:(\d*)&gt;", '<img class="emoji emoji--small" src="https://cdn.discordapp.com/emojis/%s.png">'],
-            [r"&lt;a:.*?:(\d*)&gt;", '<img class="emoji emoji--small" src="https://cdn.discordapp.com/emojis/%s.gif">'],
-            [r"<:.*?:(\d*)>", '<img class="emoji emoji--small" src="https://cdn.discordapp.com/emojis/%s.png">'],
-            [r"<a:.*?:(\d*)>", '<img class="emoji emoji--small" src="https://cdn.discordapp.com/emojis/%s.gif">'],
-        )
-
-        shield_blocks = []
-        def repl(match):
-            shield_blocks.append(match.group(0))
-            return f"{{{{SHIELD_{len(shield_blocks) - 1}}}}}"
-        self.content = re.sub(r'<div class="pre pre--multiline.*?</div>', repl, self.content, flags=re.DOTALL)
-        self.content = re.sub(r'<span class="pre pre-inline">.*?</span>', repl, self.content, flags=re.DOTALL)
-
-        self.content = await convert_emoji([word for word in self.content])
-
-        for p, r in holder:
-
-            def make_repl(template):
-                def repl(match):
-                    return template % match.group(1)
-
-                return repl
-
-            self.content = re.sub(p, make_repl(r), self.content)
-
-        for i, block in enumerate(shield_blocks):
-            self.content = self.content.replace(f"{{{{SHIELD_{i}}}}}", block)

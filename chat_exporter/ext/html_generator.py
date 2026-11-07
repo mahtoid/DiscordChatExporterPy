@@ -1,13 +1,12 @@
-import html
-import json
 import os
 import re
 
+from chat_exporter.ext.sanitize import escape, safe_url
 from chat_exporter.parse.markdown import ParseMarkdown
-from chat_exporter.parse.markdown import bot as mention_bot
 
 dir_path = os.path.abspath(os.path.join((os.path.dirname(os.path.realpath(__file__))), ".."))
 
+# PARSE_MODE_NONE inserts the value as-is: only use it for HTML the library built itself.
 PARSE_MODE_NONE = 0
 PARSE_MODE_NO_MARKDOWN = 1
 PARSE_MODE_MARKDOWN = 2
@@ -16,6 +15,10 @@ PARSE_MODE_SPECIAL_EMBED = 4
 PARSE_MODE_REFERENCE = 5
 PARSE_MODE_EMOJI = 6
 PARSE_MODE_HTML_SAFE = 7
+# Plain text: escaped, no markdown. Use for names, filenames and any attribute value.
+PARSE_MODE_TEXT = 8
+# A URL for href/src: only absolute http(s) URLs are kept, everything else becomes "".
+PARSE_MODE_URL = 9
 
 
 async def fill_out(guild, base, replacements):
@@ -28,24 +31,21 @@ async def fill_out(guild, base, replacements):
             k, v, mode = r
 
         if mode == PARSE_MODE_MARKDOWN:
-            v = await ParseMarkdown(v, guild, mention_bot).standard_message_flow()
+            v = await ParseMarkdown(v, guild).standard_message_flow()
         elif mode == PARSE_MODE_EMBED:
-            v = await ParseMarkdown(v, guild, mention_bot).standard_embed_flow()
+            v = await ParseMarkdown(v, guild).standard_embed_flow()
         elif mode == PARSE_MODE_SPECIAL_EMBED:
-            v = await ParseMarkdown(v, guild, mention_bot).special_embed_flow()
+            v = await ParseMarkdown(v, guild).special_embed_flow()
         elif mode == PARSE_MODE_REFERENCE:
-            v = await ParseMarkdown(v, guild, mention_bot).message_reference_flow()
+            v = await ParseMarkdown(v, guild).message_reference_flow()
         elif mode == PARSE_MODE_EMOJI:
-            v = await ParseMarkdown(v, guild, mention_bot).special_emoji_flow()
-        elif mode == PARSE_MODE_HTML_SAFE:
-            if mode != PARSE_MODE_NONE:
-                v = await ParseMarkdown(v, guild, mention_bot).standard_embed_flow()
-            # escape html characters
-            v = html.escape(v, quote=True)
-            # escape characters that could be used for xss
-            v = json.dumps(v, ensure_ascii=False)[1:-1]
+            v = await ParseMarkdown(v, guild).special_emoji_flow()
+        elif mode in (PARSE_MODE_HTML_SAFE, PARSE_MODE_TEXT):
+            v = escape(v)
+        elif mode == PARSE_MODE_URL:
+            v = safe_url(v)
         elif mode != PARSE_MODE_NONE:
-            v = await ParseMarkdown(v, guild, mention_bot).standard_embed_flow()
+            v = await ParseMarkdown(v, guild).standard_embed_flow()
 
         resolved[k] = str(v or "").strip()
 

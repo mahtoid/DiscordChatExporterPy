@@ -40,6 +40,9 @@ dev = [
     "discord.py",
 ]
 
+[tool.setuptools.package-data]
+chat_exporter = ["html/**/*.html", "construct/*.png"]
+
 [tool.ruff]
 # Target version for the generated code.
 target-version = "py311"

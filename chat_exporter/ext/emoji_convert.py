@@ -29,6 +29,7 @@
 #                                                                                #
 # Github: https://github.com/glasnt/emojificate                                  #
 ##################################################################################
+import asyncio
 import unicodedata
 
 import aiohttp
@@ -36,6 +37,8 @@ import emoji
 from grapheme import graphemes
 
 from chat_exporter.ext.cache import cache
+from chat_exporter.ext.export_context import http_session
+from chat_exporter.ext.sanitize import escape
 
 cdn_fmt = "https://cdn.jsdelivr.net/gh/jdecked/twemoji@latest/assets/72x72/{codepoint}.png"
 
@@ -43,10 +46,10 @@ cdn_fmt = "https://cdn.jsdelivr.net/gh/jdecked/twemoji@latest/assets/72x72/{code
 @cache()
 async def valid_src(src):
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(src) as resp:
+        async with http_session() as session:
+            async with session.head(src, allow_redirects=True) as resp:
                 return resp.status == 200
-    except aiohttp.ClientConnectorError:
+    except (aiohttp.ClientError, asyncio.TimeoutError):
         return False
 
 
@@ -65,24 +68,30 @@ async def codepoint(codes):
 
 
 async def convert(char):
+    # Only real emoji have a Twemoji image; skipping everything else avoids a network request per symbol.
+    if not emoji.is_emoji(char):
+        return char
+
     if valid_category(char):
-        name = unicodedata.name(char).title()
+        name = unicodedata.name(char, "").title()
     else:
-        if len(char) == 1:
-            return char
-        else:
-            shortcode = emoji.demojize(char)
-            name = shortcode.replace(":", "").replace("_", " ").replace("selector", "").title()
+        shortcode = emoji.demojize(char)
+        name = shortcode.replace(":", "").replace("_", " ").replace("selector", "").title()
 
     src = cdn_fmt.format(codepoint=await codepoint(["{cp:x}".format(cp=ord(c)) for c in char]))
 
     if await valid_src(src):
-        return f'<img class="emoji emoji--small" src="{src}" alt="{char}" title="{name}" aria-label="Emoji: {name}">'
+        return (
+            f'<img class="emoji emoji--small" src="{src}" alt="{escape(char)}" title="{escape(name)}" '
+            f'aria-label="Emoji: {escape(name)}">'
+        )
     else:
         return char
 
 
 async def convert_emoji(string):
+    if not isinstance(string, str):
+        string = "".join(string)
     x = []
     for ch in graphemes(string):
         x.append(await convert(ch))

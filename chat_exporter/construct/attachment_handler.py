@@ -9,6 +9,7 @@ from typing import Union
 import aiohttp
 
 from chat_exporter.ext.discord_import import discord
+from chat_exporter.ext.export_context import http_session
 
 
 class AttachmentHandler:
@@ -58,19 +59,15 @@ class AttachmentToDiscordChannelHandler(AttachmentHandler):
         :param attachment: discord.Attachment
         :return: str
         """
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(attachment.url) as res:
-                    if res.status != 200:
-                        res.raise_for_status()
-                    data = io.BytesIO(await res.read())
-                    data.seek(0)
-                    attach = discord.File(data, attachment.filename)
-                    msg: discord.Message = await self.channel.send(file=attach)
-                    return msg.attachments[0]
-        except discord.errors.HTTPException as e:
-            # discords http errors, including missing permissions
-            raise e
+        async with http_session() as session:
+            async with session.get(attachment.url) as res:
+                if res.status != 200:
+                    res.raise_for_status()
+                data = io.BytesIO(await res.read())
+                data.seek(0)
+                attach = discord.File(data, attachment.filename)
+                msg: discord.Message = await self.channel.send(file=attach)
+                return msg.attachments[0]
 
 
 class AttachmentToWebhookHandler(AttachmentHandler):
@@ -85,24 +82,22 @@ class AttachmentToWebhookHandler(AttachmentHandler):
         """Implement this to process the asset and return a url to the stored attachment.
         :param attachment: discord.Attachment
         :return: str"""
-        try:
-            if attachment.size > self.size_limit:
-                file = discord.File(self.placeholder_path, filename="too_large.png")
-            else:
-                file = await attachment.to_file()
-
-            async with aiohttp.ClientSession() as session:
-                webhook = discord.Webhook.from_url(self.webhook_link, session=session)
-                for i in range(3):
-                    try:
-                        message = await webhook.send(file=file, wait=True)
-                        break
-                    except aiohttp.ClientConnectionError:
-                        print(f"Retry {i + 1}/3 | Error - Webhook connection failed.")
-                        await asyncio.sleep(3)  # to prevent frequent retries on connection error
-
-        except discord.errors.HTTPException as e:
-            # discords http errors, including missing permissions
-            raise e
+        if attachment.size > self.size_limit:
+            file = discord.File(self.placeholder_path, filename="too_large.png")
         else:
-            return message.attachments[0]
+            file = await attachment.to_file()
+
+        message = None
+        async with http_session() as session:
+            webhook = discord.Webhook.from_url(self.webhook_link, session=session)
+            for i in range(3):
+                try:
+                    message = await webhook.send(file=file, wait=True)
+                    break
+                except aiohttp.ClientConnectionError:
+                    print(f"Retry {i + 1}/3 | Error - Webhook connection failed.")
+                    await asyncio.sleep(3)  # to prevent frequent retries on connection error
+
+        if message is None:
+            return attachment
+        return message.attachments[0]

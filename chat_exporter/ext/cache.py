@@ -1,7 +1,7 @@
 from functools import wraps
 from typing import Any, Dict, Tuple
 
-_internal_cache: dict = {}
+from chat_exporter.ext.export_context import current
 
 
 def _wrap_and_store_coroutine(cache, key, coro):
@@ -21,7 +21,7 @@ def _wrap_new_coroutine(value):
 
 
 def clear_cache():
-    _internal_cache.clear()
+    current().cache.clear()
 
 
 def cache():
@@ -44,17 +44,16 @@ def cache():
 
         @wraps(func)
         def wrapper(*args, **kwargs):
+            store = current().cache
             key = _make_key(args, kwargs)
             try:
-                value = _internal_cache[key]
+                value = store[key]
             except KeyError:
                 value = func(*args, **kwargs)
-                return _wrap_and_store_coroutine(_internal_cache, key, value)
+                return _wrap_and_store_coroutine(store, key, value)
             else:
                 return _wrap_new_coroutine(value)
 
-        wrapper.cache = _internal_cache
-        wrapper.clear_cache = _internal_cache.clear()
         return wrapper
 
     return decorator
