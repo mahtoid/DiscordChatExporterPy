@@ -1,6 +1,6 @@
 import datetime
 import io
-from typing import List, Optional
+from typing import Callable, List, Optional
 
 from chat_exporter.construct.attachment_handler import (
     AttachmentHandler,
@@ -15,6 +15,7 @@ __all__ = [
     "quick_export",
     "export",
     "raw_export",
+    "export_to_file",
     "AttachmentHandler",
     "AttachmentToLocalFileHostHandler",
     "AttachmentToDiscordChannelHandler",
@@ -27,6 +28,7 @@ async def quick_export(
     guild: Optional[discord.Guild] = None,
     bot: Optional[discord.Client] = None,
     raise_exceptions: bool = False,
+    fetch_reactors: bool = True,
 ):
     """
     Create a quick export of your Discord channel.
@@ -55,6 +57,7 @@ async def quick_export(
             bot=bot,
             attachment_handler=None,
             raise_exceptions=raise_exceptions,
+            fetch_reactors=fetch_reactors,
         ).export()
     ).html
 
@@ -82,6 +85,7 @@ async def export(
     support_dev: Optional[bool] = True,
     attachment_handler: Optional[AttachmentHandler] = None,
     raise_exceptions: bool = False,
+    fetch_reactors: bool = True,
 ):
     """
     Create a customised transcript of your Discord channel.
@@ -116,6 +120,7 @@ async def export(
             bot=bot,
             attachment_handler=attachment_handler,
             raise_exceptions=raise_exceptions,
+            fetch_reactors=fetch_reactors,
         ).export()
     ).html
 
@@ -131,6 +136,7 @@ async def raw_export(
     support_dev: Optional[bool] = True,
     attachment_handler: Optional[AttachmentHandler] = None,
     raise_exceptions: bool = False,
+    fetch_reactors: bool = True,
 ):
     """
     Create a customised transcript with your own captured Discord messages
@@ -163,5 +169,47 @@ async def raw_export(
             bot=bot,
             attachment_handler=attachment_handler,
             raise_exceptions=raise_exceptions,
+            fetch_reactors=fetch_reactors,
         ).export()
     ).html
+
+
+async def export_to_file(
+    channel: discord.TextChannel,
+    fp,
+    limit: Optional[int] = None,
+    messages: Optional[List[discord.Message]] = None,
+    tz_info: str = "UTC",
+    guild: Optional[discord.Guild] = None,
+    bot: Optional[discord.Client] = None,
+    military_time: Optional[bool] = False,
+    fancy_times: Optional[bool] = True,
+    before: Optional[datetime.datetime] = None,
+    after: Optional[datetime.datetime] = None,
+    support_dev: Optional[bool] = True,
+    attachment_handler: Optional[AttachmentHandler] = None,
+    fetch_reactors: bool = True,
+    should_stop: Optional[Callable[[], bool]] = None,
+) -> int:
+    """Stream a channel's transcript to `fp` (a file path or a binary file object) with bounded memory.
+
+    Returns the number of exported messages.
+    """
+    if guild:
+        channel.guild = guild
+
+    return await Transcript(
+        channel=channel,
+        limit=limit,
+        messages=messages,
+        pytz_timezone=tz_info,
+        military_time=military_time,
+        fancy_times=fancy_times,
+        before=before,
+        after=after,
+        support_dev=support_dev,
+        bot=bot,
+        attachment_handler=attachment_handler,
+        fetch_reactors=fetch_reactors,
+    ).export_to_file(fp, should_stop=should_stop)
+

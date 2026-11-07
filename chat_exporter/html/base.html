@@ -476,6 +476,22 @@ If you have any issues or suggestions - open an issue on the Github Repository o
         unicode-bidi: bidi-override;
       }
 
+      .chatlog__avatar-wrapper {
+        position: relative;
+        display: inline-block;
+        width: 40px;
+        height: 40px;
+      }
+
+      .chatlog__avatar-decoration {
+        position: absolute;
+        top: -4px;
+        left: -4px;
+        width: 48px;
+        height: 48px;
+        pointer-events: none;
+      }
+
       .chatlog__avatar {
         width: 40px;
         height: 40px;
@@ -601,7 +617,7 @@ If you have any issues or suggestions - open an issue on the Github Repository o
 
       /* Single image (1 total) - natural size, scales with viewport */
       .chatlog__attachment-grid--single {
-        display: inline-block;
+        display: block;
         width: fit-content;
         width: -moz-fit-content;
         max-width: 100%;
@@ -1147,6 +1163,11 @@ If you have any issues or suggestions - open an issue on the Github Repository o
       .spoiler--hidden:hover .spoiler-text {
         background-color: #5c5f66;
         color: transparent;
+      }
+
+      /* Hide emojis inside hidden spoiler tags */
+      .spoiler--hidden .spoiler-text img.emoji {
+        opacity: 0;
       }
 
       .quote {
@@ -2469,7 +2490,7 @@ If you have any issues or suggestions - open an issue on the Github Repository o
               theme: 'disc',
           });
 
-      { { FANCY_TIME } }
+      {{FANCY_TIME}}
     </script>
   </body>
 </html>

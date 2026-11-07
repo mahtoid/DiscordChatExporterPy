@@ -1,9 +1,12 @@
 import datetime
+import html
 import re
 import time
 from typing import List
 
 import pytz
+
+from chat_exporter.ext.sanitize import escape, normalise_text, safe_url
 
 
 class Node:
@@ -69,7 +72,8 @@ class CodeBlockNode(Node):
         self.code = code
 
     def render(self, guild=None, bot=None):
-        lang_class = f"language-{self.lang}" if self.lang else "nohighlight"
+        lang = re.sub(r"[^\w+#.-]", "", self.lang or "")
+        lang_class = f"language-{lang}" if lang else "nohighlight"
         return f'<div class="pre pre--multiline {lang_class}">{self.code}</div>'
 
 
@@ -102,15 +106,28 @@ class LinkNode(ContainerNode):
         self.url = url
 
     def render(self, guild=None, bot=None):
-        return f'<a href="{self.url}">{self.render_children(guild, bot)}</a>'
+        # The URL is a slice of escaped text; unescape it so the scheme check sees what a browser would.
+        href = safe_url(html.unescape(self.url))
+        if not href:
+            return self.render_children(guild, bot)
+        return f'<a href="{href}">{self.render_children(guild, bot)}</a>'
 
 
-class HtmlNode(Node):
-    def __init__(self, raw: str):
-        self.raw = raw
+class CustomEmojiNode(Node):
+    PATTERN = r"&lt;(a?):([A-Za-z0-9_~]{1,32}):([0-9]{1,25})&gt;"
+
+    def __init__(self, animated: bool, name: str, emoji_id: str):
+        self.animated = animated
+        self.name = name
+        self.emoji_id = emoji_id
+
+    @classmethod
+    def from_match(cls, match):
+        return cls(bool(match.group(1)), match.group(2), match.group(3))
 
     def render(self, guild=None, bot=None):
-        return self.raw
+        ext = "gif" if self.animated else "png"
+        return f'<img class="emoji emoji--small" src="https://cdn.discordapp.com/emojis/{self.emoji_id}.{ext}">'
 
 
 class ListItemNode(ContainerNode):
@@ -164,14 +181,10 @@ class ChannelMentionNode(Node):
         channel = guild.get_channel(self.channel_id) if guild else None
         if channel is None:
             return "#deleted-channel"
-        return f'<span class="mention" title="{channel.id}">#{channel.name}</span>'
+        return f'<span class="mention" title="{escape(channel.id)}">#{escape(channel.name)}</span>'
 
 
 class UserMentionNode(Node):
-    ESCAPE_LT = "______lt______"
-    ESCAPE_GT = "______gt______"
-    ESCAPE_AMP = "______amp______"
-
     def __init__(self, user_id: int):
         self.user_id = user_id
 
@@ -183,13 +196,7 @@ class UserMentionNode(Node):
             member = bot.get_user(self.user_id)
 
         if member:
-            member_name = member.display_name
-            escaped_name = (
-                member_name.replace("<", self.ESCAPE_LT)
-                .replace(">", self.ESCAPE_GT)
-                .replace("&", self.ESCAPE_AMP)
-            )
-            return f'<span class="mention" title="{self.user_id}">@{escaped_name}</span>'
+            return f'<span class="mention" title="{self.user_id}">@{escape(member.display_name)}</span>'
         else:
             return f'<span class="mention" title="{self.user_id}">&lt;@{self.user_id}&gt;</span>'
 
@@ -202,11 +209,13 @@ class RoleMentionNode(Node):
         role = guild.get_role(self.role_id) if guild else None
         if role is None:
             return "@deleted-role"
+        name = escape(role.name)
         if role.color.r == 0 and role.color.g == 0 and role.color.b == 0:
-            colour = "#dee0fc"
+            return f'<span class="mention" title="{name}">@{name}</span>'
         else:
             colour = "#%02x%02x%02x" % (role.color.r, role.color.g, role.color.b)
-        return f'<span style="color: {colour};">@{role.name}</span>'
+            bg_colour = "rgba(%d, %d, %d, 0.1)" % (role.color.r, role.color.g, role.color.b)
+            return f'<span class="mention" style="color: {colour}; background-color: {bg_colour};" title="{name}">@{name}</span>'
 
 
 class EveryoneMentionNode(Node):
@@ -224,7 +233,8 @@ class SlashCommandNode(Node):
         self.name = name
 
     def render(self, guild=None, bot=None):
-        return f'<span class="mention" title="{self.name}">/{self.name}</span>'
+        name = escape(self.name)
+        return f'<span class="mention" title="{name}">/{name}</span>'
 
 
 class TimeMentionNode(Node):
@@ -256,10 +266,10 @@ class TimeMentionNode(Node):
                 str(dt.year), str(final_year)
             )
 
-        original_escaped = self.original.replace("<", "&lt;").replace(">", "&gt;")
         return (
-            f'<span class="unix-timestamp" data-timestamp="{tooltip_time}" raw-content="{original_escaped}">'
-            f"{ui_time}"
+            f'<span class="unix-timestamp" data-timestamp="{escape(tooltip_time)}" '
+            f'raw-content="{escape(html.unescape(self.original))}">'
+            f"{escape(ui_time)}"
             "</span>"
         )
 
@@ -268,7 +278,8 @@ class AstParser:
     def parse(self, text: str) -> List[Node]:
         if not text:
             return []
-        nodes = self._parse_inline(str(text))
+        # The parser only ever sees escaped text, so user input can't produce raw markup.
+        nodes = self._parse_inline(normalise_text(text))
         nodes = self._merge_text_nodes(nodes)
         nodes = self._merge_quote_nodes(nodes)
         nodes = self._merge_list_nodes(nodes)
@@ -346,12 +357,12 @@ class AstParser:
                 if time_found:
                     continue
 
-                # HTML fallback
-                if text[i] == "<":
-                    tag_match = re.match(r"(<[^>]+>)", text[i:])
-                    if tag_match:
-                        nodes.append(HtmlNode(tag_match.group(1)))
-                        i += len(tag_match.group(1))
+                # Custom emoji (parsed as a unit so formatting like _ inside the name can't split it)
+                if is_escaped:
+                    emoji_match = re.match(CustomEmojiNode.PATTERN, text[i:])
+                    if emoji_match:
+                        nodes.append(CustomEmojiNode.from_match(emoji_match))
+                        i += len(emoji_match.group(0))
                         continue
 
             # Newline handler (crucial to restart cursor for block elements)
@@ -544,7 +555,7 @@ class AstParser:
 
             # Raw HTTP
             if text[i : i + 4] == "http":
-                match = re.search(r"^https?://[^\s<*\n\)]+", text[i:])
+                match = re.search(r"^https?://(?:(?!&gt;|&lt;|&quot;)[^\s<*\n\)])+", text[i:])
                 if match:
                     url = match.group(0)
                     nodes.append(LinkNode(url, [TextNode(url)]))

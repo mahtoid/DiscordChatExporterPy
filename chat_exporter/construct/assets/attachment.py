@@ -3,6 +3,8 @@ import math
 from chat_exporter.ext.discord_utils import DiscordUtils
 from chat_exporter.ext.html_generator import (
     PARSE_MODE_NONE,
+    PARSE_MODE_TEXT,
+    PARSE_MODE_URL,
     audio_attachment,
     fill_out,
     img_attachment,
@@ -70,17 +72,19 @@ class Attachment:
             self.guild,
             img_attachment,
             [
-                ("ATTACH_URL", self.attachments.url, PARSE_MODE_NONE),
-                ("ATTACH_URL_THUMB", self.attachments.url, PARSE_MODE_NONE),
+                ("ATTACH_URL", self.attachments.url, PARSE_MODE_URL),
+                ("ATTACH_URL_THUMB", self.attachments.url, PARSE_MODE_URL),
             ],
         )
 
     async def video(self):
-        width_str = f'width="{self.attachments.width}"' if getattr(self.attachments, "width", None) else ""
-        height_str = f'height="{self.attachments.height}"' if getattr(self.attachments, "height", None) else ""
+        width = getattr(self.attachments, "width", None)
+        height = getattr(self.attachments, "height", None)
+        width_str = f'width="{int(width)}"' if width else ""
+        height_str = f'height="{int(height)}"' if height else ""
         self.attachments = await fill_out(
             self.guild, video_attachment, [
-                ("ATTACH_URL", self.attachments.url, PARSE_MODE_NONE),
+                ("ATTACH_URL", self.attachments.url, PARSE_MODE_URL),
                 ("ATTACH_WIDTH", width_str, PARSE_MODE_NONE),
                 ("ATTACH_HEIGHT", height_str, PARSE_MODE_NONE),
             ]
@@ -94,11 +98,11 @@ class Attachment:
             self.guild,
             audio_attachment,
             [
-                ("ATTACH_ICON", file_icon, PARSE_MODE_NONE),
-                ("ATTACH_URL", self.attachments.url, PARSE_MODE_NONE),
-                ("ATTACH_BYTES", str(file_size), PARSE_MODE_NONE),
-                ("ATTACH_AUDIO", self.attachments.url, PARSE_MODE_NONE),
-                ("ATTACH_FILE", str(self.attachments.filename), PARSE_MODE_NONE),
+                ("ATTACH_ICON", file_icon, PARSE_MODE_URL),
+                ("ATTACH_URL", self.attachments.url, PARSE_MODE_URL),
+                ("ATTACH_BYTES", str(file_size), PARSE_MODE_TEXT),
+                ("ATTACH_AUDIO", self.attachments.url, PARSE_MODE_URL),
+                ("ATTACH_FILE", str(self.attachments.filename), PARSE_MODE_TEXT),
             ],
         )
 
@@ -111,10 +115,10 @@ class Attachment:
             self.guild,
             msg_attachment,
             [
-                ("ATTACH_ICON", file_icon, PARSE_MODE_NONE),
-                ("ATTACH_URL", self.attachments.url, PARSE_MODE_NONE),
-                ("ATTACH_BYTES", str(file_size), PARSE_MODE_NONE),
-                ("ATTACH_FILE", str(self.attachments.filename), PARSE_MODE_NONE),
+                ("ATTACH_ICON", file_icon, PARSE_MODE_URL),
+                ("ATTACH_URL", self.attachments.url, PARSE_MODE_URL),
+                ("ATTACH_BYTES", str(file_size), PARSE_MODE_TEXT),
+                ("ATTACH_FILE", str(self.attachments.filename), PARSE_MODE_TEXT),
             ],
         )
 

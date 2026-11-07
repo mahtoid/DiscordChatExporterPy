@@ -15,7 +15,7 @@ for(var i = 0; i < timeStamps.length; i++) {
     const diff = date_2.diff(date_1, 'day', true)
 
     if (date_1.isTomorrow()) {
-        timeStamps[i].ineerText = "Tomorrow at " + date_1.format('{{TIME_FORMAT}}')
+        timeStamps[i].innerText = "Tomorrow at " + date_1.format('{{TIME_FORMAT}}')
     } else if (date_1.isToday()) {
         timeStamps[i].innerText = "Today at " + date_1.format('{{TIME_FORMAT}}')
     } else if (date_1.add(1, 'day').isToday()) {

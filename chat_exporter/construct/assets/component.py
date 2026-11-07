@@ -4,11 +4,14 @@ from urllib.parse import urlparse
 from chat_exporter.construct.assets.attachment import Attachment
 from chat_exporter.ext.discord_import import discord
 from chat_exporter.ext.discord_utils import DiscordUtils
+from chat_exporter.ext.export_context import current
 from chat_exporter.ext.html_generator import (
     PARSE_MODE_EMBED,
     PARSE_MODE_EMOJI,
     PARSE_MODE_MARKDOWN,
     PARSE_MODE_NONE,
+    PARSE_MODE_TEXT,
+    PARSE_MODE_URL,
     component_button,
     component_container,
     component_file,
@@ -23,6 +26,7 @@ from chat_exporter.ext.html_generator import (
     component_thumbnail,
     fill_out,
 )
+from chat_exporter.ext.sanitize import escape, safe_url
 
 modules_which_use_none = ["nextcord", "disnake"]
 
@@ -114,7 +118,7 @@ class Component:
             return await self.build_button(c)
         if isinstance(c, discord.SelectMenu):
             menu_html = await self.build_menu(c)
-            Component.menu_div_id += 1
+            self._next_menu_id()
             return menu_html
 
         # Handle components v2 based on type
@@ -128,10 +132,19 @@ class Component:
             method = getattr(self, method_name)
             result = await method(c)
             if type_value == 3:  # StringSelect
-                Component.menu_div_id += 1
+                self._next_menu_id()
             return result
             
         return ""
+
+    @staticmethod
+    def _current_menu_id() -> int:
+        return current().menu_div_id
+
+    @staticmethod
+    def _next_menu_id() -> None:
+        current().menu_div_id += 1
+        Component.menu_div_id = current().menu_div_id
 
     async def build_action_row(self, c):
         """Build an action row containing buttons or select menus"""
@@ -153,8 +166,9 @@ class Component:
         url_value = self._get_attr(c, "url", None)
         disabled = bool(self._get_attr(c, "disabled", False))
 
-        if url_value and not disabled:
-            url = str(url_value)
+        href = safe_url(url_value) if url_value and not disabled else ""
+        if href:
+            url = href
             target = " target='_blank'"
             icon = str(DiscordUtils.button_external_link)
         else:
@@ -222,16 +236,15 @@ class Component:
             content = await self.build_menu_options(options)
 
         selected_label = html.escape(selected_label) if selected_label else ""
-        placeholder = html.escape(placeholder) if placeholder else ""
 
         menu_html = await fill_out(
             self.guild,
             component_menu,
             [
                 ("DISABLED", "chatlog__component-disabled" if disabled else "", PARSE_MODE_NONE),
-                ("ID", str(self.menu_div_id), PARSE_MODE_NONE),
+                ("ID", str(self._current_menu_id()), PARSE_MODE_NONE),
                 ("PLACEHOLDER", str(selected_label), PARSE_MODE_MARKDOWN),
-                ("PLACEHOLDER_TITLE", str(placeholder), PARSE_MODE_MARKDOWN),
+                ("PLACEHOLDER_TITLE", str(placeholder), PARSE_MODE_TEXT),
                 ("CONTENT", str(content), PARSE_MODE_NONE),
                 ("ICON", DiscordUtils.interaction_dropdown_icon, PARSE_MODE_NONE),
             ],
@@ -280,7 +293,7 @@ class Component:
                 )
 
         if content:
-            content = f'<div id="dropdownMenu{self.menu_div_id}" class="dropdownContent">{"".join(content)}</div>'
+            content = f'<div id="dropdownMenu{self._current_menu_id()}" class="dropdownContent">{"".join(content)}</div>'
 
         return content
 
@@ -394,9 +407,9 @@ class Component:
             self.guild,
             component_thumbnail,
             [
-                ("URL", props["URL"], PARSE_MODE_NONE),
-                ("TITLE", props["TITLE"], PARSE_MODE_MARKDOWN),
-                ("ALT", props["ALT"], PARSE_MODE_MARKDOWN),
+                ("URL", props["URL"], PARSE_MODE_URL),
+                ("TITLE", props["TITLE"], PARSE_MODE_TEXT),
+                ("ALT", props["ALT"], PARSE_MODE_TEXT),
                 ("DESCRIPTION", props["DESCRIPTION"], PARSE_MODE_MARKDOWN),
                 ("SPOILER_CLASS", props["SPOILER_CLASS"], PARSE_MODE_NONE),
                 ("SPOILER_TAG", props["SPOILER_TAG"], PARSE_MODE_NONE),
@@ -447,9 +460,9 @@ class Component:
             self.guild,
             component_media_gallery_item,
             [
-                ("URL", props["URL"], PARSE_MODE_NONE),
-                ("TITLE", props["TITLE"], PARSE_MODE_MARKDOWN),
-                ("ALT", props["ALT"], PARSE_MODE_MARKDOWN),
+                ("URL", props["URL"], PARSE_MODE_URL),
+                ("TITLE", props["TITLE"], PARSE_MODE_TEXT),
+                ("ALT", props["ALT"], PARSE_MODE_TEXT),
                 ("DESCRIPTION", props["DESCRIPTION"], PARSE_MODE_MARKDOWN),
                 ("SPOILER_CLASS", props["SPOILER_CLASS"], PARSE_MODE_NONE),
                 ("SPOILER_TAG", props["SPOILER_TAG"], PARSE_MODE_NONE),
@@ -513,10 +526,10 @@ class Component:
             self.guild,
             component_file,
             [
-                ("FILE_NAME", str(file_name), PARSE_MODE_NONE),
-                ("FILE_URL", str(url), PARSE_MODE_NONE),
-                ("FILE_ICON", str(file_icon), PARSE_MODE_NONE),
-                ("FILE_SIZE", str(file_size), PARSE_MODE_NONE),
+                ("FILE_NAME", str(file_name), PARSE_MODE_TEXT),
+                ("FILE_URL", str(url), PARSE_MODE_URL),
+                ("FILE_ICON", str(file_icon), PARSE_MODE_URL),
+                ("FILE_SIZE", str(file_size), PARSE_MODE_TEXT),
                 ("SPOILER_CLASS", spoiler_class, PARSE_MODE_NONE),
             ],
         )
@@ -551,13 +564,13 @@ class Component:
         if not spoiler and description:
             description_overlay = (
                 f'<div class="chatlog__component-{css_class_prefix}-description">'
-                f'{{html.escape(str(description))}}</div>'
+                f"{escape(description)}</div>"
             )
 
         return {
             "URL": str(url),
-            "TITLE": html.escape(str(title_text)) if title_text else "",
-            "ALT": html.escape(str(alt_text)) if alt_text else "",
+            "TITLE": str(title_text) if title_text else "",
+            "ALT": str(alt_text) if alt_text else "",
             "DESCRIPTION": html.escape(str(description_text)) if description_text else "",
             "SPOILER_CLASS": spoiler_class,
             "SPOILER_TAG": spoiler_label,

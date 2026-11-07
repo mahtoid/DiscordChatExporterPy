@@ -4,6 +4,7 @@ from chat_exporter.chat_exporter import (
     AttachmentToLocalFileHostHandler,
     AttachmentToWebhookHandler,
     export,
+    export_to_file,
     quick_export,
     raw_export,
 )
@@ -14,6 +15,7 @@ __all__ = (
     export,
     raw_export,
     quick_export,
+    export_to_file,
     AttachmentHandler,
     AttachmentToLocalFileHostHandler,
     AttachmentToWebhookHandler,
